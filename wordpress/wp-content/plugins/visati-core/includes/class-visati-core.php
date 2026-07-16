@@ -40,6 +40,7 @@ final class Visati_Core {
 		Visati_Core_REST_API::init();
 		Visati_Core_Applications_Controller::init();
 		Visati_Core_Documents_Controller::init();
+		Visati_Core_Apply_Form_Shortcode::init();
 		Visati_Core_Admin_Settings::init();
 
 		// Future modules (added in later phases):

@@ -39,6 +39,7 @@ require_once VISATI_CORE_DIR . 'includes/class-stripe-payments.php';
 require_once VISATI_CORE_DIR . 'includes/class-application.php';
 require_once VISATI_CORE_DIR . 'includes/rest/class-applications-controller.php';
 require_once VISATI_CORE_DIR . 'includes/rest/class-documents-controller.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-apply-form.php';
 require_once VISATI_CORE_DIR . 'admin/class-settings-page.php';
 
 // Load .env.local (Next.js project secrets) into getenv()/$_ENV before any handler runs.

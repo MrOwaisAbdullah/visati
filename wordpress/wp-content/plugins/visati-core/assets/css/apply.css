@@ -1,0 +1,123 @@
+/**
+ * Apply form wizard styles (Visati design system).
+ */
+
+.visati-apply {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 4rem;
+}
+
+.visati-step-indicator {
+	list-style: none;
+	display: flex;
+	gap: 0.5rem;
+	padding: 0;
+	margin: 0 0 2rem;
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var( --visati-ink );
+}
+.visati-step-indicator li {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	opacity: 0.5;
+}
+.visati-step-indicator li span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var( --visati-mist );
+	color: var( --visati-navy );
+	font-weight: 700;
+}
+.visati-step-indicator li.is-active { opacity: 1; }
+.visati-step-indicator li.is-active span { background: var( --visati-navy ); color: var( --visati-white ); }
+.visati-step-indicator li.is-done span { background: var( --visati-gold ); color: var( --visati-navy ); }
+
+.visati-step h2 {
+	font-size: 1.5rem;
+	margin: 0 0 1.25rem;
+}
+
+.visati-grid {
+	display: grid;
+	grid-template-columns: repeat( 2, 1fr );
+	gap: 1rem 1.25rem;
+}
+@media ( max-width: 600px ) {
+	.visati-grid { grid-template-columns: 1fr; }
+}
+
+.visati-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var( --visati-ink );
+	margin-bottom: 1rem;
+}
+.visati-field input,
+.visati-field select {
+	padding: 0.7rem 0.85rem;
+	border: 1px solid #d7dbe2;
+	border-radius: 10px;
+	font-size: 1rem;
+	font-weight: 400;
+	font-family: inherit;
+	background: #fff;
+}
+.visati-field input:focus,
+.visati-field select:focus {
+	outline: none;
+	border-color: var( --visati-blue );
+	box-shadow: 0 0 0 3px rgba( 22, 89, 255, 0.15 );
+}
+
+.visati-tier {
+	border: 0;
+	display: flex;
+	gap: 1.5rem;
+	margin: 1rem 0 0;
+	padding: 0;
+}
+.visati-tier legend { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+.visati-tier label { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 400; cursor: pointer; }
+
+.visati-help { color: #6b7280; font-size: 0.85rem; }
+
+.visati-doc-list { list-style: none; padding: 0; margin: 0.75rem 0; }
+.visati-doc-list li {
+	padding: 0.5rem 0.75rem;
+	background: var( --visati-mist );
+	border-radius: 8px;
+	margin-bottom: 0.4rem;
+	font-size: 0.9rem;
+}
+
+.visati-review { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0 0 1rem; }
+.visati-review dt { font-weight: 600; color: var( --visati-ink ); font-size: 0.9rem; }
+.visati-review dd { margin: 0; color: #4b5563; font-size: 0.9rem; }
+
+.visati-nav {
+	display: flex;
+	gap: 0.75rem;
+	justify-content: flex-end;
+	margin-top: 1.5rem;
+}
+
+.visati-error {
+	background: #fef2f2;
+	color: #b91c1c;
+	border: 1px solid #fecaca;
+	padding: 0.75rem 1rem;
+	border-radius: 10px;
+	font-size: 0.9rem;
+	margin-top: 1rem;
+}
