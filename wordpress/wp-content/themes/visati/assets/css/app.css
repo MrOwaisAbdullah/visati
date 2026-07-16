@@ -144,6 +144,12 @@ a:hover { color: var( --visati-navy ); }
 	text-decoration: none;
 }
 .visati-header__logo { height: 36px; width: auto; display: block; }
+.visati-header__brand-text {
+	display: flex;
+	flex-direction: column;
+	margin-left: 0.5rem;
+	line-height: 1.1;
+}
 .visati-header__wordmark {
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-weight: 800;
@@ -151,12 +157,14 @@ a:hover { color: var( --visati-navy ); }
 	letter-spacing: 0.04em;
 	color: var( --visati-white );
 	text-transform: uppercase;
-	margin-left: 0.5rem;
 	line-height: 1;
 }
-	font-size: 1.25rem;
-	color: var( --visati-white );
-	letter-spacing: -0.02em;
+.visati-header__tagline {
+	font-family: "Inter", sans-serif;
+	font-size: 0.65rem;
+	color: rgba(255,255,255,0.6);
+	letter-spacing: 0.02em;
+	margin-top: 2px;
 }
 .visati-header__nav { display: none; }
 .visati-header__links {
@@ -318,13 +326,18 @@ a:hover { color: var( --visati-navy ); }
 		gap: 2rem;
 	}
 }
-.visati-footer__logo { height: 40px; width: auto; margin-bottom: 0.75rem; }
+.visati-footer__logo { height: 40px; width: auto; }
 .visati-footer__brand-link {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
 	text-decoration: none;
 	margin-bottom: 0.75rem;
+}
+.visati-footer__brand-text {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.1;
 }
 .visati-footer__wordmark {
 	font-family: "Plus Jakarta Sans", sans-serif;
@@ -334,6 +347,13 @@ a:hover { color: var( --visati-navy ); }
 	color: var( --visati-white );
 	text-transform: uppercase;
 	line-height: 1;
+}
+.visati-footer__tagline {
+	font-family: "Inter", sans-serif;
+	font-size: 0.75rem;
+	color: rgba(255,255,255,0.5);
+	letter-spacing: 0.02em;
+	margin-top: 4px;
 }
 .visati-footer__wordmark {
 	font-family: "Plus Jakarta Sans", sans-serif;
@@ -863,14 +883,11 @@ a:hover { color: var( --visati-navy ); }
    Uses !important because hello-elementor/reset.css loads after child theme.
    IMPORTANT: Only target content area buttons/links, not admin panel.
    ───────────────────────────────────────────────────────── */
-/* Content area buttons (not admin) */
-.visati-page button,
-.visati-page [type="button"],
-.visati-page [type="submit"],
-.visati-page [type="reset"],
-.visati-header button,
-.visati-footer button,
-.visati-drawer button {
+/* Content area buttons (not admin) - exclude styled components */
+.visati-page button:not(.visati-btn):not(.visati-combobox__button):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close),
+.visati-page [type="button"]:not(.visati-btn),
+.visati-page [type="submit"]:not(.visati-btn),
+.visati-page [type="reset"]:not(.visati-btn) {
 	background-color: var( --visati-navy ) !important;
 	color: var( --visati-white ) !important;
 	border: 0 !important;
@@ -881,13 +898,10 @@ a:hover { color: var( --visati-navy ); }
 	cursor: pointer;
 	transition: background 0.15s ease, color 0.15s ease;
 }
-.visati-page button:hover,
-.visati-page [type="button"]:hover,
-.visati-page [type="submit"]:hover,
-.visati-page [type="reset"]:hover,
-.visati-header button:hover,
-.visati-footer button:hover,
-.visati-drawer button:hover {
+.visati-page button:not(.visati-btn):not(.visati-combobox__button):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):hover,
+.visati-page [type="button"]:not(.visati-btn):hover,
+.visati-page [type="submit"]:not(.visati-btn):hover,
+.visati-page [type="reset"]:not(.visati-btn):hover {
 	background: var( --visati-gold ) !important;
 	color: var( --visati-navy ) !important;
 }
