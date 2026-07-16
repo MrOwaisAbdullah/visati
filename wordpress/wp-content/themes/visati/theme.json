@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "color": {
+      "defaultPalette": false,
+      "palette": [
+        { "slug": "navy",     "color": "#0A1628", "name": "Navy" },
+        { "slug": "gold",     "color": "#C9A84C", "name": "Gold" },
+        { "slug": "blue",     "color": "#1659FF", "name": "Blue" },
+        { "slug": "mist",     "color": "#F8F9FB", "name": "Mist" },
+        { "slug": "ink",      "color": "#1A1A2E", "name": "Ink" },
+        { "slug": "white",    "color": "#FFFFFF", "name": "White" },
+        { "slug": "whatsapp", "color": "#25D366", "name": "WhatsApp" }
+      ]
+    },
+    "typography": {
+      "fluid": true,
+      "fontFamilies": [
+        { "fontFamily": "\"Plus Jakarta Sans\", -apple-system, BlinkMacSystemFont, sans-serif", "name": "Plus Jakarta Sans", "slug": "display" },
+        { "fontFamily": "\"Inter\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", "name": "Inter", "slug": "body" },
+        { "fontFamily": "\"JetBrains Mono\", ui-monospace, SFMono-Regular, monospace", "name": "JetBrains Mono", "slug": "mono" }
+      ]
+    },
+    "layout": {
+      "contentSize": "768px",
+      "wideSize": "1200px"
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "var(--wp--preset--color--white)",
+      "text": "var(--wp--preset--color--ink)"
+    },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--body)",
+      "lineHeight": "1.6"
+    },
+    "elements": {
+      "heading": {
+        "typography": {
+          "fontFamily": "var(--wp--preset--font-family--display)",
+          "fontWeight": "700",
+          "lineHeight": "1.15"
+        }
+      },
+      "link": {
+        "color": { "text": "var(--wp--preset--color--blue)" },
+        ":hover": { "color": { "text": "var(--wp--preset--color--navy)" } }
+      }
+    }
+  }
+}

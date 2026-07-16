@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "emcp-tools": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [
+        "D:/GIAIC/Visati/wordpress/scripts/wp-local.sh",
+        "mcp-adapter",
+        "serve",
+        "--server=emcp-tools-server",
+        "--user=visati-admin"
+      ]
+    }
+  }
+}

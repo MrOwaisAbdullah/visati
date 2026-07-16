@@ -1,0 +1,15 @@
+/*
+Theme Name:   Visati
+Theme URI:    https://visati.ae
+Description:  Visati child theme for Hello Elementor. Provides global chrome (header, footer, announcement bar, WhatsApp widget) and the Visati design tokens. Content pages are built in Elementor.
+Author:       Visati
+Author URI:   https://visati.ae
+Template:     hello-elementor
+Version:      0.1.0
+Requires at least: 6.9
+Requires PHP: 8.2
+License:      GPL-2.0-or-later
+Text Domain:  visati
+*/
+
+/* Design tokens are defined in theme.json and assets/css/app.css (added in Phase 1). */

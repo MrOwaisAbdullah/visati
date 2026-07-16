@@ -1,0 +1,19 @@
+# WordPress core & third-party installs are NOT versioned here.
+# Only our authored theme (wp-content/themes/visati) and plugin
+# (wp-content/plugins/visati-core) are tracked.
+
+# Build artifacts inside our theme/plugin
+**/node_modules/
+**/vendor/
+**/dist/
+**/build/
+
+# Tailwind / composer lock files (keep or track per-tooling decision later)
+# **/package-lock.json
+# **/composer.lock
+
+# OS / editor noise
+**/.DS_Store
+**/Thumbs.db
+**/.vscode/
+**/.idea/

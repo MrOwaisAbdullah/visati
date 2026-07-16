@@ -1,0 +1,110 @@
+/**
+ * Visati design-system base styles.
+ *
+ * Tokens mirror theme.json (var(--wp--preset--color--*)) and the Elementor Kit.
+ * The plain --visati-* custom properties are provided for non-Elementor markup
+ * (shortcode output, plugin templates) so it matches the design system.
+ */
+
+:root {
+	--visati-navy:    #0A1628;
+	--visati-gold:    #C9A84C;
+	--visati-blue:    #1659FF;
+	--visati-mist:    #F8F9FB;
+	--visati-ink:     #1A1A2E;
+	--visati-white:   #FFFFFF;
+	--visati-whatsapp:#25D366;
+	--visati-radius:  14px;
+	--visati-shadow:  0 10px 30px rgba( 10, 22, 40, 0.08 );
+	--visati-max:     1200px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+	font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	color: var( --visati-ink );
+	background: var( --visati-white );
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+	color: var( --visati-navy );
+	line-height: 1.15;
+	font-weight: 700;
+}
+
+a { color: var( --visati-blue ); text-decoration: none; }
+a:hover { color: var( --visati-navy ); }
+
+/* Buttons / CTAs (gold pill) */
+.visati-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: var( --visati-gold );
+	color: var( --visati-navy );
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	padding: 0.85rem 1.5rem;
+	border-radius: 999px;
+	border: 0;
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.visati-btn:hover { background: var( --visati-navy ); color: var( --visati-gold ); transform: translateY( -1px ); }
+.visati-btn--navy { background: var( --visati-navy ); color: var( --visati-white ); }
+.visati-btn--navy:hover { background: var( --visati-gold ); color: var( --visati-navy ); }
+.visati-btn--outline { background: transparent; color: var( --visati-navy ); box-shadow: inset 0 0 0 2px var( --visati-navy ); }
+.visati-btn--outline:hover { background: var( --visati-navy ); color: var( --visati-white ); }
+
+/* Layout helpers */
+.visati-section { padding: 5rem 0; }
+.visati-section--mist { background: var( --visati-mist ); }
+.visati-section--navy { background: var( --visati-navy ); color: var( --visati-white ); }
+.visati-section--navy h1,
+.visati-section--navy h2,
+.visati-section--navy h3 { color: var( --visati-white ); }
+
+.visati-container { width: 100%; max-width: var( --visati-max ); margin: 0 auto; padding: 0 1.25rem; }
+
+/* Section eyebrow / tag */
+.visati-eyebrow {
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var( --visati-gold );
+}
+
+/* Mono (application IDs / codes) */
+.visati-mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+/* Cards */
+.visati-card {
+	background: var( --visati-white );
+	border-radius: var( --visati-radius );
+	box-shadow: var( --visati-shadow );
+	padding: 1.75rem;
+}
+
+/* Floating WhatsApp button */
+.visati-whatsapp-fab {
+	position: fixed;
+	right: 1.25rem;
+	bottom: 1.25rem;
+	z-index: 9998;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: var( --visati-whatsapp );
+	color: var( --visati-white );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8px 24px rgba( 37, 211, 102, 0.4 );
+	transition: transform 0.15s ease;
+}
+.visati-whatsapp-fab:hover { transform: scale( 1.06 ); color: var( --visati-white ); }
