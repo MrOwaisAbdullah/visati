@@ -151,7 +151,7 @@ a:hover { color: var( --visati-navy ); }
 	line-height: 1.1;
 }
 .visati-header__wordmark {
-	font-family: "Plus Jakarta Sans", sans-serif;
+	font-family: "Montserrat", sans-serif;
 	font-weight: 800;
 	font-size: 1.25rem;
 	letter-spacing: 0.04em;
@@ -160,7 +160,7 @@ a:hover { color: var( --visati-navy ); }
 	line-height: 1;
 }
 .visati-header__tagline {
-	font-family: "Inter", sans-serif;
+	font-family: "Poppins", sans-serif;
 	font-size: 0.65rem;
 	color: rgba(255,255,255,0.6);
 	letter-spacing: 0.02em;
@@ -295,6 +295,19 @@ a:hover { color: var( --visati-navy ); }
 	padding-bottom: 1.5rem;
 	position: relative;
 	overflow: hidden;
+	margin-top: 0;
+}
+/* Kill the white gap between last page content and footer */
+.visati-footer:first-of-type {
+	margin-top: 0;
+}
+main ~ .visati-footer,
+.elementor ~ .visati-footer {
+	margin-top: 0 !important;
+}
+.wp-site-blocks > :last-child,
+body > main > :last-child {
+	margin-bottom: 0;
 }
 .visati-footer::before {
 	content: "";
@@ -326,13 +339,13 @@ a:hover { color: var( --visati-navy ); }
 		gap: 2rem;
 	}
 }
-.visati-footer__logo { height: 40px; width: auto; }
+.visati-footer__logo { height: 36px; width: auto; }
 .visati-footer__brand-link {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 0.75rem;
 	text-decoration: none;
-	margin-bottom: 0.75rem;
+	margin-bottom: 1rem;
 }
 .visati-footer__brand-text {
 	display: flex;
@@ -340,7 +353,7 @@ a:hover { color: var( --visati-navy ); }
 	line-height: 1.1;
 }
 .visati-footer__wordmark {
-	font-family: "Plus Jakarta Sans", sans-serif;
+	font-family: "Montserrat", sans-serif;
 	font-weight: 800;
 	font-size: 1.5rem;
 	letter-spacing: 0.04em;
@@ -349,7 +362,7 @@ a:hover { color: var( --visati-navy ); }
 	line-height: 1;
 }
 .visati-footer__tagline {
-	font-family: "Inter", sans-serif;
+	font-family: "Poppins", sans-serif;
 	font-size: 0.75rem;
 	color: rgba(255,255,255,0.5);
 	letter-spacing: 0.02em;
@@ -883,6 +896,29 @@ a:hover { color: var( --visati-navy ); }
    Uses !important because hello-elementor/reset.css loads after child theme.
    IMPORTANT: Only target content area buttons/links, not admin panel.
    ───────────────────────────────────────────────────────── */
+
+/* Direct override of Hello Elementor button styles - highest specificity */
+body .visati-page button,
+body .visiti-page [type="button"],
+body .visati-page [type="submit"],
+body .visati-page [type="reset"] {
+	background-color: var( --visati-navy ) !important;
+	color: var( --visati-white ) !important;
+	border: none !important;
+	border-radius: 999px !important;
+	padding: 0.85rem 1.5rem !important;
+	font-family: "Plus Jakarta Sans", sans-serif !important;
+	font-weight: 700 !important;
+	cursor: pointer !important;
+	transition: background 0.15s ease, color 0.15s ease !important;
+}
+body .visiti-page button:hover,
+body .visiti-page [type="button"]:hover,
+body .visati-page [type="submit"]:hover,
+body .visiti-page [type="reset"]:hover {
+	background-color: var( --visati-gold ) !important;
+	color: var( --visati-navy ) !important;
+}
 /* Content area buttons (not admin) - exclude styled components */
 .visati-page button:not(.visati-btn):not(.visati-combobox__button):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close),
 .visati-page [type="button"]:not(.visati-btn),

@@ -52,7 +52,7 @@ function visati_enqueue_assets(): void {
 	// Google Fonts: Plus Jakarta Sans (headings), Inter (body), JetBrains Mono (IDs/codes).
 	wp_enqueue_style(
 		'visati-fonts',
-		'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap',
+		'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@700;800&family=Poppins:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap',
 		array(),
 		null
 	);
@@ -61,6 +61,21 @@ function visati_enqueue_assets(): void {
 	wp_enqueue_style( 'visati-style', get_stylesheet_uri(), array( 'hello-elementor-style' ), VISATI_THEME_VERSION );
 	wp_enqueue_style( 'visati-app', trailingslashit( get_stylesheet_directory_uri() ) . 'assets/css/app.css', array( 'visati-style' ), VISATI_THEME_VERSION );
 }
+
+/**
+ * Dequeue Hello Elementor's reset.css which applies pink #c36 to all buttons/links.
+ * Our design system in app.css handles all button/link styling.
+ *
+ * @return void
+ */
+function visati_dequeue_hello_elementor_reset(): void {
+	// Dequeue all Hello Elementor CSS files except the main style.css
+	wp_dequeue_style( 'hello-elementor-css' );
+	wp_dequeue_style( 'hello-elementor-theme-style-css' );
+	wp_dequeue_style( 'hello-elementor-header-footer-css' );
+}
+add_action( 'wp_enqueue_scripts', 'visati_dequeue_hello_elementor_reset', 999 );
+
 add_action( 'wp_enqueue_scripts', 'visati_enqueue_assets' );
 
 /**
