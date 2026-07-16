@@ -171,3 +171,66 @@
 **Phase 3 — US1 backend (application draft + document upload):** ✅ Done + verified end-to-end. `Visati_Core_Application` model (create draft, get, exists, append-only `add_status`). REST `POST /applications` (validate required + sanitize + create draft + `VIS-YYYY-XXXXXX`) + `POST /documents` (validate `application_id` + file type PDF/JPG/PNG + ≤5MB → upload to R2 via the verified SigV4 signer → store metadata). **Smoke-tested live:** draft `VIS-2026-K2DTHB` created → doc uploaded to R2 (`2026/VIS-…/….pdf`, id=1) → R2 delete OK → DB cleanup. ⏳ Next: US1 frontend — 5-step form wizard (`[visati_apply_form]` shortcode + `page-apply.php` + `application-form.js` + `apply.css`).
 
 **Phase 3 — US1 frontend (5-step apply form):** ✅ Done + verified live at `http://visati.local/apply/`. `[visati_apply_form]` shortcode renders the wizard (Step 1 visa + processing tier; Step 2 personal details; Step 3 document upload; Step 4 review) with `application-form.js` (step nav + per-step validation; on file-select → creates draft via `POST /applications` then uploads via `POST /documents`; review summary) + `apply.css` (Visati tokens). Assets registered on `wp_enqueue_scripts`, enqueued only when the shortcode is present; REST URL + nonce localized. **Setup:** pretty permalinks `/%postname%/` flushed; seeded 3 visa types (Tourist 30/60, Multi Entry 90); `/apply` page (id=14) created with the shortcode. **Verified:** `/apply` HTTP 200; form markup + `tourist-30d` option + `application-form.js`/`apply.css` enqueued. ⏳ Step 5 (post-payment success) lands with US2 (Stripe Checkout handoff).
+
+---
+
+**Homepage conversion to Elementor (All-Elementor approach):** ✅ Done + verified live at `http://visati.local/`. Removed custom `front-page.php` (renamed to `.bak`); created `page.php` template that outputs `the_content()` for Elementor pages. Built pre-built Elementor JSON template (`visati-core/admin/templates/homepage.json`) matching original Next.js design: Hero (2-col: badges + h1 + sub + CTAs + social proof + trust icons | quick apply widget) → Stats bar (navy, 4 stats) → Visa showcase (eyebrow + heading + `[visati_visa_cards]`) → Global reach (navy card with stats + copy) → Process steps (mist bg, 4-step with connecting line) → Why choose (2-col: copy + 2×2 feature cards) → Testimonials (heading + rating + `[visati_testimonials]`) → FAQ (2-col: copy + `[visati_faq]`) → Footer CTA (navy, WhatsApp + inquiry). Import script (`wordpress/scripts/import-homepage.php`) creates/updates Home page, saves Elementor data, sets as static front page. **Verified:** HTTP 200; `show_on_front=page`; page ID 18. All shortcodes render inside Elementor HTML widgets. Client can now edit entire homepage via Elementor visual editor. **Skill note:** For All-Elementor WordPress sites, never use `front-page.php` — always use a JSON template imported via `update_post_meta( $id, '_elementor_data', ... )` + set `show_on_front=page`. This preserves editability while matching any design.
+
+### P8 — Elementor JSON import: data format requires `wp_slash()` on encode
+- **Symptom:** Elementor data saved via `update_post_meta` but editor showed empty/broken layout.
+- **Cause:** `wp_json_encode` output stored directly; WordPress slashes stored data on read, causing double-encoding of quotes.
+- **Fix:** Apply `wp_slash()` before saving: `update_post_meta( $id, '_elementor_data', wp_slash( wp_json_encode( $data ) ) )`.
+- **Commands:**
+  ```php
+  update_post_meta( $page_id, '_elementor_data', wp_slash( wp_json_encode( $elementor_data ) ) );
+  update_post_meta( $page_id, '_elementor_edit_mode', 'builder' );
+  update_post_meta( $page_id, '_elementor_version', '4.1.5' );
+  ```
+- **Skill note:** Always `wp_slash()` Elementor JSON data before `update_post_meta`. The `_elementor_data` meta key expects unslashed JSON; WP's internal `addslashes` on save will double-escape if the input already has quotes.
+
+---
+
+### P9 — Elementor sections constrained: `layout: "boxed"` vs `"full_width"`
+- **Symptom:** All homepage sections appeared narrow/constrained instead of spanning full viewport width. Background colors (navy stats bar, global reach, footer CTA) didn't reach edges.
+- **Cause:** All sections in the Elementor JSON used `"layout": "boxed"` with `"content_width": 1200px`. Boxed layout constrains the entire section (background + content) to the content width. Full-width sections let background span edge-to-edge while content stays centered.
+- **Fix:** Changed every section from `"layout": "boxed"` → `"layout": "full_width"`. Added `"padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80"}` on the inner column to center content at ~1200px (viewport width minus 160px padding).
+- **Commands:**
+  ```json
+  {
+    "settings": {
+      "layout": "full_width",
+      "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+      "background_color": "#F8F9FB"
+    },
+    "elements": [{
+      "settings": {
+        "_column_size": 100,
+        "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+      }
+    }]
+  }
+  ```
+- **Skill note:** In Elementor JSON, `boxed` = content + background constrained; `full_width` = background spans viewport, content centered via column padding. For edge-to-edge backgrounds (navy bars, hero sections), always use `full_width` + column padding.
+
+### P10 — Shortcodes inside Elementor HTML widgets don't render
+- **Symptom:** `[visati_quick_apply]`, `[visati_visa_cards]`, etc. appeared as raw text on the homepage instead of rendering the actual content.
+- **Cause:** Elementor HTML widgets treat shortcode syntax as plain text — they don't process `[shortcodes]`. Shortcodes must be in dedicated `shortcode` type widgets.
+- **Fix:** Added `extract_shortcodes_from_html()` to the import script. It scans HTML widget content for `[tag ...]` patterns, splits the HTML at each shortcode boundary, and creates separate Elementor elements: HTML widgets for static content + `shortcode` widgets for dynamic shortcodes.
+- **Commands:**
+  ```php
+  // Pattern to find shortcodes in HTML
+  $pattern = '/\[([a-z_]+(?:\s+[^\]]*)?)\]/';
+  preg_match_all( $pattern, $html, $matches, PREG_OFFSET_CAPTURE );
+  // For each match: create HTML widget (before) + shortcode widget (match)
+  ```
+- **Skill note:** When building Elementor JSON templates with dynamic content, always use dedicated `{"widgetType": "shortcode", "settings": {"shortcode": "[tag]"}}` widgets. Never embed shortcodes inside HTML widgets — they won't process. The import script now auto-extracts them, but it's cleaner to structure the JSON with separate widgets from the start.
+
+### Files created/modified this session
+| File | Action | Purpose |
+|---|---|---|
+| `themes/visati/front-page.php.bak` | Renamed | Backup of custom PHP homepage (no longer used) |
+| `themes/visati/page.php` | Created | Generic page template — outputs `the_content()` for Elementor pages |
+| `plugins/visati-core/admin/templates/homepage.json` | Created | Pre-built Elementor template matching original Next.js design (9 sections, full-width) |
+| `scripts/import-homepage.php` | Created | Imports JSON template → creates/updates Home page → saves Elementor data → sets as static front page. Includes shortcode extraction logic. |
+
+**Apply form redesign (per client feedback):** ✅ Rebuilt `[visati_apply_form]` to match the original Next.js design. (1) Stepper = connecting line + progress fill + navy circles with check icons + "Step N"/labels. (2) Nationality = searchable combobox with country flags (flagcdn, 77 countries) — was a text field. (3) Colors: confirmed Elementor global colors ARE set (`post-6.css` → `--e-global-color-primary:#0A1628`); form uses `--visati-*` tokens (Navy/Gold) with hex fallbacks. **Verified:** `/apply` 200; stepper + combobox + 77 flags render. (Recall P5: `get-global-settings` reads stale, but the Kit CSS file + post meta are correct.)

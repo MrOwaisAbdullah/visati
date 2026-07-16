@@ -1,0 +1,319 @@
+{
+  "version": "0.4",
+  "title": "Home",
+  "type": "page",
+  "content": [
+    {
+      "id": "hero-section",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "120", "right": "0", "bottom": "60", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#ffffff"
+      },
+      "elements": [
+        {
+          "id": "hero-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "hero-grid",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:grid;grid-template-columns:58% 42%;gap:48px;align-items:start;\"><div><!-- Badges --><div style=\"display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;\"><span style=\"display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(10,22,40,0.1);background:rgba(10,22,40,0.05);padding:4px 12px;font-size:12px;font-weight:500;color:rgba(10,22,40,0.7);font-family:sans-serif;\"><span style=\"width:6px;height:6px;border-radius:50%;background:#C9A84C;\"></span>Dubai Based</span><span style=\"display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(10,22,40,0.1);background:rgba(10,22,40,0.05);padding:4px 12px;font-size:12px;font-weight:500;color:rgba(10,22,40,0.7);font-family:sans-serif;\"><span style=\"width:6px;height:6px;border-radius:50%;background:#C9A84C;\"></span>Trusted Worldwide</span></div><!-- Headline --><h1 style=\"font-size:clamp(40px,6vw,72px);font-weight:700;color:#0A1628;margin:0 0 24px;line-height:0.95;font-family:'Plus Jakarta Sans',sans-serif;\">Dubai Visa<br><span style=\"color:#C9A84C;\">Simple</span><span style=\"color:#C9A84C;\">.</span></h1><!-- Subheading --><p style=\"font-size:18px;color:rgba(26,26,46,0.6);margin:0 0 32px;max-width:480px;line-height:1.6;\">Visa processing for residents worldwide. Dubai based, trusted internationally.</p><!-- CTAs --><div style=\"display:flex;gap:12px;flex-wrap:wrap;\"><a href=\"/apply\" style=\"display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:12px;background:linear-gradient(135deg,#C9A84C,#F0C864);color:#0A1628;font-weight:600;font-size:14px;font-family:sans-serif;text-decoration:none;\">Apply Now <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg></a><a href=\"/track\" style=\"display:inline-flex;align-items:center;height:48px;padding:0 24px;border-radius:12px;border:1px solid rgba(10,22,40,0.15);color:#0A1628;font-weight:600;font-size:14px;font-family:sans-serif;text-decoration:none;\">Track Application</a></div><!-- Social proof --><div style=\"display:flex;align-items:center;gap:16px;margin-top:28px;flex-wrap:wrap;\"><div style=\"display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(10,22,40,0.1);background:rgba(10,22,40,0.05);padding:8px 12px;border-radius:8px;\"><div style=\"display:flex;gap:2px;\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"#FACC15\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"#FACC15\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"#FACC15\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"#FACC15\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"#FACC15\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg></div><span style=\"font-size:12px;font-weight:600;color:#0A1628;\">4.9/5</span></div><span style=\"font-size:14px;color:rgba(26,26,46,0.5);\">1,000+ clients served</span></div><!-- Trust icons --><div style=\"display:flex;align-items:center;gap:24px;margin-top:32px;flex-wrap:wrap;\"><span style=\"display:inline-flex;align-items:center;gap:6px;font-size:12px;color:rgba(10,22,40,0.7);\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><path d=\"M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16\"/></svg> UAE Office</span><span style=\"display:inline-flex;align-items:center;gap:6px;font-size:12px;color:rgba(10,22,40,0.7);\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg> Secure Documents</span><span style=\"display:inline-flex;align-items:center;gap:6px;font-size:12px;color:rgba(10,22,40,0.7);\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><path d=\"M13 2L3 14h9l-1 8 10-12h-9l1-8z\"/></svg> Fast Processing</span><span style=\"display:inline-flex;align-items:center;gap:6px;font-size:12px;color:rgba(10,22,40,0.7);\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z\"/></svg> Worldwide Applicants</span></div></div><!-- Right: Quick Apply --><div>[visati_quick_apply]</div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stats-bar",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "40", "right": "0", "bottom": "40", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#0A1628"
+      },
+      "elements": [
+        {
+          "id": "stats-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "stats-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:grid;grid-template-columns:repeat(4,1fr);gap:32px;text-align:center;\"><div><p style=\"font-size:36px;font-weight:700;color:#fff;margin:0;font-family:'Plus Jakarta Sans',sans-serif;\">1,000+</p><p style=\"font-size:12px;color:rgba(255,255,255,0.5);margin:4px 0 0;\">Happy Travelers</p></div><div><p style=\"font-size:36px;font-weight:700;color:#fff;margin:0;font-family:'Plus Jakarta Sans',sans-serif;\">99%</p><p style=\"font-size:12px;color:rgba(255,255,255,0.5);margin:4px 0 0;\">Approval Rate</p></div><div><p style=\"font-size:36px;font-weight:700;color:#fff;margin:0;font-family:'Plus Jakarta Sans',sans-serif;\">24–72h</p><p style=\"font-size:12px;color:rgba(255,255,255,0.5);margin:4px 0 0;\">Avg. Processing</p></div><div><p style=\"font-size:36px;font-weight:700;color:#fff;margin:0;font-family:'Plus Jakarta Sans',sans-serif;\">100+</p><p style=\"font-size:12px;color:rgba(255,255,255,0.5);margin:4px 0 0;\">Google Reviews</p></div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "visa-showcase",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#ffffff"
+      },
+      "elements": [
+        {
+          "id": "visa-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "visa-head",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:40px;\"><div><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 12px;\">Visa Types</p><h2 style=\"font-size:clamp(28px,4vw,48px);font-weight:700;color:#0A1628;margin:0;line-height:1.1;\">Pick the visa that fits<br> your trip.</h2></div><a href=\"/visa-types\" style=\"display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#C9A84C;text-decoration:none;\">Compare all <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg></a></div>"
+              }
+            },
+            {
+              "id": "visa-cards",
+              "elType": "widget",
+              "widgetType": "shortcode",
+              "settings": {
+                "shortcode": "[visati_visa_cards count=\"6\"]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "global-reach",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "60", "right": "0", "bottom": "60", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#0A1628"
+      },
+      "elements": [
+        {
+          "id": "reach-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "reach-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"position:relative;border-radius:24px;background:#0a1a3a;overflow:hidden;min-height:380px;padding:48px;display:flex;align-items:center;justify-content:space-between;gap:64px;flex-wrap:wrap;\"><div style=\"position:absolute;inset:0;opacity:0.08;background:radial-gradient(circle at 60% 40%,#C9A84C 0%,transparent 60%);pointer-events:none;\"></div><div style=\"position:relative;z-index:1;max-width:480px;\"><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 12px;\">Global Reach</p><h2 style=\"font-size:clamp(24px,3vw,34px);font-weight:700;color:#fff;margin:0 0 16px;line-height:1.2;\">Trusted by Applicants Across the Globe</h2><p style=\"font-size:14px;color:rgba(255,255,255,0.6);margin:0 0 24px;line-height:1.6;\">We are a Dubai based visa agency serving residents of all nationalities across USA, UK, Canada, Australia and Europe.</p><a href=\"/about\" style=\"display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;border:1px solid rgba(201,168,76,0.25);background:rgba(201,168,76,0.1);color:#C9A84C;font-size:12px;font-weight:600;text-decoration:none;\">More About Us</a></div><div style=\"position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;\"><div style=\"display:flex;align-items:center;gap:12px;\"><div style=\"width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);display:grid;place-items:center;\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(201,168,76,0.6)\" stroke-width=\"1.5\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg></div><div><p style=\"font-size:20px;font-weight:700;color:#fff;margin:0;\">1,000+</p><p style=\"font-size:11px;color:rgba(255,255,255,0.5);margin:2px 0 0;\">Happy Travelers</p></div></div><div style=\"display:flex;align-items:center;gap:12px;\"><div style=\"width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);display:grid;place-items:center;\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(201,168,76,0.6)\" stroke-width=\"1.5\"><path d=\"M22 11.08V12a10 10 0 11-5.93-9.14\"/><polyline points=\"22 4 12 14.01 9 11.01\"/></svg></div><div><p style=\"font-size:20px;font-weight:700;color:#fff;margin:0;\">99%</p><p style=\"font-size:11px;color:rgba(255,255,255,0.5);margin:2px 0 0;\">Approval Rate</p></div></div><div style=\"display:flex;align-items:center;gap:12px;\"><div style=\"width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);display:grid;place-items:center;\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(201,168,76,0.6)\" stroke-width=\"1.5\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg></div><div><p style=\"font-size:20px;font-weight:700;color:#fff;margin:0;\">100+</p><p style=\"font-size:11px;color:rgba(255,255,255,0.5);margin:2px 0 0;\">Google Reviews</p></div></div><div style=\"display:flex;align-items:center;gap:12px;\"><div style=\"width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);display:grid;place-items:center;\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(201,168,76,0.6)\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z\"/></svg></div><div><p style=\"font-size:20px;font-weight:700;color:#fff;margin:0;\">4.9/5</p><p style=\"font-size:11px;color:rgba(255,255,255,0.5);margin:2px 0 0;\">Customer Rating</p></div></div></div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "process-steps",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#F8F9FB"
+      },
+      "elements": [
+        {
+          "id": "process-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "process-head",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"text-align:center;margin-bottom:56px;\"><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 12px;\">The Process</p><h2 style=\"font-size:clamp(28px,4vw,48px);font-weight:700;color:#0A1628;margin:0;\">Four simple steps.</h2></div>"
+              }
+            },
+            {
+              "id": "process-steps-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:grid;grid-template-columns:repeat(4,1fr);gap:32px;position:relative;\"><div style=\"position:absolute;top:28px;left:12.5%;right:12.5%;height:1px;background:rgba(10,22,40,0.1);\"></div><div style=\"text-align:center;\"><div style=\"position:relative;z-index:1;width:56px;height:56px;border-radius:50%;background:#fff;border:1px solid rgba(10,22,40,0.1);box-shadow:0 1px 3px rgba(0,0,0,0.05);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;\"><span style=\"font-size:18px;font-weight:700;color:#0A1628;\">01</span></div><h3 style=\"font-size:18px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Choose Visa</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;max-width:224px;margin-left:auto;margin-right:auto;\">Select the visa type that matches your travel plans.</p></div><div style=\"text-align:center;\"><div style=\"position:relative;z-index:1;width:56px;height:56px;border-radius:50%;background:#fff;border:1px solid rgba(10,22,40,0.1);box-shadow:0 1px 3px rgba(0,0,0,0.05);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;\"><span style=\"font-size:18px;font-weight:700;color:#0A1628;\">02</span></div><h3 style=\"font-size:18px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Submit Details</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;max-width:224px;margin-left:auto;margin-right:auto;\">Fill in your personal information and upload documents.</p></div><div style=\"text-align:center;\"><div style=\"position:relative;z-index:1;width:56px;height:56px;border-radius:50%;background:#fff;border:1px solid rgba(10,22,40,0.1);box-shadow:0 1px 3px rgba(0,0,0,0.05);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;\"><span style=\"font-size:18px;font-weight:700;color:#0A1628;\">03</span></div><h3 style=\"font-size:18px;font-weight:700;color:#0A1628;margin:0 0 8px;\">We Process</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;max-width:224px;margin-left:auto;margin-right:auto;\">Our team reviews and submits to immigration authorities.</p></div><div style=\"text-align:center;\"><div style=\"position:relative;z-index:1;width:56px;height:56px;border-radius:50%;background:#fff;border:1px solid rgba(10,22,40,0.1);box-shadow:0 1px 3px rgba(0,0,0,0.05);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;\"><span style=\"font-size:18px;font-weight:700;color:#0A1628;\">04</span></div><h3 style=\"font-size:18px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Travel Ready</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;max-width:224px;margin-left:auto;margin-right:auto;\">Receive your approved visa by email. Ready to go.</p></div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "why-choose",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#F8F9FB"
+      },
+      "elements": [
+        {
+          "id": "why-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "why-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:grid;grid-template-columns:40% 60%;gap:64px;align-items:center;\"><div><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 16px;\">Why Choose Visati</p><h2 style=\"font-size:clamp(28px,4vw,48px);font-weight:700;color:#0A1628;margin:0 0 20px;line-height:1.1;\">The VISATI<br> Difference.</h2><p style=\"font-size:15px;color:rgba(26,26,46,0.6);margin:0 0 28px;line-height:1.6;max-width:400px;\">Visati handles every step, from documentation to embassy follow-ups, so you can focus on the trip instead of the paperwork.</p><a href=\"/about\" style=\"display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;background:#0A1628;color:#fff;font-size:14px;font-weight:600;text-decoration:none;\">Read our story <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg></a></div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:16px;\"><div style=\"background:#fff;border-radius:16px;border:1px solid rgba(10,22,40,0.06);padding:24px;\"><div style=\"width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,0.08);display:grid;place-items:center;margin-bottom:16px;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.5\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg></div><h3 style=\"font-size:16px;font-weight:700;color:#0A1628;margin:0 0 8px;\">100% Approval Guarantee</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;\">100% refund guarantee if your visa is rejected for any reason within our control.</p></div><div style=\"background:#fff;border-radius:16px;border:1px solid rgba(10,22,40,0.06);padding:24px;\"><div style=\"width:40px;height:40px;border-radius:10px;background:rgba(201,168,76,0.1);display:grid;place-items:center;margin-bottom:16px;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/></svg></div><h3 style=\"font-size:16px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Fast Processing</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;\">Most visas processed in 24–48 hours. Same-day express option available.</p></div><div style=\"background:#fff;border-radius:16px;border:1px solid rgba(10,22,40,0.06);padding:24px;\"><div style=\"width:40px;height:40px;border-radius:10px;background:rgba(37,211,102,0.1);display:grid;place-items:center;margin-bottom:16px;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"#25D366\"><path d=\"M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z\"/></svg></div><h3 style=\"font-size:16px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Dedicated Support 24/7</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;\">Our visa experts are on WhatsApp 24/7. Real people, instant replies.</p></div><div style=\"background:#fff;border-radius:16px;border:1px solid rgba(10,22,40,0.06);padding:24px;\"><div style=\"width:40px;height:40px;border-radius:10px;background:rgba(201,168,76,0.1);display:grid;place-items:center;margin-bottom:16px;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C9A84C\" stroke-width=\"1.5\"><path d=\"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><line x1=\"16\" y1=\"13\" x2=\"8\" y2=\"13\"/><line x1=\"16\" y1=\"17\" x2=\"8\" y2=\"17\"/></svg></div><h3 style=\"font-size:16px;font-weight:700;color:#0A1628;margin:0 0 8px;\">Document Verification</h3><p style=\"font-size:14px;color:rgba(26,26,46,0.6);margin:0;line-height:1.6;\">We pre-check every document. Catch issues before the embassy does.</p></div></div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testimonials",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#ffffff"
+      },
+      "elements": [
+        {
+          "id": "testi-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "testi-head",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;\"><div><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 12px;\">Testimonials</p><h2 style=\"font-size:clamp(28px,4vw,48px);font-weight:700;color:#0A1628;margin:0;\">Loved by travellers.</h2></div><div style=\"text-align:right;\"><div style=\"display:flex;align-items:center;gap:6px;justify-content:flex-end;\"><div style=\"display:flex;gap:2px;\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"#C9A84C\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"#C9A84C\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"#C9A84C\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"#C9A84C\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"#C9A84C\"><path d=\"M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.28l-4.77 2.51.91-5.33L2.27 6.7l5.34-.78z\"/></svg></div><span style=\"font-size:18px;font-weight:700;color:#0A1628;margin-left:4px;\">4.9</span></div><p style=\"font-size:12px;color:rgba(26,26,46,0.5);margin:4px 0 0;\">Based on 100+ reviews on Trustpilot &amp; Google</p></div></div>"
+              }
+            },
+            {
+              "id": "testi-cards",
+              "elType": "widget",
+              "widgetType": "shortcode",
+              "settings": {
+                "shortcode": "[visati_testimonials count=\"8\"]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faq-section",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#F8F9FB"
+      },
+      "elements": [
+        {
+          "id": "faq-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "faq-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:grid;grid-template-columns:33% 67%;gap:64px;\"><div><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 16px;\">FAQ</p><h2 style=\"font-size:clamp(28px,4vw,48px);font-weight:700;color:#0A1628;margin:0 0 20px;line-height:1.1;\">Questions,<br> answered.</h2><p style=\"font-size:15px;color:rgba(26,26,46,0.6);margin:0 0 24px;line-height:1.6;\">Can't find what you're looking for? Our team is on WhatsApp, 24/7.</p><a href=\"/faq\" style=\"display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;background:#0A1628;color:#fff;font-size:14px;font-weight:600;text-decoration:none;\">All FAQs <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg></a></div><div>[visati_faq count=\"10\"]</div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "footer-cta",
+      "elType": "section",
+      "settings": {
+        "layout": "full_width",
+        "content_width": {"unit": "px", "size": 1200, "sizes": []},
+        "padding": {"unit": "px", "top": "48", "right": "0", "bottom": "48", "left": "0", "isLinked": false},
+        "background_background": "classic",
+        "background_color": "#0A1628"
+      },
+      "elements": [
+        {
+          "id": "cta-inner",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100,
+            "_inline_size": null,
+            "padding": {"unit": "px", "top": "0", "right": "80", "bottom": "0", "left": "80", "isLinked": false}
+          },
+          "elements": [
+            {
+              "id": "cta-widget",
+              "elType": "widget",
+              "widgetType": "html",
+              "settings": {
+                "html": "<div style=\"display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;\"><div><p style=\"font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#C9A84C;margin:0 0 8px;\">Need Help?</p><h2 style=\"font-size:clamp(22px,3vw,30px);font-weight:700;color:#fff;margin:0 0 8px;\">Talk to a visa consultant.</h2><p style=\"font-size:14px;color:rgba(255,255,255,0.6);margin:0;\">Real humans, average response under 2 minutes. WhatsApp is the fastest route.</p></div><div style=\"display:flex;gap:12px;flex-wrap:wrap;\"><a href=\"https://wa.me/971585542344?text=Hello%20Visati%2C%20I%27d%20like%20to%20enquire%20about%20a%20UAE%20visa.\" style=\"display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 24px;border-radius:12px;background:#25D366;color:#fff;font-size:14px;font-weight:600;text-decoration:none;\" target=\"_blank\" rel=\"noopener noreferrer\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z\"/></svg> WhatsApp Us</a><a href=\"/contact\" style=\"display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;font-weight:600;text-decoration:none;\">Send Inquiry</a></div></div>"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

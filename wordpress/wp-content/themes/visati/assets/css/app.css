@@ -108,3 +108,724 @@ a:hover { color: var( --visati-navy ); }
 	transition: transform 0.15s ease;
 }
 .visati-whatsapp-fab:hover { transform: scale( 1.06 ); color: var( --visati-white ); }
+
+/* ─────────────────────────────────────────────────────────
+   HEADER
+   ───────────────────────────────────────────────────────── */
+.visati-header {
+	position: sticky;
+	top: 0;
+	z-index: 9999;
+	transition: padding 0.3s ease;
+}
+.visati-header__bar {
+	background: var( --visati-navy );
+	transition: all 0.3s ease;
+}
+.visati-header.is-scrolled .visati-header__bar {
+	border-radius: 0 0 16px 16px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.visati-header__inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	height: 56px;
+}
+.visati-header__brand {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	text-decoration: none;
+}
+.visati-header__logo { height: 32px; width: auto; }
+.visati-header__wordmark {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 800;
+	font-size: 1.25rem;
+	color: var( --visati-white );
+	letter-spacing: -0.02em;
+}
+.visati-header__nav { display: none; }
+.visati-header__links {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	gap: 1.75rem;
+}
+.visati-header__links a {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: rgba(255,255,255,0.8);
+	text-decoration: none;
+	transition: color 0.15s;
+}
+.visati-header__links a:hover,
+.visati-header__links .current-menu-item a {
+	color: var( --visati-white );
+}
+.visati-header__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.visati-header__cta {
+	font-size: 0.875rem;
+	padding: 0.5rem 1.15rem;
+	font-weight: 700;
+	display: none;
+}
+@media ( min-width: 640px ) {
+	.visati-header__cta { display: inline-flex; }
+}
+@media ( min-width: 1024px ) {
+	.visati-header__nav { display: block; }
+}
+
+/* Hamburger */
+.visati-header__toggle {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 5px;
+	width: 36px;
+	height: 36px;
+	padding: 6px;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+}
+.visati-header__toggle span {
+	display: block;
+	width: 100%;
+	height: 2px;
+	background: var( --visati-white );
+	border-radius: 2px;
+	transition: transform 0.25s, opacity 0.25s;
+}
+.visati-header__toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.visati-header__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.visati-header__toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile drawer */
+.visati-drawer {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+}
+.visati-drawer[hidden] { display: none; }
+.visati-drawer__overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0,0,0,0.5);
+}
+.visati-drawer__panel {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: min(320px, 85vw);
+	height: 100%;
+	background: var( --visati-navy );
+	padding: 1.25rem;
+	overflow-y: auto;
+	animation: slideIn 0.25s ease;
+}
+@keyframes slideIn {
+	from { transform: translateX(100%); }
+	to   { transform: translateX(0); }
+}
+.visati-drawer__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 2rem;
+}
+.visati-drawer__close {
+	background: transparent;
+	border: 0;
+	color: var( --visati-white );
+	cursor: pointer;
+	padding: 4px;
+}
+.visati-drawer__links {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.visati-drawer__links li { border-bottom: 1px solid rgba(255,255,255,0.08); }
+.visati-drawer__links a {
+	display: block;
+	padding: 0.85rem 0;
+	color: rgba(255,255,255,0.85);
+	font-size: 0.95rem;
+	text-decoration: none;
+	transition: color 0.15s;
+}
+.visati-drawer__links a:hover { color: var( --visati-gold ); }
+
+/* ─────────────────────────────────────────────────────────
+   FOOTER
+   ───────────────────────────────────────────────────────── */
+.visati-footer {
+	background: var( --visati-navy );
+	color: var( --visati-white );
+	padding-top: 3.5rem;
+	padding-bottom: 1.5rem;
+	position: relative;
+	overflow: hidden;
+}
+.visati-footer::before {
+	content: "";
+	position: absolute;
+	bottom: -100px;
+	left: -80px;
+	width: 480px;
+	height: 480px;
+	border-radius: 50%;
+	background: var( --visati-gold );
+	opacity: 0.12;
+	filter: blur(100px);
+	pointer-events: none;
+}
+.visati-footer__inner {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2.5rem;
+	position: relative;
+}
+@media ( min-width: 640px ) {
+	.visati-footer__inner {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+@media ( min-width: 1024px ) {
+	.visati-footer__inner {
+		grid-template-columns: 2fr 1fr 1fr 1fr 2fr;
+		gap: 2rem;
+	}
+}
+.visati-footer__logo { height: 28px; width: auto; margin-bottom: 0.75rem; }
+.visati-footer__wordmark {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 800;
+	font-size: 1.25rem;
+	color: var( --visati-white );
+	display: block;
+	margin-bottom: 0.75rem;
+}
+.visati-footer__desc {
+	font-size: 0.875rem;
+	color: rgba(255,255,255,0.55);
+	line-height: 1.6;
+	max-width: 280px;
+	margin-bottom: 1.25rem;
+}
+.visati-footer__social { display: flex; gap: 0.6rem; }
+.visati-footer__social-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	border: 1px solid rgba(255,255,255,0.15);
+	color: rgba(255,255,255,0.7);
+	text-decoration: none;
+	transition: color 0.15s, border-color 0.15s;
+}
+.visati-footer__social-link:hover {
+	color: var( --visati-white );
+	border-color: rgba(255,255,255,0.4);
+}
+.visati-footer__heading {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: rgba(255,255,255,0.4);
+	margin-bottom: 1rem;
+}
+.visati-footer__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.visati-footer__list li { margin-bottom: 0.6rem; }
+.visati-footer__link {
+	font-size: 0.875rem;
+	color: rgba(255,255,255,0.6);
+	text-decoration: none;
+	transition: color 0.15s;
+}
+.visati-footer__link:hover { color: var( --visati-white ); }
+.visati-footer__contact { display: flex; flex-direction: column; gap: 1rem; }
+.visati-footer__contact-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	font-size: 0.875rem;
+	color: rgba(255,255,255,0.6);
+	line-height: 1.5;
+}
+.visati-footer__contact-row svg {
+	flex-shrink: 0;
+	margin-top: 3px;
+	color: var( --visati-gold );
+}
+.visati-footer__contact-row a {
+	color: rgba(255,255,255,0.6);
+	text-decoration: none;
+	transition: color 0.15s;
+}
+.visati-footer__contact-row a:hover { color: var( --visati-white ); }
+.visati-footer__bottom {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 1.5rem;
+	margin-top: 2rem;
+	border-top: 1px solid rgba(255,255,255,0.1);
+	text-align: center;
+}
+@media ( min-width: 640px ) {
+	.visati-footer__bottom {
+		flex-direction: row;
+		text-align: left;
+	}
+}
+.visati-footer__copy {
+	font-size: 0.75rem;
+	color: rgba(255,255,255,0.4);
+}
+.visati-footer__legal {
+	display: flex;
+	gap: 1.25rem;
+}
+.visati-footer__legal a {
+	font-size: 0.75rem;
+	color: rgba(255,255,255,0.4);
+	text-decoration: none;
+	transition: color 0.15s;
+}
+.visati-footer__legal a:hover { color: var( --visati-white ); }
+
+/* ─────────────────────────────────────────────────────────
+   SHORTCODES — Visa Cards
+   ───────────────────────────────────────────────────────── */
+.visati-visa-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+}
+@media ( min-width: 640px ) {
+	.visati-visa-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media ( min-width: 1024px ) {
+	.visati-visa-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.visati-visa-card {
+	background: var( --visati-white );
+	border-radius: var( --visati-radius );
+	box-shadow: var( --visati-shadow );
+	padding: 1.75rem;
+	display: flex;
+	flex-direction: column;
+	transition: transform 0.2s, box-shadow 0.2s;
+	position: relative;
+	overflow: hidden;
+}
+.visati-visa-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 16px 40px rgba(10,22,40,0.12);
+}
+.visati-visa-card__badge {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	background: var( --visati-gold );
+	color: var( --visati-navy );
+	font-size: 0.7rem;
+	font-weight: 700;
+	padding: 0.25rem 0.75rem;
+	border-radius: 999px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.visati-visa-card__title {
+	font-size: 1.1rem;
+	margin-bottom: 0.5rem;
+}
+.visati-visa-card__tagline {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.6);
+	margin-bottom: 1rem;
+	line-height: 1.5;
+}
+.visati-visa-card__price {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: var( --visati-navy );
+	margin-bottom: 0.25rem;
+}
+.visati-visa-card__price span {
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: rgba(26,26,46,0.5);
+}
+.visati-visa-card__meta {
+	display: flex;
+	gap: 1rem;
+	font-size: 0.8rem;
+	color: rgba(26,26,46,0.55);
+	margin-bottom: 1rem;
+}
+.visati-visa-card__features {
+	list-style: none;
+	padding: 0;
+	margin: 0 0 1.25rem;
+	flex: 1;
+}
+.visati-visa-card__features li {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.7);
+	padding: 0.3rem 0;
+	padding-left: 1.5rem;
+	position: relative;
+}
+.visati-visa-card__features li::before {
+	content: "\2713";
+	position: absolute;
+	left: 0;
+	color: var( --visati-whatsapp );
+	font-weight: 700;
+}
+.visati-visa-card .visati-btn {
+	width: 100%;
+	justify-content: center;
+	text-decoration: none;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SHORTCODES — Quick Apply
+   ───────────────────────────────────────────────────────── */
+.visati-quick-apply {
+	background: var( --visati-white );
+	border-radius: var( --visati-radius );
+	box-shadow: var( --visati-shadow );
+	padding: 1.75rem;
+}
+.visati-quick-apply__row {
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+.visati-quick-apply__row select {
+	flex: 1;
+	min-width: 160px;
+	padding: 0.75rem 1rem;
+	border: 2px solid rgba(10,22,40,0.12);
+	border-radius: 10px;
+	font-size: 0.9rem;
+	font-family: inherit;
+	background: var( --visati-white );
+	color: var( --visati-ink );
+	appearance: auto;
+}
+.visati-quick-apply__row select:focus {
+	outline: none;
+	border-color: var( --visati-gold );
+}
+.visati-quick-apply__row .visati-btn { flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────────────────
+   SHORTCODES — Testimonials
+   ───────────────────────────────────────────────────────── */
+.visati-testimonials-track {
+	display: flex;
+	gap: 1.5rem;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	padding-bottom: 1rem;
+	scrollbar-width: none;
+}
+.visati-testimonials-track::-webkit-scrollbar { display: none; }
+.visati-testimonial-card {
+	min-width: 320px;
+	max-width: 400px;
+	flex-shrink: 0;
+	scroll-snap-align: start;
+	background: var( --visati-white );
+	border-radius: var( --visati-radius );
+	box-shadow: var( --visati-shadow );
+	padding: 1.75rem;
+}
+.visati-testimonial-card__stars {
+	color: var( --visati-gold );
+	font-size: 1rem;
+	margin-bottom: 0.75rem;
+	letter-spacing: 2px;
+}
+.visati-testimonial-card__text {
+	font-size: 0.9rem;
+	line-height: 1.7;
+	color: rgba(26,26,46,0.8);
+	margin-bottom: 1rem;
+	font-style: italic;
+}
+.visati-testimonial-card__author {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.visati-testimonial-card__flag {
+	font-size: 1.5rem;
+	line-height: 1;
+}
+.visati-testimonial-card__name {
+	font-weight: 600;
+	font-size: 0.85rem;
+	color: var( --visati-navy );
+}
+.visati-testimonial-card__country {
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.5);
+}
+
+/* ─────────────────────────────────────────────────────────
+   SHORTCODES — FAQ
+   ───────────────────────────────────────────────────────── */
+.visati-faq-search {
+	width: 100%;
+	padding: 0.85rem 1.25rem;
+	border: 2px solid rgba(10,22,40,0.1);
+	border-radius: 999px;
+	font-size: 0.95rem;
+	font-family: inherit;
+	margin-bottom: 1.5rem;
+	transition: border-color 0.2s;
+}
+.visati-faq-search:focus { outline: none; border-color: var( --visati-gold ); }
+.visati-faq-categories {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1.5rem;
+}
+.visati-faq-cat-btn {
+	padding: 0.45rem 1rem;
+	border-radius: 999px;
+	border: 1.5px solid rgba(10,22,40,0.12);
+	background: transparent;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s;
+	font-family: inherit;
+}
+.visati-faq-cat-btn:hover,
+.visati-faq-cat-btn.is-active {
+	background: var( --visati-navy );
+	color: var( --visati-white );
+	border-color: var( --visati-navy );
+}
+.visati-faq-item {
+	border-bottom: 1px solid rgba(10,22,40,0.08);
+}
+.visati-faq-item__q {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 1.1rem 0;
+	background: transparent;
+	border: 0;
+	text-align: left;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var( --visati-navy );
+	cursor: pointer;
+	font-family: inherit;
+	gap: 1rem;
+}
+.visati-faq-item__q::after {
+	content: "+";
+	font-size: 1.25rem;
+	color: var( --visati-gold );
+	flex-shrink: 0;
+	transition: transform 0.2s;
+}
+.visati-faq-item.is-open .visati-faq-item__q::after {
+	transform: rotate(45deg);
+}
+.visati-faq-item__a {
+	display: none;
+	padding: 0 0 1.25rem;
+	font-size: 0.9rem;
+	line-height: 1.7;
+	color: rgba(26,26,46,0.7);
+}
+.visati-faq-item.is-open .visati-faq-item__a { display: block; }
+.visati-faq-empty {
+	text-align: center;
+	padding: 3rem 1rem;
+	color: rgba(26,26,46,0.5);
+	font-size: 0.95rem;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SHORTCODES — Contact Form
+   ───────────────────────────────────────────────────────── */
+.visati-contact-form {
+	max-width: 600px;
+}
+.visati-contact-form .visati-field {
+	display: block;
+	margin-bottom: 1rem;
+}
+.visati-contact-form label {
+	display: block;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var( --visati-navy );
+	margin-bottom: 0.35rem;
+}
+.visati-contact-form input,
+.visati-contact-form textarea {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	border: 2px solid rgba(10,22,40,0.1);
+	border-radius: 10px;
+	font-size: 0.95rem;
+	font-family: inherit;
+	color: var( --visati-ink );
+	transition: border-color 0.2s;
+	box-sizing: border-box;
+}
+.visati-contact-form input:focus,
+.visati-contact-form textarea:focus {
+	outline: none;
+	border-color: var( --visati-gold );
+}
+.visati-contact-form textarea { resize: vertical; min-height: 120px; }
+.visati-contact-form .visati-field-error {
+	font-size: 0.8rem;
+	color: #dc3545;
+	margin-top: 0.25rem;
+	display: none;
+}
+.visati-contact-form .visati-field.has-error .visati-field-error { display: block; }
+.visati-contact-form .visati-field.has-error input,
+.visati-contact-form .visati-field.has-error textarea { border-color: #dc3545; }
+.visati-contact-form__status {
+	padding: 1rem;
+	border-radius: 10px;
+	margin-bottom: 1rem;
+	font-size: 0.9rem;
+	display: none;
+}
+.visati-contact-form__status.is-success {
+	display: block;
+	background: #d4edda;
+	color: #155724;
+}
+.visati-contact-form__status.is-error {
+	display: block;
+	background: #f8d7da;
+	color: #721c24;
+}
+
+/* ─────────────────────────────────────────────────────────
+   TRACKING
+   ───────────────────────────────────────────────────────── */
+.visati-track-search {
+	display: flex;
+	gap: 0.75rem;
+	max-width: 500px;
+	margin-bottom: 2rem;
+}
+.visati-track-search input {
+	flex: 1;
+	padding: 0.85rem 1.25rem;
+	border: 2px solid rgba(10,22,40,0.1);
+	border-radius: 999px;
+	font-size: 0.95rem;
+	font-family: inherit;
+}
+.visati-track-search input:focus { outline: none; border-color: var( --visati-gold ); }
+.visati-timeline {
+	position: relative;
+	padding-left: 2rem;
+	margin-top: 1.5rem;
+}
+.visati-timeline::before {
+	content: "";
+	position: absolute;
+	left: 7px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: rgba(10,22,40,0.1);
+}
+.visati-timeline-item {
+	position: relative;
+	padding-bottom: 1.5rem;
+}
+.visati-timeline-item::before {
+	content: "";
+	position: absolute;
+	left: -2rem;
+	top: 4px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var( --visati-white );
+	border: 3px solid rgba(10,22,40,0.15);
+	z-index: 1;
+}
+.visati-timeline-item.is-current::before {
+	border-color: var( --visati-gold );
+	background: var( --visati-gold );
+}
+.visati-timeline-item__status {
+	font-weight: 700;
+	font-size: 0.9rem;
+	color: var( --visati-navy );
+	text-transform: capitalize;
+}
+.visati-timeline-item__note {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.6);
+	margin-top: 0.25rem;
+}
+.visati-timeline-item__date {
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.4);
+	margin-top: 0.15rem;
+}
+.visati-track-not-found {
+	text-align: center;
+	padding: 3rem 1rem;
+	color: rgba(26,26,46,0.5);
+	font-size: 0.95rem;
+}
+.visati-track-status-badge {
+	display: inline-block;
+	padding: 0.35rem 1rem;
+	border-radius: 999px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 1rem;
+}
+.visati-track-status-badge.is-approved { background: #d4edda; color: #155724; }
+.visati-track-status-badge.is-rejected { background: #f8d7da; color: #721c24; }
+.visati-track-status-badge.is-processing { background: #fff3cd; color: #856404; }
+.visati-track-status-badge.is-default { background: var( --visati-mist ); color: var( --visati-ink ); }

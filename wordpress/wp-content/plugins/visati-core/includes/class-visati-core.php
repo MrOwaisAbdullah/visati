@@ -40,11 +40,19 @@ final class Visati_Core {
 		Visati_Core_REST_API::init();
 		Visati_Core_Applications_Controller::init();
 		Visati_Core_Documents_Controller::init();
-		Visati_Core_Apply_Form_Shortcode::init();
-		Visati_Core_Admin_Settings::init();
+		Visati_Core_Inquiries_Controller::init();
+		Visati_Core_Track_Controller::init();
 
-		// Future modules (added in later phases):
-		// - Visati_Core_R2_Storage, Visati_Core_Stripe_Payments, shortcodes, admin dashboard.
+		// Shortcodes.
+		Visati_Core_Apply_Form_Shortcode::init();
+		Visati_Core_Visa_Cards_Shortcode::init();
+		Visati_Core_Quick_Apply_Shortcode::init();
+		Visati_Core_Testimonials_Shortcode::init();
+		Visati_Core_FAQ_Shortcode::init();
+		Visati_Core_Contact_Form_Shortcode::init();
+
+		// Admin.
+		Visati_Core_Admin_Settings::init();
 	}
 
 	/**
@@ -56,6 +64,7 @@ final class Visati_Core {
 		Visati_Core_Database::create_tables();
 		Visati_Core_Roles::add_consultant_role();
 		Visati_Core_Post_Types::register();
+		Visati_Core_Pages::create_pages();
 		flush_rewrite_rules();
 	}
 

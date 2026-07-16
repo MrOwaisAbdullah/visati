@@ -33,13 +33,21 @@ require_once VISATI_CORE_DIR . 'includes/helpers.php';
 require_once VISATI_CORE_DIR . 'includes/class-env-loader.php';
 require_once VISATI_CORE_DIR . 'includes/class-settings.php';
 require_once VISATI_CORE_DIR . 'includes/class-rest-api.php';
+require_once VISATI_CORE_DIR . 'includes/class-pages.php';
 require_once VISATI_CORE_DIR . 'includes/class-email.php';
 require_once VISATI_CORE_DIR . 'includes/class-r2-storage.php';
 require_once VISATI_CORE_DIR . 'includes/class-stripe-payments.php';
 require_once VISATI_CORE_DIR . 'includes/class-application.php';
 require_once VISATI_CORE_DIR . 'includes/rest/class-applications-controller.php';
 require_once VISATI_CORE_DIR . 'includes/rest/class-documents-controller.php';
+require_once VISATI_CORE_DIR . 'includes/rest/class-inquiries-controller.php';
+require_once VISATI_CORE_DIR . 'includes/rest/class-track-controller.php';
 require_once VISATI_CORE_DIR . 'includes/shortcodes/class-apply-form.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-visa-cards.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-quick-apply.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-testimonials.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-faq.php';
+require_once VISATI_CORE_DIR . 'includes/shortcodes/class-contact-form.php';
 require_once VISATI_CORE_DIR . 'admin/class-settings-page.php';
 
 // Load .env.local (Next.js project secrets) into getenv()/$_ENV before any handler runs.

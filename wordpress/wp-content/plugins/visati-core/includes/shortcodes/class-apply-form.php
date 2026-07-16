@@ -1,6 +1,7 @@
 <?php
 /**
- * [visati_apply_form] — renders the 5-step visa application wizard.
+ * [visati_apply_form] — renders the visa application wizard (stepper + fields),
+ * matching the original Next.js design (connecting-line stepper, flag nationality dropdown).
  *
  * @package Visati_Core
  */
@@ -10,6 +11,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Visati_Core_Apply_Form_Shortcode {
+
+	/**
+	 * Nationality list: ISO-3166 alpha-2 => label (flag via flagcdn.com/<code>.svg).
+	 */
+	const NATIONALITIES = array(
+		'AF' => 'Afghanistan', 'AL' => 'Albania', 'DZ' => 'Algeria', 'AR' => 'Argentina', 'AU' => 'Australia',
+		'AT' => 'Austria', 'BD' => 'Bangladesh', 'BE' => 'Belgium', 'BR' => 'Brazil', 'BG' => 'Bulgaria',
+		'CA' => 'Canada', 'CL' => 'Chile', 'CN' => 'China', 'CO' => 'Colombia', 'HR' => 'Croatia',
+		'CZ' => 'Czech Republic', 'DK' => 'Denmark', 'EG' => 'Egypt', 'EE' => 'Estonia', 'FI' => 'Finland',
+		'FR' => 'France', 'DE' => 'Germany', 'GR' => 'Greece', 'HU' => 'Hungary', 'IN' => 'India',
+		'ID' => 'Indonesia', 'IR' => 'Iran', 'IQ' => 'Iraq', 'IE' => 'Ireland', 'IL' => 'Israel',
+		'IT' => 'Italy', 'JP' => 'Japan', 'JO' => 'Jordan', 'KZ' => 'Kazakhstan', 'KE' => 'Kenya',
+		'KW' => 'Kuwait', 'LV' => 'Latvia', 'LB' => 'Lebanon', 'LT' => 'Lithuania', 'LU' => 'Luxembourg',
+		'MY' => 'Malaysia', 'MX' => 'Mexico', 'MA' => 'Morocco', 'NL' => 'Netherlands', 'NZ' => 'New Zealand',
+		'NG' => 'Nigeria', 'NO' => 'Norway', 'PK' => 'Pakistan', 'PS' => 'Palestine', 'PH' => 'Philippines',
+		'PL' => 'Poland', 'PT' => 'Portugal', 'QA' => 'Qatar', 'RO' => 'Romania', 'RU' => 'Russia',
+		'SA' => 'Saudi Arabia', 'RS' => 'Serbia', 'SG' => 'Singapore', 'SK' => 'Slovakia', 'SI' => 'Slovenia',
+		'ZA' => 'South Africa', 'KR' => 'South Korea', 'ES' => 'Spain', 'LK' => 'Sri Lanka', 'SE' => 'Sweden',
+		'CH' => 'Switzerland', 'SY' => 'Syria', 'TW' => 'Taiwan', 'TH' => 'Thailand', 'TN' => 'Tunisia',
+		'TR' => 'Turkey', 'UA' => 'Ukraine', 'AE' => 'United Arab Emirates', 'GB' => 'United Kingdom', 'US' => 'United States',
+		'VN' => 'Vietnam', 'YE' => 'Yemen',
+	);
 
 	/**
 	 * Hook shortcode + asset registration.
@@ -22,7 +45,7 @@ final class Visati_Core_Apply_Form_Shortcode {
 	}
 
 	/**
-	 * Register (not enqueue) assets — enqueued only when the shortcode renders.
+	 * Register assets (enqueued when shortcode renders).
 	 *
 	 * @return void
 	 */
@@ -50,7 +73,7 @@ final class Visati_Core_Apply_Form_Shortcode {
 			);
 		}
 
-		$visas = get_posts(
+		$visas    = get_posts(
 			array(
 				'post_type'      => 'visati_visa_type',
 				'posts_per_page' => 50,
@@ -59,21 +82,36 @@ final class Visati_Core_Apply_Form_Shortcode {
 				'post_status'    => 'publish',
 			)
 		);
-
 		$surcharge = Visati_Core_Settings::express_surcharge_aed();
 
 		ob_start();
 		?>
 		<form id="visati-apply-form" class="visati-apply" novalidate>
-			<ol class="visati-step-indicator">
-				<li class="is-active"><span>1</span><?php esc_html_e( 'Visa', 'visati-core' ); ?></li>
-				<li><span>2</span><?php esc_html_e( 'Details', 'visati-core' ); ?></li>
-				<li><span>3</span><?php esc_html_e( 'Documents', 'visati-core' ); ?></li>
-				<li><span>4</span><?php esc_html_e( 'Review', 'visati-core' ); ?></li>
-			</ol>
+			<!-- Stepper -->
+			<div class="visati-stepper" aria-hidden="true">
+				<div class="visati-stepper__line"></div>
+				<div class="visati-stepper__progress" data-progress></div>
+				<ol class="visati-stepper__items">
+					<?php
+					$labels = array( 'Visa Selection', 'Personal Details', 'Documents', 'Review & Submit' );
+					foreach ( $labels as $i => $label ) :
+						$n = $i + 1;
+						?>
+						<li class="visati-stepper__item<?php echo 1 === $n ? ' is-active' : ''; ?>" data-step-marker="<?php echo (int) $n; ?>">
+							<span class="visati-stepper__circle"><span class="visati-stepper__num"><?php echo (int) $n; ?></span><svg class="visati-stepper__check" viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
+							<span class="visati-stepper__meta"><small>Step <?php echo (int) $n; ?></small><?php echo esc_html( $label ); ?></span>
+						</li>
+					<?php endforeach; ?>
+				</ol>
+			</div>
 
-			<section class="visati-step" data-step="1">
-				<h2><?php esc_html_e( 'Choose your visa', 'visati-core' ); ?></h2>
+			<!-- Step 1 -->
+			<section class="visati-step is-current" data-step="1">
+				<header class="visati-step__head">
+					<small>Step 1 of 4</small>
+					<h2>Choose your visa</h2>
+					<p>Select a visa type and processing speed.</p>
+				</header>
 				<label class="visati-field"><?php esc_html_e( 'Visa type', 'visati-core' ); ?>
 					<select name="visa_type_slug" required>
 						<option value=""><?php esc_html_e( 'Select…', 'visati-core' ); ?></option>
@@ -83,52 +121,93 @@ final class Visati_Core_Apply_Form_Shortcode {
 					</select>
 				</label>
 				<fieldset class="visati-tier">
-					<legend><?php esc_html_e( 'Processing', 'visati-core' ); ?></legend>
-					<label><input type="radio" name="processing_tier" value="standard" checked> <?php esc_html_e( 'Standard', 'visati-core' ); ?></label>
-					<label><input type="radio" name="processing_tier" value="express"> <?php echo esc_html( sprintf( __( 'Express (+AED %d)', 'visati-core' ), $surcharge ) ); ?></label>
+					<legend>Processing</legend>
+					<label><input type="radio" name="processing_tier" value="standard" checked> Standard</label>
+					<label><input type="radio" name="processing_tier" value="express"> Express (+AED <?php echo esc_html( $surcharge ); ?>)</label>
 				</fieldset>
 			</section>
 
+			<!-- Step 2 -->
 			<section class="visati-step" data-step="2" hidden>
-				<h2><?php esc_html_e( 'Your details', 'visati-core' ); ?></h2>
+				<header class="visati-step__head">
+					<small>Step 2 of 4</small>
+					<h2>Personal details</h2>
+					<p>Enter your details exactly as they appear in your passport.</p>
+				</header>
 				<div class="visati-grid">
-					<label class="visati-field"><?php esc_html_e( 'Nationality', 'visati-core' ); ?><input name="nationality" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Given name', 'visati-core' ); ?><input name="given_name" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Surname', 'visati-core' ); ?><input name="surname" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Passport number', 'visati-core' ); ?><input name="passport_number" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Date of birth', 'visati-core' ); ?><input type="date" name="date_of_birth" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Passport expiry', 'visati-core' ); ?><input type="date" name="passport_expiry" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Travel date', 'visati-core' ); ?><input type="date" name="travel_date" required></label>
-					<label class="visati-field"><?php esc_html_e( 'Email', 'visati-core' ); ?><input type="email" name="applicant_email"></label>
+					<label class="visati-field">Given name<input name="given_name" required placeholder="As in passport"></label>
+					<label class="visati-field">Surname<input name="surname" required placeholder="As in passport"></label>
+
+					<?php self::render_nationality_field(); ?>
+
+					<label class="visati-field">Passport number<input name="passport_number" required placeholder="e.g. A1234567" class="visati-mono"></label>
+					<label class="visati-field">Date of birth<input type="date" name="date_of_birth" required></label>
+					<label class="visati-field">Passport expiry<input type="date" name="passport_expiry" required></label>
+					<label class="visati-field">Travel date<input type="date" name="travel_date" required></label>
+					<label class="visati-field visati-grid__full">Email<input type="email" name="applicant_email" placeholder="confirmation@example.com"></label>
 				</div>
 			</section>
 
+			<!-- Step 3 -->
 			<section class="visati-step" data-step="3" hidden>
-				<h2><?php esc_html_e( 'Upload documents', 'visati-core' ); ?></h2>
-				<p class="visati-help"><?php esc_html_e( 'PDF, JPG, or PNG. Max 5 MB each.', 'visati-core' ); ?></p>
-				<label class="visati-field"><?php esc_html_e( 'Passport copy', 'visati-core' ); ?>
-					<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="passport_copy">
-				</label>
-				<label class="visati-field"><?php esc_html_e( 'Photo', 'visati-core' ); ?>
-					<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="photo">
-				</label>
+				<header class="visati-step__head">
+					<small>Step 3 of 4</small>
+					<h2>Upload documents</h2>
+					<p>PDF, JPG, or PNG. Max 5 MB each.</p>
+				</header>
+				<label class="visati-field">Passport copy<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="passport_copy"></label>
+				<label class="visati-field">Photo<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="photo"></label>
 				<ul class="visati-doc-list"></ul>
 			</section>
 
+			<!-- Step 4 -->
 			<section class="visati-step" data-step="4" hidden>
-				<h2><?php esc_html_e( 'Review & submit', 'visati-core' ); ?></h2>
+				<header class="visati-step__head">
+					<small>Step 4 of 4</small>
+					<h2>Review &amp; submit</h2>
+					<p>You'll proceed to secure payment after submitting.</p>
+				</header>
 				<dl class="visati-review"></dl>
-				<p class="visati-help"><?php esc_html_e( "You'll proceed to secure payment after submitting.", 'visati-core' ); ?></p>
 			</section>
 
 			<div class="visati-nav">
-				<button type="button" class="visati-btn visati-btn--outline" data-action="back" hidden><?php esc_html_e( 'Back', 'visati-core' ); ?></button>
-				<button type="button" class="visati-btn" data-action="next"><?php esc_html_e( 'Continue', 'visati-core' ); ?></button>
-				<button type="submit" class="visati-btn visati-btn--navy" data-action="submit" hidden><?php esc_html_e( 'Submit & Pay', 'visati-core' ); ?></button>
+				<button type="button" class="visati-btn visati-btn--ghost" data-action="back" hidden>Back</button>
+				<button type="button" class="visati-btn visati-btn--gold" data-action="next">Continue</button>
+				<button type="submit" class="visati-btn visati-btn--navy" data-action="submit" hidden>Submit &amp; Pay</button>
 			</div>
 			<p class="visati-error" role="alert" hidden></p>
 		</form>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Render the nationality combobox (button + hidden input + searchable flag list).
+	 *
+	 * @return void
+	 */
+	private static function render_nationality_field(): void {
+		?>
+		<div class="visati-field visati-combobox" data-combobox>
+			<span class="visati-field__label">Nationality</span>
+			<input type="hidden" name="nationality" value="" required>
+			<button type="button" class="visati-combobox__button" data-combobox-button>
+				<span class="visati-combobox__flag" data-combobox-flag></span>
+				<span class="visati-combobox__text" data-combobox-text>Select nationality</span>
+				<svg class="visati-combobox__chevron" viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+			</button>
+			<div class="visati-combobox__panel" data-combobox-panel hidden>
+				<input type="text" class="visati-combobox__search" data-combobox-search placeholder="Search…">
+				<ul class="visati-combobox__list" data-combobox-list>
+					<?php foreach ( self::NATIONALITIES as $code => $label ) : ?>
+						<li role="option" data-value="<?php echo esc_attr( $label ); ?>" data-flag="<?php echo esc_attr( strtolower( $code ) ); ?>">
+							<img src="https://flagcdn.com/<?php echo esc_attr( strtolower( $code ) ); ?>.svg" alt="" width="20" height="14" loading="lazy">
+							<span><?php echo esc_html( $label ); ?></span>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+		</div>
+		<?php
 	}
 }

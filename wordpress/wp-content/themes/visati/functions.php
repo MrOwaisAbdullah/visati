@@ -86,3 +86,44 @@ function visati_render_whatsapp_widget(): void {
 	}
 }
 add_action( 'wp_footer', 'visati_render_whatsapp_widget' );
+
+/**
+ * Register plugin template directory so WP can find plugin-templates/*.php.
+ *
+ * @param array $templates Existing template paths.
+ * @return array
+ */
+function visati_plugin_templates( $templates ) {
+	$plugin_dir = plugin_dir_path( dirname( __FILE__ ) ) . 'visati-core/templates';
+	if ( is_dir( $plugin_dir ) ) {
+		$files = glob( $plugin_dir . '/*.php' );
+		foreach ( $files as $file ) {
+			$name = 'plugin-templates/' . basename( $file );
+			$templates[ $name ] = $file;
+		}
+	}
+	return $templates;
+}
+add_filter( 'theme_page_templates', 'visati_plugin_templates' );
+
+/**
+ * Load plugin templates from the plugin directory.
+ *
+ * @param string $template      The template path.
+ * @param string $template_name The template name (optional).
+ * @param array  $args          Template arguments (optional).
+ * @return string
+ */
+function visati_load_plugin_template( $template, $template_name = '', $args = array() ) {
+	if ( '' === $template_name && ! empty( $args ) ) {
+		$template_name = $args;
+	}
+	if ( is_string( $template_name ) && 0 === strpos( $template_name, 'plugin-templates/' ) ) {
+		$file = plugin_dir_path( dirname( __FILE__ ) ) . 'visati-core/templates/' . basename( $template_name );
+		if ( file_exists( $file ) ) {
+			return $file;
+		}
+	}
+	return $template;
+}
+add_filter( 'template_include', 'visati_load_plugin_template', 99 );

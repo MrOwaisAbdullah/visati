@@ -6,53 +6,139 @@
 		return;
 	}
 
-	var cfg     = window.visatiApply || {};
-	var restUrl = cfg.restUrl || '/wp-json/visati/v1';
-	var nonce   = cfg.nonce || '';
-	var steps   = Array.prototype.slice.call( form.querySelectorAll( '.visati-step' ) );
-	var dots    = form.querySelectorAll( '.visati-step-indicator li' );
-	var total   = steps.length;
-	var current = 1;
-	var appId   = null;
-	var docs    = []; // {filename, doc_type}
+	var cfg      = window.visatiApply || {};
+	var restUrl  = cfg.restUrl || '/wp-json/visati/v1';
+	var nonce    = cfg.nonce || '';
+	var steps    = Array.prototype.slice.call( form.querySelectorAll( '.visati-step' ) );
+	var markers  = form.querySelectorAll( '.visati-stepper__item' );
+	var progress = form.querySelector( '[data-progress]' );
+	var total    = steps.length;
+	var current  = 1;
+	var appId    = null;
+	var docs     = [];
 
-	var backBtn    = form.querySelector( '[data-action=back]' );
-	var nextBtn    = form.querySelector( '[data-action=next]' );
-	var submitBtn  = form.querySelector( '[data-action=submit]' );
-	var errorBox   = form.querySelector( '.visati-error' );
-
-	function showStep( n ) {
-		current = n;
-		steps.forEach( function ( s ) { s.hidden = Number( s.dataset.step ) !== n; } );
-		Array.prototype.forEach.call( dots, function ( li, i ) {
-			li.classList.toggle( 'is-active', ( i + 1 ) === n );
-			li.classList.toggle( 'is-done', ( i + 1 ) < n );
-		} );
-		backBtn.hidden   = n === 1;
-		nextBtn.hidden   = n === total;
-		submitBtn.hidden = n !== total;
-		errorBox.hidden  = true;
-		window.scrollTo( { top: form.offsetTop - 24, behavior: 'smooth' } );
-	}
+	var backBtn   = form.querySelector( '[data-action=back]' );
+	var nextBtn   = form.querySelector( '[data-action=next]' );
+	var submitBtn = form.querySelector( '[data-action=submit]' );
+	var errorBox  = form.querySelector( '.visati-error' );
 
 	function showError( msg ) {
 		errorBox.textContent = msg;
 		errorBox.hidden = false;
 	}
 
+	function showStep( n ) {
+		current = n;
+		steps.forEach( function ( s ) {
+			var num = Number( s.dataset.step );
+			s.hidden = num !== n;
+			s.classList.toggle( 'is-current', num === n );
+		} );
+		Array.prototype.forEach.call( markers, function ( m ) {
+			var mn = Number( m.dataset.stepMarker );
+			m.classList.toggle( 'is-active', mn === n );
+			m.classList.toggle( 'is-done', mn < n );
+		} );
+		if ( progress ) {
+			progress.style.width = ( ( ( n - 1 ) / 3 ) * 75 ) + '%';
+		}
+		backBtn.hidden   = n === 1;
+		nextBtn.hidden   = n === total;
+		submitBtn.hidden = n !== total;
+		errorBox.hidden  = true;
+		if ( n === total ) {
+			renderReview();
+		}
+		window.scrollTo( { top: form.offsetTop - 24, behavior: 'smooth' } );
+	}
+
 	function validateStep( n ) {
 		var section = form.querySelector( '.visati-step[data-step="' + n + '"]' );
-		var fields = section.querySelectorAll( '[required]' );
-		for ( var i = 0; i < fields.length; i++ ) {
-			if ( ! fields[ i ].value ) {
+		var required = section.querySelectorAll( '[required]' );
+		for ( var i = 0; i < required.length; i++ ) {
+			var el = required[ i ];
+			if ( ! el.value ) {
 				showError( 'Please complete all required fields.' );
-				fields[ i ].focus();
+				if ( el.type === 'hidden' && el.name === 'nationality' ) {
+					var cb = el.closest( '[data-combobox]' );
+					if ( cb ) {
+						cb.classList.add( 'is-open' );
+						var panel = cb.querySelector( '[data-combobox-panel]' );
+						if ( panel ) { panel.hidden = false; }
+					}
+				} else {
+					el.focus();
+				}
 				return false;
 			}
 		}
 		return true;
 	}
 
+	/* ── Nationality combobox ─────────────────────────── */
+	function initCombobox( cb ) {
+		var button = cb.querySelector( '[data-combobox-button]' );
+		var panel  = cb.querySelector( '[data-combobox-panel]' );
+		var search = cb.querySelector( '[data-combobox-search]' );
+		var list   = cb.querySelector( '[data-combobox-list]' );
+		var hidden = cb.querySelector( 'input[name="nationality"]' );
+		var textEl = cb.querySelector( '[data-combobox-text]' );
+		var flagEl = cb.querySelector( '[data-combobox-flag]' );
+
+		function open() {
+			cb.classList.add( 'is-open' );
+			panel.hidden = false;
+			if ( search ) {
+				setTimeout( function () { search.focus(); }, 0 );
+			}
+		}
+		function close() {
+			cb.classList.remove( 'is-open' );
+			panel.hidden = true;
+			if ( search ) {
+				search.value = '';
+				filter( '' );
+			}
+		}
+		function toggle() {
+			panel.hidden ? open() : close();
+		}
+		function filter( q ) {
+			q = q.toLowerCase();
+			Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( li ) {
+				li.style.display = ( li.getAttribute( 'data-value' ).toLowerCase().indexOf( q ) !== -1 ) ? '' : 'none';
+			} );
+		}
+
+		button.addEventListener( 'click', function ( e ) { e.preventDefault(); toggle(); } );
+		if ( search ) {
+			search.addEventListener( 'input', function () { filter( search.value ); } );
+		}
+		list.addEventListener( 'click', function ( e ) {
+			var li = e.target.closest ? e.target.closest( 'li' ) : null;
+			if ( ! li ) {
+				return;
+			}
+			var val  = li.getAttribute( 'data-value' );
+			var flag = li.getAttribute( 'data-flag' );
+			hidden.value = val;
+			textEl.textContent = val;
+			button.classList.add( 'is-filled' );
+			flagEl.innerHTML = flag ? '<img src="https://flagcdn.com/' + flag + '.svg" alt="" width="20" height="14">' : '';
+			Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( x ) {
+				x.classList.toggle( 'is-selected', x === li );
+			} );
+			close();
+		} );
+		document.addEventListener( 'click', function ( e ) {
+			if ( ! cb.contains( e.target ) ) {
+				close();
+			}
+		} );
+	}
+	Array.prototype.forEach.call( form.querySelectorAll( '[data-combobox]' ), initCombobox );
+
+	/* ── Draft + upload ───────────────────────────────── */
 	function formData() {
 		var fd = new FormData( form );
 		var o = {};
@@ -144,28 +230,20 @@
 		} );
 	}
 
+	/* ── Nav + submit ─────────────────────────────────── */
 	nextBtn.addEventListener( 'click', function () {
-		if ( ! validateStep( current ) ) {
-			return;
-		}
-		if ( current < total ) {
+		if ( validateStep( current ) && current < total ) {
 			showStep( current + 1 );
 		}
-		if ( current === total ) {
-			renderReview();
-		}
 	} );
-
 	backBtn.addEventListener( 'click', function () {
 		if ( current > 1 ) {
 			showStep( current - 1 );
 		}
 	} );
-
 	Array.prototype.forEach.call( form.querySelectorAll( 'input[type=file]' ), function ( input ) {
 		input.addEventListener( 'change', function () { uploadFile( input ); } );
 	} );
-
 	form.addEventListener( 'submit', async function ( e ) {
 		e.preventDefault();
 		if ( ! ( await ensureDraft() ) ) {
@@ -173,7 +251,6 @@
 		}
 		submitBtn.disabled = true;
 		submitBtn.textContent = 'Preparing payment…';
-		// US2 (Stripe) handoff lands here next. For now, surface readiness.
 		showError( 'Application ' + appId + ' ready. Stripe payment handoff is wired in the next step.' );
 		submitBtn.disabled = false;
 		submitBtn.textContent = 'Submit & Pay';
