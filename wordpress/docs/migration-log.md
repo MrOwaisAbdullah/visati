@@ -1,0 +1,173 @@
+# Visati — Next.js → WordPress Migration Log
+
+> **Purpose:** Capture every step, decision, problem, and solution during this
+> re-platform so it can be distilled into a reusable skill (working name:
+> `nextjs-to-wordpress-elementor-migration`). This file is **source material for that skill** —
+> keep entries factual, concrete, and copy-pasteable.
+>
+> **Maintained by:** Claude Code (per `CLAUDE.md` → "WordPress Migration Work Log" rule).
+> **Append** a new dated entry each session. For every blocker record
+> **Symptom → Cause → Fix → Commands**.
+
+---
+
+## 0. Context
+
+- **Source app:** Next.js 16 + Sanity (CMS) + Neon/Drizzle (DB) + Stripe + Cloudflare R2 + BetterAuth. Spec: `specs/001-visati-platform/spec.md`.
+- **Target:** WordPress — all-Elementor content pages + custom `visati-core` plugin + Hello Elementor child theme. Plan: `specs/002-wp-migration/plan.md`, tasks: `specs/002-wp-migration/tasks.md`.
+- **Build environment:** Local by Flywheel (local-first) → deploy to Hostinger subdomain (fresh DB, no Neon migration).
+- **Control plane:** EMCP (`elementor-mcp` / `emcp-tools`) + WP-CLI driven from Claude Code.
+- **Constraint:** free plugins only; Next.js repo root untouched (all WP work under `wordpress/`).
+
+---
+
+## 1. Locked decisions
+
+| Area | Decision |
+|---|---|
+| Page-builder strategy | All-Elementor for every content page (not a theme/Elementor hybrid) — maximizes client self-editing |
+| Business logic | Custom `visati-core` plugin (apply form, track, admin, Stripe, R2, email, CPTs, REST) |
+| Theme | Hello Elementor child (`visati`) — global chrome + design tokens |
+| Build env | Local by Flywheel first → Hostinger subdomain |
+| Elementor tier | Free (Pro deferred) |
+| Plugin budget | $0 |
+| DB / data | Fresh WordPress MySQL, content re-entered |
+
+---
+
+## 2. Local environment (state)
+
+- WordPress **7.0.1**, site `http://visati.local`, admin `visati-admin`
+- PHP **8.2.29** (Local Lightning), MySQL **8.4.0** on `127.0.0.1:10005` (db `local`, user `root`/`root`)
+- Elementor **4.1.5**, EMCP Tools **3.4.1**, WP Mail SMTP **4.9.0**, Hello Elementor **3.4.9**
+- Active: theme `visati` 0.1.0; plugins `elementor`, `emcp-tools`, `visati-core`, `wp-mail-smtp`
+- Theme/plugin served live via directory **junctions** → repo `wordpress/wp-content/{themes/visati,plugins/visati-core}`
+
+---
+
+## 3. Problems & Solutions (skill gold) 💎
+
+### P1 — Local: "Error Installing WordPress … php.exe is not recognized"
+- **Symptom:** `ExecError: "…\lightning-services\php-8.2.29+0\bin\win64\php.exe" is not recognized as an internal or external command` during site creation.
+- **Cause:** Local's "Lightning Services" PHP service **failed to install** — folder `php-8.2.29+0` existed but `bin/win64/php.exe` was missing (no PHP binary anywhere under `lightning-services`). Not antivirus in this case (Defender history clean).
+- **Fix:** Quit Local fully (tray → Quit). Delete the broken folder `…\AppData\Roaming\Local\lightning-services\php-8.2.29+0`. Reopen Local **as Administrator** → it re-downloads PHP cleanly. Verify `php.exe` exists.
+- **Commands:**
+  ```bash
+  rm -rf "/c/Users/K TECH/AppData/Roaming/Local/lightning-services/php-8.2.29+0"
+  # then reopen Local as Administrator and recreate the site
+  ```
+- **Skill note:** If re-download keeps failing, delete the whole `lightning-services` dir, or add AV exclusions, or fall back to DevKinsta/Laragon/Docker.
+
+### P2 — External WP-CLI: "Your PHP installation appears to be missing the MySQL extension"
+- **Symptom:** Driving WP-CLI from Claude Code's Git Bash: `wp core version` worked, but any DB-touching command errored `missing the MySQL extension (mysqli)`.
+- **Cause:** Local's bundled `php.exe`, when invoked directly from outside Local, **loads no `php.ini`** (`php --ini` → "Loaded Configuration File: (none)"), so no extensions load. Local's own "Site Shell" sets up the ini; the bare CLI doesn't.
+- **Fix:** Invoke PHP with `-d` flags pointing to Local's ext dir and enabling the needed extensions. Encapsulated in a reusable wrapper `wordpress/scripts/wp-local.sh`.
+- **Commands / wrapper:**
+  ```bash
+  PHPEXE="/c/Users/K TECH/AppData/Roaming/Local/lightning-services/php-8.2.29+0/bin/win64/php.exe"
+  EXTWIN="C:/Users/K TECH/AppData/Roaming/Local/lightning-services/php-8.2.29+0/bin/win64/ext"
+  WPCLI="C:/Users/K TECH/AppData/Local/Programs/Local/resources/extraResources/bin/wp-cli/wp-cli.phar"
+  "$PHPEXE" -d extension_dir="$EXTWIN" -d extension=mysqli -d extension=pdo_mysql \
+    -d extension=curl -d extension=mbstring -d extension=openssl -d extension=zip \
+    "$WPCLI" --path="<site>" --allow-root <command>
+  ```
+- **Skill note:** This is the #1 gotcha for automating Local from an external shell. Always wrap; never call `php.exe` bare.
+
+### P3 — "Error establishing a database connection" (after enabling mysqli)
+- **Symptom:** With mysqli loaded, WP-CLI still couldn't connect to MySQL.
+- **Cause:** `wp-config.php` had `DB_HOST = 'localhost'` → Windows mysqli defaults to TCP **127.0.0.1:3306**. But Local's MySQL runs on a **custom port** (`10005`). Local's web PHP works because its generated `php.ini` sets the custom port; the CLI PHP uses the default 3306.
+- **Diagnosis:** `tasklist` showed `mysqld.exe` listening; `netstat` → `127.0.0.1:10005`; a PHP mysqli probe confirmed `127.0.0.1:10005` + `root/root`/`local` connects.
+- **Fix:** Edit `wp-config.php`: `define( 'DB_HOST', '127.0.0.1:10005' );` (explicit host:port works for web + CLI).
+- **Commands:**
+  ```bash
+  sed -i "s|define( 'DB_HOST', 'localhost' );|define( 'DB_HOST', '127.0.0.1:10005' );|" "<site>/wp-config.php"
+  # discover the port: netstat -ano | findstr LISTENING  (the mysqld.exe PID)
+  ```
+- **Skill note:** Local assigns one TCP port per service per site (mysql often `1000X`). Discover via `netstat` + `tasklist`, then hardcode into `DB_HOST`. Port is stable per site but changes on site recreation.
+
+### P4 — Symlinking repo theme/plugin into the Local site (Windows)
+- **Symptom:** Wanted the repo `wordpress/wp-content/{themes/visati,plugins/visati-core}` served live by Local. Multiple attempts failed.
+- **Attempt 1 — `cmd //c mklink /D` (symlink):** needs **admin/elevation**, and Git Bash mangled the spaced path (`K TECH`) through `cmd /c` → `Invalid switch` / `syntax is incorrect`.
+- **Attempt 2 — `MSYS_NO_PATHCONV=1 cmd //c …`:** `//c` wasn't converted to `/c`, so `cmd` started **interactively** and hung (timeout). ❌
+- **Cause:** Directory **symlinks** require elevation; `cmd /c` quote-stripping + MSYS path conversion fights spaced paths.
+- **Fix:** Use a **directory junction** (`mklink /J`) via **PowerShell** — junctions need **no elevation** and PS quoting handles spaces.
+- **Commands:**
+  ```bash
+  powershell -NoProfile -Command "New-Item -ItemType Junction -Path 'C:\Users\K TECH\Local Sites\visati\app\public\wp-content\themes\visati' -Target 'D:\GIAIC\Visati\wordpress\wp-content\themes\visati' | Out-Null"
+  powershell -NoProfile -Command "New-Item -ItemType Junction -Path 'C:\Users\K TECH\Local Sites\visati\app\public\wp-content\plugins\visati-core' -Target 'D:\GIAIC\Visati\wordpress\wp-content\plugins\visati-core' | Out-Null"
+  ```
+- **Skill note:** ⚠️ Never use `Remove-Item -Recurse` on a junction — it can follow the link and **delete the target**. Use junctions (`mklink /J` / `New-Item -ItemType Junction`), not symlinks, on Windows without admin.
+
+---
+
+### P5 — EMCP `update-global-colors`/`update-global-typography` returned success but `get-global-settings` still showed defaults
+- **Symptom:** Both EMCP update calls returned `{"success":true}`, but `emcp-tools-get-global-settings` still reported Elementor defaults (`#6EC1E4`, Roboto).
+- **Cause:** The writes **did** land on the active Kit (post meta `_elementor_page_settings`); the `get-global-settings` tool reads a stale/merged view (`system_colors` defaults + empty `custom_colors`) rather than the freshly written palette.
+- **Verification / fix:** Confirmed tokens present via the Kit post meta (option `elementor_active_kit` → post ID); flushed caches.
+- **Commands:**
+  ```bash
+  WP="bash wordpress/scripts/wp-local.sh"
+  KIT=$( $WP option get elementor_active_kit )          # -> e.g. 6
+  $WP post meta get "$KIT" _elementor_page_settings | grep -iE '0A1628|Plus Jakarta'   # confirm tokens present
+  $WP cache flush
+  $WP elementor flush_css
+  ```
+- **Skill note:** Don't trust `emcp-tools-get-global-settings` as the sole confirmation of a Kit write — verify via the **Kit post meta** (`_elementor_page_settings`) and flush Elementor's CSS cache. The Kit post is the source of truth, not the merged read view.
+
+### P6 — `wp db query` needs the `mysql` client (not on Local's PATH)
+- **Symptom:** `wp db query "SHOW TABLES LIKE '%visati%';"` → `Error: Failed to get current SQL modes. Reason: 'mysql' is not recognized`.
+- **Cause:** `wp db *` subcommands shell out to the `mysql` CLI binary; Local's lightning-services ships the MySQL *server* but doesn't expose the `mysql` client on PATH.
+- **Fix:** inspect the DB via WordPress's `$wpdb` (PHP/mysqli) using `wp eval` / `wp eval-file`.
+- **Commands:**
+  ```bash
+  WP="bash wordpress/scripts/wp-local.sh"
+  cat > wordpress/scripts/_check.php <<'EOF'
+  <?php global $wpdb; $r=$wpdb->get_results("SHOW TABLES LIKE '%visati%'",ARRAY_N); foreach($r as $x) echo $x[0]."\n";
+  EOF
+  $WP eval-file wordpress/scripts/_check.php && rm wordpress/scripts/_check.php
+  ```
+- **Skill note:** On Local (and many hosts) prefer `$wpdb` over `wp db query` for DB inspection.
+
+### P7 — `wp eval` via the Local wrapper is slow (Elementor bootstraps every load)
+- **Symptom:** `bash wordpress/scripts/wp-local.sh eval '…'` (full plugin load) exceeded a 60s timeout and was killed (SIGTERM / exit 143); `wp core version` (light load) was fast.
+- **Cause:** `wp eval` boots the full WP environment including **all active plugins**; Elementor is heavy (~10–40s) plus the PHP/WP-CLI wrapper overhead.
+- **Fix:** give `wp eval` a generous timeout (≥90–110s); combine multiple checks into one `eval` to amortize the boot; use `wp eval-file` for larger scripts.
+- **Skill note:** when automating Local via external WP-CLI, budget for Elementor's boot cost on any full-stack command.
+
+---
+
+## 4. Tooling built this session
+
+- **`wordpress/scripts/wp-local.sh`** — WP-CLI wrapper for Local's `visati` site (handles P2 + P3). Usage: `bash wordpress/scripts/wp-local.sh <command>`.
+- **EMCP stdio verified working** — `initialize` probe returned `MCP Tools for Elementor Server v3.4.1` over the wrapper. Wiring into `.mcp.json` is the next step (T005).
+
+---
+
+## 5. Progress tracker
+
+- [x] **Phase 0 — Setup:** Local site, Elementor/Hello Elementor/EMCP/WP Mail SMTP installed; `visati` theme + `visati-core` plugin junctioned + activated.
+- [x] **T005** — Wired EMCP stdio into `.mcp.json`; reload confirmed. EMCP verified working through Claude Code's MCP integration (5 read tools exercised: `core-get-site-info`, `core-get-environment-info`, `emcp-tools-get-global-settings`, `emcp-tools-list-plugins`, `emcp-tools-list-pages`). Stdio-via-wrapper is solid — no HTTP-proxy fallback needed.
+- [~] **Phase 2 — Foundational:** ✅ Chunk 1 done — Elementor Kit tokens applied via EMCP (`update-global-colors`: Navy/Gold/Blue/Mist/Ink/White/WhatsApp; `update-global-typography`: Plus Jakarta Sans / Inter / JetBrains Mono); child `theme.json` v3 (palette + fontFamilies + layout) + `functions.php` (nav menus, supports, Google Fonts + asset enqueue, ABSPATH guard) + `assets/css/app.css` (`--visati-*` token vars + base components) written. **Problem P5 (resolved inline):** `update-global-colors` took a flat array of `{_id,title,color}` — used Elementor system ids (primary/secondary/text/accent) + custom ids (mist/white/whatsapp). ⏳ Next: plugin foundation (Options page, CPTs, custom tables, service libs) via `wp-plugin-dev`, then global chrome (header/footer/announcement/WhatsApp).
+
+**Phase 2 — Chunk 2 (plugin foundation via `wp-plugin-dev`):** ✅ Done + verified. Clean bootstrap (`visati-core.php`) + main class (`Visati_Core` singleton) + CPTs (`visati_visa_type`, `visati_faq`, `visati_testimonial`, `visati_job`, `visati_discount`) + `visati_consultant` role + 5 custom tables via `dbDelta` + helpers (`visati_generate_application_id()` → `VIS-2026-XXXXXX`, verified) + `uninstall.php`. **Verified:** 5 CPTs registered, role added, app-ID generator returned `VIS-2026-BVS2J8`, all 5 tables present & queryable. ⏳ Next: service libs (R2, Stripe, email) + REST bootstrap → global chrome → US1 apply form.
+
+**Phase 2 — Chunk 3 (Settings/Secrets + REST + Email):** ✅ Done + verified. `Visati_Core_Settings` (secrets read from `wp-config.php` `VISATI_*` constants — never DB, values never echoed; `missing_secrets()` + admin error notice), `Visati_Core_REST_API` (namespace `visati/v1`, public `/status` ping, response + permission helpers), `Visati_Core_Email` (`wp_mail()` + Visati-branded HTML templates — confirmation + status-update; provider-agnostic, delivery routed by WP Mail SMTP). **Verified:** all classes load, `/status` returns `{"plugin":"visati-core","version":"0.2.0"}` over HTTP, `missing_secrets()` flags Stripe + R2. **Decision:** secrets = `wp-config.php` constants (per-env, never committed); non-secret config = `visati_core_settings` option; email provider = Resend (default) via WP Mail SMTP. ⏳ Next: R2 storage (S3 SigV4 — research via Context7) + Stripe (raw REST API + HMAC webhook verify). **Needs test keys in Local `wp-config.php` to verify** (Stripe `sk_test_`/`whsec_`, R2 account/access/secret/bucket).
+
+**Phase 2 — Chunk 4 (R2 + Stripe, dependency-free):** ✅ Code done + load-verified. `Visati_Core_R2_Storage` (S3-compatible; self-contained **AWS SigV4** signer — server-side PUT/DELETE via `Authorization` header + presigned GET URLs (15-min default); region `auto`, path-style; **no AWS SDK / composer**). `Visati_Core_Stripe_Payments` (raw REST `wp_remote_post` Checkout Session + **HMAC-SHA256** webhook verify with 5-min tolerance + timing-safe `hash_equals`; **no Stripe SDK**). **Verified:** both load; degrade gracefully when keys absent (`is_configured()=false`, `presigned_url()`→`''`, webhook guard→`WP_Error('stripe_webhook_not_configured')`). ⏳ **Needs live keys** to verify real upload + presigned URL + Stripe session + webhook. **Tooling note:** Context7 mandate reaffirmed — use it for any library/framework (Elementor APIs, AWS/Stripe SDK if ever adopted, JS libs like Embla/dotted-map/html2pdf); R2 + Stripe were written with **no** library, so no lookup was needed there. R2 specifics confirmed via Cloudflare R2 S3 API docs (endpoint `https://<account>.r2.cloudflarestorage.com`, region `auto`, PutObject/GetObject/DeleteObject + presigned supported).
+
+**Phase 2 — Chunk 5 (Options page + global chrome):** ✅ Done + verified. `Visati_Core_Admin_Settings` (top-level "Visati" admin menu; nonce + capability + sanitize + PRG save → `visati_core_settings`; field groups: WhatsApp/contact, announcement bar, tracking, social — **secrets excluded**, those stay in `wp-config.php`). Global chrome injected via action hooks (no `header.php` override = low risk): `wp_body_open` → announcement bar (`template-parts/announcement-bar.php`, cookie-dismiss + end-date), `wp_footer` → floating WhatsApp widget (`template-parts/whatsapp-widget.php`, `wa.me` deep-link). **Verified:** admin class loads; homepage HTTP 200; chrome markup present (`id="visati-announcement"`, `Test announcement`, `visati-whatsapp-fab`, `wa.me/971500000000`). **🎉 PHASE 2 (Foundational) COMPLETE.** ⏳ Next: Phase 3 — US1 (5-step apply form + draft + R2 document upload) — needs R2 test keys for step 3.
+
+**Post-checkpoint — `.env.local` integration + live verification:** ✅ The plugin now reuses the Next.js `.env.local` as the **single source of secrets**. `Visati_Core_Env_Loader` (dependency-free dotenv; path via `VISATI_ENV_FILE` constant → `D:/GIAIC/Visati/.env.local`; real env vars win over file values). `Visati_Core_Settings` reads `getenv()` first, then wp-config `VISATI_*` constants (mapped: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `ADMIN_NOTIFICATION_EMAIL`, `EXPRESS_SURCHARGE_AED`). wp-config edited (Local, outside repo): `define('VISATI_ENV_FILE','D:/GIAIC/Visati/.env.local')`. **R2 + Stripe now VERIFIED LIVE:** R2 SigV4 round-trip (upload → presigned GET **200 body-matches** → delete) ✅; Stripe HMAC self-signed **OK** + tampered **rejected** ✅. Secrets were never printed (status-only checks). **The "needs test keys" blocker is fully resolved — Phase 3 is unblocked.**
+- [ ] Phases 3–12 (US1–US10), Phase 13 (polish/deploy).
+
+---
+
+## 6. Open questions / risks
+
+- EMCP `.mcp.json` stdio via `bash` wrapper — confirm Claude Code spawns it correctly after reload (fallback: Node.js HTTP proxy + Application Password).
+- Local MySQL port (`10005`) is site-specific; re-verify if the site is recreated.
+- Hostinger environment + subdomain name + plan tier still TBD (needed at Phase 6).
+
+**Phase 3 — US1 backend (application draft + document upload):** ✅ Done + verified end-to-end. `Visati_Core_Application` model (create draft, get, exists, append-only `add_status`). REST `POST /applications` (validate required + sanitize + create draft + `VIS-YYYY-XXXXXX`) + `POST /documents` (validate `application_id` + file type PDF/JPG/PNG + ≤5MB → upload to R2 via the verified SigV4 signer → store metadata). **Smoke-tested live:** draft `VIS-2026-K2DTHB` created → doc uploaded to R2 (`2026/VIS-…/….pdf`, id=1) → R2 delete OK → DB cleanup. ⏳ Next: US1 frontend — 5-step form wizard (`[visati_apply_form]` shortcode + `page-apply.php` + `application-form.js` + `apply.css`).
+
+**Phase 3 — US1 frontend (5-step apply form):** ✅ Done + verified live at `http://visati.local/apply/`. `[visati_apply_form]` shortcode renders the wizard (Step 1 visa + processing tier; Step 2 personal details; Step 3 document upload; Step 4 review) with `application-form.js` (step nav + per-step validation; on file-select → creates draft via `POST /applications` then uploads via `POST /documents`; review summary) + `apply.css` (Visati tokens). Assets registered on `wp_enqueue_scripts`, enqueued only when the shortcode is present; REST URL + nonce localized. **Setup:** pretty permalinks `/%postname%/` flushed; seeded 3 visa types (Tourist 30/60, Multi Entry 90); `/apply` page (id=14) created with the shortcode. **Verified:** `/apply` HTTP 200; form markup + `tourist-30d` option + `application-form.js`/`apply.css` enqueued. ⏳ Step 5 (post-payment success) lands with US2 (Stripe Checkout handoff).
