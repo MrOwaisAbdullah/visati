@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_THEME_VERSION', '0.2.0' );
+define( 'VISATI_THEME_VERSION', '0.2.1' );
 
 /**
  * Theme setup: nav menus and core supports.

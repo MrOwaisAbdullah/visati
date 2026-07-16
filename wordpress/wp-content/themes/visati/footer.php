@@ -34,12 +34,14 @@ if ( '' === $copyright ) {
 	<div class="visati-container visati-footer__inner">
 
 		<!-- Brand -->
+		<?php $footer_logo_url = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
+		if ( ! $footer_logo_url ) {
+			$footer_logo_url = get_theme_file_uri( 'assets/images/logo-mark.svg' );
+		} ?>
 		<div class="visati-footer__brand">
-			<?php if ( $logo_url = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '' ) : ?>
-				<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" height="28" class="visati-footer__logo">
-			<?php else : ?>
-				<span class="visati-footer__wordmark"><?php echo esc_html( $site_name ); ?></span>
-			<?php endif; ?>
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="visati-footer__brand-link" aria-label="<?php echo esc_attr( $site_name ); ?> home">
+				<img src="<?php echo esc_url( $footer_logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" height="40" class="visati-footer__logo">
+			</a>
 			<p class="visati-footer__desc"><?php echo esc_html( $desc ); ?></p>
 			<div class="visati-footer__social">
 				<a href="<?php echo esc_url( $ig ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="visati-footer__social-link">

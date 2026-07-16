@@ -11,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $logo_url   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
+if ( ! $logo_url ) {
+	$logo_url = get_theme_file_uri( 'assets/images/logo-mark.svg' );
+}
 $cta_label  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_label', 'Apply Now' ) : 'Apply Now';
 $cta_url    = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_url', '/apply' ) : '/apply';
 $site_name  = get_bloginfo( 'name' );
@@ -33,7 +36,7 @@ $site_desc  = get_bloginfo( 'description' );
 
 			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="visati-header__brand" aria-label="<?php echo esc_attr( $site_name ); ?> home">
 				<?php if ( $logo_url ) : ?>
-					<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" class="visati-header__logo" height="32">
+					<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" class="visati-header__logo" height="36">
 				<?php else : ?>
 					<span class="visati-header__wordmark"><?php echo esc_html( $site_name ); ?></span>
 				<?php endif; ?>

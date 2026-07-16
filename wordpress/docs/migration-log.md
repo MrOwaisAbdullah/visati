@@ -134,6 +134,18 @@
 - **Fix:** give `wp eval` a generous timeout (≥90–110s); combine multiple checks into one `eval` to amortize the boot; use `wp eval-file` for larger scripts.
 - **Skill note:** when automating Local via external WP-CLI, budget for Elementor's boot cost on any full-stack command.
 
+### P8 — Pink buttons/links on all pages (Hello Elementor default styles)
+- **Symptom:** Every bare `<button>`, `[type="submit"]`, and `<a>` element showed **pink (#c36)** background/text instead of Visati Navy/Gold/Blue. Affected both front-end content and WordPress admin panel.
+- **Cause:** Hello Elementor's `assets/css/reset.css` (loaded AFTER child theme) applies global button/link styles: `button { border: 1px solid #c36; color: #c36 }` and `a { color: #c36 }`. Child theme's `app.css` button reset was overridden by loading order.
+- **Fix:** Added scoped, `!important` button/link overrides in `app.css` that target ONLY content-area elements (`.visati-page button`, `.visati-page a`, etc.), leaving admin panel untouched. Used `!important` because hello-elementor loads after child theme.
+- **Commands:**
+  ```bash
+  # Updated wordpress/wp-content/themes/visati/assets/css/app.css
+  # Added scoped selectors like .visati-page button, .visati-page a
+  # with !important flags to override hello-elementor/reset.css
+  ```
+- **Skill note:** When using Hello Elementor as parent, expect its `reset.css` to override child theme styles. Use scoped selectors (not global `button`/`a`) and `!important` to preserve admin panel styling.
+
 ---
 
 ## 4. Tooling built this session
