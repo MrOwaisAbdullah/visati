@@ -30,12 +30,16 @@ require_once VISATI_CORE_DIR . 'includes/class-post-types.php';
 require_once VISATI_CORE_DIR . 'includes/class-database.php';
 require_once VISATI_CORE_DIR . 'includes/class-roles.php';
 require_once VISATI_CORE_DIR . 'includes/helpers.php';
+require_once VISATI_CORE_DIR . 'includes/class-env-loader.php';
 require_once VISATI_CORE_DIR . 'includes/class-settings.php';
 require_once VISATI_CORE_DIR . 'includes/class-rest-api.php';
 require_once VISATI_CORE_DIR . 'includes/class-email.php';
 require_once VISATI_CORE_DIR . 'includes/class-r2-storage.php';
 require_once VISATI_CORE_DIR . 'includes/class-stripe-payments.php';
 require_once VISATI_CORE_DIR . 'admin/class-settings-page.php';
+
+// Load .env.local (Next.js project secrets) into getenv()/$_ENV before any handler runs.
+Visati_Core_Env_Loader::load();
 
 register_activation_hook( __FILE__, array( 'Visati_Core', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Visati_Core', 'deactivate' ) );

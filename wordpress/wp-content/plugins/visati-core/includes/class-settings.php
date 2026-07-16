@@ -2,9 +2,10 @@
 /**
  * Central settings + secrets accessor.
  *
- * Secrets (Stripe, R2, email API key) are read from wp-config.php constants — never
- * from the database, never echoed. Non-secret, client-editable config lives in one
- * wp_options array (edited later via the admin Settings page).
+ * Secrets are read FIRST from the environment (the Next.js .env.local, loaded by
+ * Visati_Core_Env_Loader) and then from wp-config.php VISATI_* constants as a
+ * fallback. Values are never echoed. Non-secret, client-editable config lives in
+ * the `visati_core_settings` option (edited via the admin Settings page).
  *
  * @package Visati_Core
  */
@@ -17,30 +18,30 @@ final class Visati_Core_Settings {
 
 	const OPTION = 'visati_core_settings';
 
-	/* ── Secrets (read from wp-config.php constants) ─────────────────── */
+	/* ── Secrets (env first, then wp-config constant) ────────────────── */
 
 	public static function stripe_secret_key(): string {
-		return defined( 'VISATI_STRIPE_SECRET_KEY' ) ? VISATI_STRIPE_SECRET_KEY : '';
+		return self::env( array( 'STRIPE_SECRET_KEY' ), 'VISATI_STRIPE_SECRET_KEY' );
 	}
 
 	public static function stripe_webhook_secret(): string {
-		return defined( 'VISATI_STRIPE_WEBHOOK_SECRET' ) ? VISATI_STRIPE_WEBHOOK_SECRET : '';
+		return self::env( array( 'STRIPE_WEBHOOK_SECRET' ), 'VISATI_STRIPE_WEBHOOK_SECRET' );
 	}
 
 	public static function r2_account_id(): string {
-		return defined( 'VISATI_R2_ACCOUNT_ID' ) ? VISATI_R2_ACCOUNT_ID : '';
+		return self::env( array( 'R2_ACCOUNT_ID' ), 'VISATI_R2_ACCOUNT_ID' );
 	}
 
 	public static function r2_access_key(): string {
-		return defined( 'VISATI_R2_ACCESS_KEY' ) ? VISATI_R2_ACCESS_KEY : '';
+		return self::env( array( 'R2_ACCESS_KEY_ID' ), 'VISATI_R2_ACCESS_KEY' );
 	}
 
 	public static function r2_secret_key(): string {
-		return defined( 'VISATI_R2_SECRET_KEY' ) ? VISATI_R2_SECRET_KEY : '';
+		return self::env( array( 'R2_SECRET_ACCESS_KEY' ), 'VISATI_R2_SECRET_KEY' );
 	}
 
 	public static function r2_bucket(): string {
-		return defined( 'VISATI_R2_BUCKET' ) ? VISATI_R2_BUCKET : '';
+		return self::env( array( 'R2_BUCKET_NAME' ), 'VISATI_R2_BUCKET' );
 	}
 
 	/**
@@ -52,7 +53,29 @@ final class Visati_Core_Settings {
 	}
 
 	public static function resend_api_key(): string {
-		return defined( 'VISATI_RESEND_API_KEY' ) ? VISATI_RESEND_API_KEY : '';
+		return self::env( array( 'RESEND_API_KEY' ), 'VISATI_RESEND_API_KEY' );
+	}
+
+	/**
+	 * Verified sender address (from RESEND_FROM_EMAIL), or '' to fall back to noreply@<host>.
+	 */
+	public static function from_email(): string {
+		return self::env( array( 'RESEND_FROM_EMAIL' ), '' );
+	}
+
+	/**
+	 * Admin alert recipient (new application / inquiry notifications).
+	 */
+	public static function admin_notification_email(): string {
+		return self::env( array( 'ADMIN_NOTIFICATION_EMAIL', 'NEXT_PUBLIC_ADMIN_EMAIL' ), '' );
+	}
+
+	/**
+	 * Express processing surcharge in AED (default 99).
+	 */
+	public static function express_surcharge_aed(): int {
+		$val = self::env( array( 'EXPRESS_SURCHARGE_AED' ), '' );
+		return '' !== $val ? (int) $val : 99;
 	}
 
 	/* ── Configuration status (booleans only — never values) ─────────── */
@@ -73,10 +96,10 @@ final class Visati_Core_Settings {
 	public static function missing_secrets(): array {
 		$missing = array();
 		if ( ! self::stripe_is_configured() ) {
-			$missing[] = 'Stripe (VISATI_STRIPE_SECRET_KEY / VISATI_STRIPE_WEBHOOK_SECRET)';
+			$missing[] = 'Stripe (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET)';
 		}
 		if ( ! self::r2_is_configured() ) {
-			$missing[] = 'Cloudflare R2 (VISATI_R2_ACCOUNT_ID / ACCESS_KEY / SECRET_KEY / BUCKET)';
+			$missing[] = 'Cloudflare R2 (R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET_NAME)';
 		}
 		return $missing;
 	}
@@ -97,7 +120,7 @@ final class Visati_Core_Settings {
 		printf(
 			'<div class="notice notice-error"><p><strong>%s:</strong> %s</p><p>%s</p></div>',
 			esc_html__( 'Visati Core', 'visati-core' ),
-			esc_html__( 'the following secrets are not defined in wp-config.php — payment and document features will be disabled until added:', 'visati-core' ),
+			esc_html__( 'the following secrets are not defined (in .env.local or wp-config.php) — payment and document features will be disabled until added:', 'visati-core' ),
 			esc_html( implode( '; ', $missing ) )
 		);
 	}
@@ -127,5 +150,28 @@ final class Visati_Core_Settings {
 		$opts         = get_option( self::OPTION, array() );
 		$opts[ $key ] = $value;
 		update_option( self::OPTION, $opts );
+	}
+
+	/* ── Internals ───────────────────────────────────────────────────── */
+
+	/**
+	 * Read a secret: try env names first, then a wp-config constant.
+	 *
+	 * @param array<int,string> $names    Environment variable names.
+	 * @param string            $constant Optional wp-config constant name.
+	 * @return string
+	 */
+	protected static function env( array $names, string $constant = '' ): string {
+		foreach ( $names as $name ) {
+			$val = getenv( $name );
+			if ( is_string( $val ) && '' !== $val ) {
+				return $val;
+			}
+		}
+		if ( '' !== $constant && defined( $constant ) ) {
+			$val = constant( $constant );
+			return is_string( $val ) ? $val : '';
+		}
+		return '';
 	}
 }
