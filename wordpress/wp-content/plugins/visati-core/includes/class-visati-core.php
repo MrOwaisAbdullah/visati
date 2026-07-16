@@ -38,6 +38,8 @@ final class Visati_Core {
 		add_action( 'admin_notices', array( 'Visati_Core_Settings', 'admin_config_notice' ) );
 
 		Visati_Core_REST_API::init();
+		Visati_Core_Applications_Controller::init();
+		Visati_Core_Documents_Controller::init();
 		Visati_Core_Admin_Settings::init();
 
 		// Future modules (added in later phases):
