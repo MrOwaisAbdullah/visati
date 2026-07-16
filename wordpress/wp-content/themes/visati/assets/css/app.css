@@ -148,6 +148,13 @@ a:hover { color: var( --visati-navy ); }
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-weight: 800;
 	font-size: 1.25rem;
+	letter-spacing: 0.04em;
+	color: var( --visati-white );
+	text-transform: uppercase;
+	margin-left: 0.5rem;
+	line-height: 1;
+}
+	font-size: 1.25rem;
 	color: var( --visati-white );
 	letter-spacing: -0.02em;
 }
@@ -311,7 +318,23 @@ a:hover { color: var( --visati-navy ); }
 		gap: 2rem;
 	}
 }
-.visati-footer__logo { height: 28px; width: auto; margin-bottom: 0.75rem; }
+.visati-footer__logo { height: 40px; width: auto; margin-bottom: 0.75rem; }
+.visati-footer__brand-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	text-decoration: none;
+	margin-bottom: 0.75rem;
+}
+.visati-footer__wordmark {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 800;
+	font-size: 1.5rem;
+	letter-spacing: 0.04em;
+	color: var( --visati-white );
+	text-transform: uppercase;
+	line-height: 1;
+}
 .visati-footer__wordmark {
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-weight: 800;
@@ -870,16 +893,12 @@ a:hover { color: var( --visati-navy ); }
 }
 
 /* Override pink links (#c36) from hello-elementor reset.css
-   Only target content area links, not admin or system links */
-.visati-page a,
-.visati-header a,
-.visati-footer a,
-.visati-drawer a {
-	color: var( --visati-blue ) !important;
+   Only target content area links, not admin or system links.
+   NOTE: Don't use !important here to preserve header/footer specific styles.
+   Only target .visati-page content links, excluding styled components. */
+.visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a) {
+	color: var( --visati-blue );
 }
-.visati-page a:hover,
-.visati-header a:hover,
-.visati-footer a:hover,
-.visati-drawer a:hover {
-	color: var( --visati-navy ) !important;
+.visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):hover {
+	color: var( --visati-navy );
 }
