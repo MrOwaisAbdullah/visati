@@ -290,12 +290,28 @@
 /* ─────────────────────────────────────────────────────────
    QUICK APPLY CARD (hero sidebar)
    ───────────────────────────────────────────────────────── */
+
+/* Force side-by-side layout for hero row */
+.elementor-element-hero-row {
+	display: flex !important;
+	flex-direction: row !important;
+	gap: 2rem !important;
+}
+
+@media (min-width: 768px) {
+	.elementor-element-hero-row .elementor-widget {
+		flex: 1 !important;
+		min-width: 0 !important;
+	}
+}
+
 .visati-qa-card {
 	background: #fff;
 	border-radius: 16px;
 	box-shadow: 0 10px 40px rgba(10, 22, 40, 0.12);
 	padding: 1.5rem;
-	max-width: 380px;
+	max-width: 400px;
+	margin-left: auto;
 }
 
 .visati-qa-card__header {
