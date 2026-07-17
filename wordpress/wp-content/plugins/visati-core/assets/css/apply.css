@@ -372,27 +372,27 @@
 }
 
 .visati-qa-card__submit {
-	width: 100%;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	background: linear-gradient(135deg, #C9A84C, #F0C864);
-	color: #0A1628;
-	font-family: "Plus Jakarta Sans", sans-serif;
-	font-weight: 700;
-	padding: 0.85rem 1.5rem;
-	border-radius: 999px;
-	border: 0;
-	cursor: pointer;
-	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+	width: 100% !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 0.5rem !important;
+	background: linear-gradient(135deg, #C9A84C, #F0C864) !important;
+	color: #0A1628 !important;
+	font-family: "Plus Jakarta Sans", sans-serif !important;
+	font-weight: 700 !important;
+	padding: 0.85rem 1.5rem !important;
+	border-radius: 999px !important;
+	border: 0 !important;
+	cursor: pointer !important;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
 	margin-top: 0.5rem;
 }
 
 .visati-qa-card__submit:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(201, 168, 76, 0.4);
-	filter: brightness(1.08);
+	transform: translateY(-1px) !important;
+	box-shadow: 0 4px 12px rgba(201, 168, 76, 0.4) !important;
+	filter: brightness(1.08) !important;
 }
 
 .visati-qa-card__secure {
