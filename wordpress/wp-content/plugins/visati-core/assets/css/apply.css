@@ -405,7 +405,23 @@
 	margin-top: 0.5rem;
 }
 
-.visati-qa-card__submit:hover {
+.visiti-qa-card__submit:hover {
+	transform: translateY(-1px) !important;
+	box-shadow: 0 4px 12px rgba(201, 168, 76, 0.4) !important;
+	filter: brightness(1.08) !important;
+}
+
+/* Ultra-specific override for button inside Quick Apply card */
+.visiti-qa-card .visati-btn.visiti-qa-card__submit,
+.visiti-qa-card button.visiti-btn,
+.visiti-qa-card button[type="button"] {
+	background: linear-gradient(135deg, #C9A84C, #F0C864) !important;
+	color: #0A1628 !important;
+	border: none !important;
+}
+
+.visiti-qa-card .visati-btn.visiti-qa-card__submit:hover,
+.visiti-qa-card button.visiti-btn:hover {
 	transform: translateY(-1px) !important;
 	box-shadow: 0 4px 12px rgba(201, 168, 76, 0.4) !important;
 	filter: brightness(1.08) !important;
