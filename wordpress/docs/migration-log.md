@@ -146,6 +146,25 @@
   ```
 - **Skill note:** When using Hello Elementor as parent, expect its `reset.css` to override child theme styles. Use scoped selectors (not global `button`/`a`) and `!important` to preserve admin panel styling.
 
+### P9 — Pink buttons/links persists despite CSS overrides (Hello Elementor reset.css)
+- **Symptom:** Even with high-specificity `!important` CSS overrides in child theme, buttons and links still showed pink (#c36) colors. Quick Apply button and form fields affected.
+- **Cause:** Hello Elementor's `assets/css/reset.css` loads AFTER child theme and applies fundamental button/link styles that are difficult to override due to CSS specificity and loading order. The file contains `button { border: 1px solid #c36; color: #c36 }` and `a { color: #c36 }`.
+- **Fix:** **Direct edit of Hello Elementor reset.css** to replace all instances of pink `#c36` with Visati theme colors. Updated:
+  - Links: Gold (`#C9A84C`) with Navy hover (`#0A1628`)
+  - Buttons: Solid Gold background, no borders, pill shape (`border-radius: 999px`), white text
+  - Button hover: Shining effect (`filter: brightness(1.08)`, golden glow, `translateY(-1px)`)
+  - Form fields: Rounded corners (`10px`), light borders (`#d7dbe2`), gold focus state
+- **Commands:**
+  ```bash
+  # Direct file edit (outside git repo - Local Sites directory)
+  sed -i 's/#c36/#C9A84C/g' "/c/Users/K TECH/Local Sites/visati/app/public/wp-content/themes/hello-elementor/assets/css/reset.css"
+  # Manual refinement of hover states and border-radius
+  ```
+- **Deployment note:** ⚠️ **This change must be replicated on Hostinger** after deployment. The reset.css file needs to be edited in the live WordPress installation at:
+  `wp-content/themes/hello-elementor/assets/css/reset.css`
+  Replace all `#c36` with `#C9A84C` and apply the same button/form field styling.
+- **Skill note:** When CSS specificity battles become too complex, direct modification of the parent theme's reset.css is more reliable than fighting with `!important` declarations. Document this requirement for deployment.
+
 ---
 
 ## 4. Tooling built this session
@@ -246,3 +265,29 @@
 | `scripts/import-homepage.php` | Created | Imports JSON template → creates/updates Home page → saves Elementor data → sets as static front page. Includes shortcode extraction logic. |
 
 **Apply form redesign (per client feedback):** ✅ Rebuilt `[visati_apply_form]` to match the original Next.js design. (1) Stepper = connecting line + progress fill + navy circles with check icons + "Step N"/labels. (2) Nationality = searchable combobox with country flags (flagcdn, 77 countries) — was a text field. (3) Colors: confirmed Elementor global colors ARE set (`post-6.css` → `--e-global-color-primary:#0A1628`); form uses `--visati-*` tokens (Navy/Gold) with hex fallbacks. **Verified:** `/apply` 200; stepper + combobox + 77 flags render. (Recall P5: `get-global-settings` reads stale, but the Kit CSS file + post meta are correct.)
+
+---
+
+### Session P12 — Homepage hero two-column layout + header button fix
+**Date:** 2026-07-16
+
+**Goal:** Fix the hero section so the Quick Apply card renders as a right-side vertical card in a two-column layout. Fix header "Apply Now" button not visible (navy on navy).
+
+#### Hero two-column layout
+- **Symptom:** Quick Apply card renders below the hero text instead of beside it in a two-column row.
+- **Cause:** Elementor data was restructured with nested containers (`hero-row` → `hero-col-left` / `hero-col-right`) but the inner container `8ba4e0d` didn't have `layout: "row"` set properly, and child containers didn't have correct `elType: "container"` with `content_width`.
+- **Fix:** (1) Updated Elementor `_elementor_data` to set inner container `8ba4e0d` to `layout: "row"` with two child containers. (2) Added CSS overrides to force `.elementor-element-8ba4e0d` as flex row with proper column widths. **Status:** CSS forced via `!important` — needs verification in browser.
+
+#### Header "Apply Now" button invisible
+- **Symptom:** Header CTA button blends into the dark navy header background — not visible as a distinct button.
+- **Cause:** `.visati-header__cta` only set `font-size`, `padding`, `font-weight`, `display`. It relied on base `.visati-btn` for golden gradient, but no explicit `!important` override to prevent bleed from Elementor/WordPress CSS.
+- **Fix:** Added explicit `.visati-header__cta` styles with `background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important`, `color: var(--visati-navy) !important`, `border: none !important`, `box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3)`.
+
+#### Files modified
+| File | Action | Purpose |
+|---|---|---|
+| `themes/visati/assets/css/app.css` | Modified | Added `.visati-header__cta` golden gradient `!important` override; added `.elementor-element-54c25a9` and `.elementor-element-8ba4e0d` flex row overrides for hero two-column layout |
+
+#### Known issues
+- Hero two-column CSS forced via `!important` on Elementor auto-generated class IDs — fragile if Elementor regenerates classes. Ideally fix via Elementor data structure properly.
+- Hero `hero-row` / `hero-col-left` / `hero-col-right` containers may not render as expected — Elementor container `elType` + `layout` settings need verification.
