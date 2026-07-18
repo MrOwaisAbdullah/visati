@@ -13,14 +13,12 @@ get_header();
 ?>
 
 <main id="primary" class="visati-page">
-	<div class="visati-container" style="padding-top:2rem;padding-bottom:4rem;">
-		<?php
-		while ( have_posts() ) :
-			the_post();
-			the_content();
-		endwhile;
-		?>
-	</div>
+	<?php
+	while ( have_posts() ) :
+		the_post();
+		the_content();
+	endwhile;
+	?>
 </main>
 
 <?php

@@ -43,6 +43,7 @@ class Visati_Core_Database {
 			date_of_birth DATE NOT NULL,
 			passport_expiry DATE NOT NULL,
 			travel_date DATE NOT NULL,
+			travelers_data LONGTEXT DEFAULT NULL,
 			status ENUM({$enum_app}) DEFAULT 'draft',
 			stripe_payment_intent_id VARCHAR(255) DEFAULT NULL,
 			stripe_checkout_session_id VARCHAR(255) DEFAULT NULL,
@@ -115,7 +116,39 @@ class Visati_Core_Database {
 			dbDelta( $sql );
 		}
 
+		/* Safety migration: dbDelta() won't add columns to existing tables.
+		   Check for travelers_data and add it if missing. */
+		self::ensure_columns();
+
 		update_option( 'visati_core_db_version', VISATI_CORE_VERSION );
+	}
+
+	/**
+	 * Self-healing column check. dbDelta() does not add columns to tables that
+	 * already exist, so any column introduced after the first activation must be
+	 * added explicitly. Runs on activation and on every admin init (cheap).
+	 *
+	 * @return void
+	 */
+	public static function ensure_columns(): void {
+		static $done = false;
+		if ( $done ) {
+			return;
+		}
+		$done = true;
+
+		global $wpdb;
+		$prefix = $wpdb->prefix;
+		$table  = $prefix . 'visati_applications';
+
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! is_array( $columns ) ) {
+			return;
+		}
+
+		if ( ! in_array( 'travelers_data', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN travelers_data LONGTEXT DEFAULT NULL AFTER travel_date" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
 	}
 
 	/**

@@ -80,7 +80,7 @@ get_header();
 		else if(data.status === 'processing' || data.status === 'reviewing') statusClass = 'is-processing';
 
 		var html = '<div class="visati-card" style="margin-bottom:1.5rem;">';
-		html += '<div class="visati-visa-card__meta" style="margin-bottom:0.75rem;"><span>Application</span><span class="visati-mono" style="font-weight:700;">' + data.id + '</span></div>';
+		html += '<div class="visati-visa-card__meta" style="margin-bottom:0.75rem;"><span>Application </span><span class="visati-mono" style="font-weight:700;">' + data.id + '</span></div>';
 		html += '<span class="visati-track-status-badge ' + statusClass + '">' + data.status + '</span>';
 		if(data.visa_type) html += '<p style="color:rgba(26,26,46,0.6);font-size:0.9rem;margin:0.5rem 0 0;">Visa: ' + data.visa_type + '</p>';
 		html += '</div>';

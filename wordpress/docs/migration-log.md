@@ -291,3 +291,162 @@
 #### Known issues
 - Hero two-column CSS forced via `!important` on Elementor auto-generated class IDs — fragile if Elementor regenerates classes. Ideally fix via Elementor data structure properly.
 - Hero `hero-row` / `hero-col-left` / `hero-col-right` containers may not render as expected — Elementor container `elType` + `layout` settings need verification.
+
+---
+
+### P14 — Testimonial Stars Unicode + FAQ Layout + Content Seeding
+
+#### Testimonial stars showing as `\u2605\u2605\u2605\u2605\u2605`
+- **Symptom:** Star ratings display as literal escape sequences instead of ★ characters.
+- **Cause:** PHP `"\u2605"` is NOT a Unicode escape — it's a literal string `\u2605`. PHP doesn't support JS-style `\u` escapes in double-quoted strings.
+- **Symptom → Cause → Fix → Commands:**
+  - Changed `str_repeat("\u2605", $rating)` to `str_repeat('★', $rating)` (actual UTF-8 character).
+  - Same for empty star: `"\u2606"` → `'☆'`.
+- **File:** `plugins/visati-core/includes/shortcodes/class-testimonials.php:57`
+
+#### FAQ section stacked vertically instead of side-by-side
+- **Symptom:** FAQ heading ("Questions, answered.") and accordion items stacked vertically. Should be side-by-side (heading left, accordion right) like the Next.js version.
+- **Cause:** FAQ shortcode output was a flat block — no layout wrapper. Elementor container set to `content_width: full` with no flex structure.
+- **Fix:** Updated FAQ shortcode to output a `.visati-faq-layout` flex container with `.visati-faq-heading` (35% width, sticky) and `.visati-faq-right` (flex: 1). Added CSS for side-by-side layout + mobile responsive.
+- **File:** `plugins/visati-core/includes/shortcodes/class-faq.php`, `themes/visati/assets/css/app.css`
+
+#### FAQ category buttons unstyled
+- **Symptom:** Category filter buttons appear as empty white rounded boxes with no visible text.
+- **Cause:** Category labels were empty or had low contrast. The buttons use `border: 1.5px solid rgba(10,22,40,0.12)` with `background: transparent` — text was rendering but nearly invisible against white background.
+- **Fix:** The category labels now display correctly (e.g. "Process", "Documents") since they're populated from `_visati_faq_category` meta. CSS already handles active state with navy background.
+
+#### FAQ Question field added to meta box
+- **Symptom:** FAQ meta box only had Answer and Category fields. The "Question" for the accordion header was the WP title field, which is not intuitive.
+- **Fix:** Added `_visati_faq_question` field to the FAQ meta box. Shortcode updated: `get_post_meta($faq->ID, '_visati_faq_question', true) ?: $faq->post_title` — prefers the explicit field, falls back to title.
+
+#### Content seeded from Next.js site
+- **FAQ items:** 8 items seeded from `src/lib/sanity/seed.ts` — process, documents, general, application, pricing, visa-types categories.
+- **Testimonials:** 5 items seeded from `src/lib/sanity/seed-testimonials.ts` — Priya Sharma (IN), James Whitfield (GB), Sophie Laurent (FR), David Chen (US), Fatima Al Marzouqi (AE).
+- **Seed script:** `wordpress/scripts/seed-content.php` — idempotent (skips duplicates).
+
+#### Files modified
+| File | Action | Purpose |
+|---|---|---|
+| `plugins/visati-core/includes/shortcodes/class-testimonials.php` | Modified | Fixed star Unicode: `"\u2605"` → `'★'` |
+| `plugins/visati-core/includes/shortcodes/class-faq.php` | Modified | Added `.visati-faq-layout` wrapper, side-by-side heading, `_visati_faq_question` field |
+| `plugins/visati-core/includes/class-meta-boxes.php` | Modified | Added `_visati_faq_question` field to FAQ meta box |
+| `themes/visati/assets/css/app.css` | Modified | Added `.visati-faq-layout`, `.visati-faq-heading`, `.visati-faq-right`, `.visati-faq-label`, `.visati-faq-title`, `.visati-faq-desc`, `.visati-faq-cta` styles + mobile responsive |
+| `wordpress/scripts/seed-content.php` | Created | Idempotent seed script for FAQ items and testimonials |
+| `themes/visati/functions.php` | Modified | Version bump to 0.3.4 |
+
+#### Skill learned — PHP Unicode handling
+- PHP `"\u2605"` is NOT a Unicode escape. Use actual UTF-8 characters directly: `'★'` (U+2605), `'☆'` (U+2606).
+- `esc_html()` passes UTF-8 characters through correctly.
+
+---
+
+## Session: Policy Pages + Global CSS Fix (July 18, 2026)
+
+### P14 — Policy pages show raw content without hero/card
+
+- **Symptom:** Privacy, Terms, Cookies, Refund pages display raw H2 headings and bullet lists with no navy hero section and no white card wrapper.
+- **Cause:** Policy hero was previously rendered via `wp_body_open` hook and content wrapped via `the_content` filter. Both targeted `elementor_header_footer` template. When we created `page-policy.php` in the theme directory, the pages still had `_wp_page_template = elementor_header_footer` in the database.
+- **Fix:** Created `page-policy.php` theme template (hero + card + `get_header()`/`get_footer()`). Removed the `wp_body_open` hook and simplified the `the_content` filter. Created `fix-templates.php` admin script to bulk-update page meta.
+- **File:** `themes/visati/page-policy.php` (new), `themes/visati/functions.php`
+- **Status:** Pending — user must run `http://visati.local/wp-content/plugins/visati-core/admin/fix-templates.php` in browser then delete the file.
+
+### P15 — Homepage and all pages narrower (800px max-width)
+
+- **Symptom:** Homepage, About, Contact, Track, and all Elementor pages suddenly constrained to 800px width. Stats bar and CTA no longer touch screen edges.
+- **Cause:** CSS rule at `app.css:2124-2135` applied `max-width: 800px !important` to ALL `.elementor-section` and `.elementor-widget-container` on ANY page using `elementor_header_footer` template. This was originally added for policy pages but was global — it affected every single Elementor page.
+- **Fix:** Removed the entire global constraint block. Policy pages now use their own `page-policy.php` template (not `elementor_header_footer`) so the constraint is no longer needed.
+- **File:** `themes/visati/assets/css/app.css:2124-2135` (removed), `themes/visati/functions.php` (version bump 0.3.6 → 0.3.7)
+- **Symptom → Cause → Fix → Commands:**
+  - Removed lines 2124-2135 from `app.css`:
+    ```css
+    /* REMOVED — was constraining ALL Elementor pages to 800px */
+    body.page-template-elementor_header_footer .elementor,
+    body.page-template-elementor_header_footer .elementor-section,
+    body.page-template-elementor_header_footer .elementor-widget-container {
+        max-width: 800px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    ```
+  - User must hard-refresh (Ctrl+Shift+R) to pick up cached CSS.
+
+### Skill learned — Elementor template selection scope
+
+- **NEVER** target `body.page-template-elementor_header_footer` in CSS for page-specific styling. This template is used by the homepage AND most other Elementor pages. Any CSS rule targeting it is effectively global.
+- When styling a specific page type (e.g., policy pages), either:
+  1. Use a **dedicated page template** (`page-policy.php`) and target `.page-template-page-policy` body class, or
+  2. Use **page-specific body classes** from Elementor (`e.g., .page-id-99`)
+- Policy pages should use their own PHP template (`page-policy.php`), NOT `elementor_header_footer`.
+
+### P16 — Policy page links render as gold gradient buttons
+
+- **Symptom:** Links inside `.visati-policy-card` (email, phone, WhatsApp) render as golden gradient buttons with pill padding instead of plain underlined text.
+- **Cause:** The blanket button reset at `app.css:1243` targets `body .visati-page a:not([class*="visati-btn"])` — catches ALL `<a>` tags inside `.visati-page`. The `page-policy.php` template had `<main class="visati-page">` but was missing `visati-page--policy`, so the `:not(.visati-page--policy)` exclusion didn't work.
+- **Fix:** Added `visati-page--policy` class to `<main>` in `page-policy.php`. The blanket reset's `:not(.visati-page--policy)` now correctly excludes policy page links.
+- **File:** `themes/visati/page-policy.php:19`
+
+### P17 — Policy hero has gap above it
+
+- **Symptom:** Visible white space between the sticky header and the navy hero section on policy pages.
+- **Cause:** The sticky header has `margin-bottom: 12px` and there's likely default spacing from the page wrapper. No negative margin on the hero to compensate.
+- **Fix:** Added `margin-top: -24px` to `.visati-policy-hero` to pull the hero up under the header.
+- **File:** `themes/visati/assets/css/app.css:2107`
+
+---
+
+## Session: Admin Layer — T047–T051 (July 18, 2026)
+
+### T047–T051 — Admin dashboard, applications management, inquiries management
+
+- **Files created (8):**
+  - `admin/class-admin-dashboard.php` — WP admin menu registration (Visati → Dashboard, Applications, Inquiries, Settings), stat cards query, recent activity queries, style enqueue
+  - `admin/class-admin-applications.php` — Applications list with pagination + status filter, detail view with status history timeline + documents (presigned R2 URLs), status-update handler (append-only history + email notification)
+  - `admin/class-admin-inquiries.php` — Inquiries list with status filter, detail view with resolve toggle (new→read→resolved), reply-via-email link
+  - `admin/views/dashboard.php` — 7 stat cards (total/pending/submitted/approved/rejected apps, total/new inquiries) + recent applications table + recent inquiries table
+  - `admin/views/applications-list.php` — WP-style table with Application ID, Name, Nationality, Visa Type, Status badge, Date + pagination + status subnav
+  - `admin/views/application-detail.php` — Full detail table (14 fields) + status history timeline + documents with signed URLs + status update form
+  - `admin/views/inquiries-list.php` — WP-style table with ID, Name, Email, Subject, Status badge, Date + pagination + status subnav
+  - `admin/views/inquiry-detail.php` — Detail table + message block + resolve toggle button + reply-via-email link
+  - `assets/css/admin.css` — Admin-only styles (stat cards, status badges, detail grid, timeline, doc list)
+
+- **Files modified (3):**
+  - `visati-core.php` — Added `require_once` for 3 admin classes, version bump 0.2.1 → 0.3.0
+  - `includes/class-visati-core.php` — Added `Visati_Core_Admin_Dashboard::init()` to constructor
+
+- **Design decisions:**
+  - All admin pages capability-gated (`visati_manage_apps` / `visati_manage_inquiries`)
+  - Status history is append-only (never update existing rows) — matches `class-application.php` design
+  - Document viewing uses presigned R2 URLs (15-min TTL) — falls back gracefully if R2 not configured
+  - Status update sends email notification via `Visati_Core_Email::send_status_update()`
+  - Admin CSS is separate (`admin.css`) — only loads on Visati admin pages
+
+---
+
+## Session: Stripe Webhook + Tracking + Stripe Frontend (July 18, 2026)
+
+### T033 — Stripe webhook REST endpoint
+
+- **File created:** `includes/rest/class-webhooks-controller.php`
+- **Endpoints:**
+  - `POST /visati/v1/webhooks/stripe` — receives Stripe webhooks, verifies HMAC signature, handles `checkout.session.completed` (mark submitted + record payment + send confirmation email) and `payment_intent.payment_failed` (mark payment failed, app stays draft)
+  - `POST /visati/v1/checkout-session` — frontend creates Stripe Checkout Session (gets visa type price from CPT, adds express surcharge if applicable, returns `{id, url}`)
+- **Design decisions:**
+  - Idempotent: `checkout.session.completed` skips if app already `submitted`
+  - Payment record stored in `wp_visati_payments` with `stripe_session_id`, `stripe_payment_id`, `amount_cents`, `currency`, `status`
+  - Email confirmation sent via `Visati_Core_Email::send_confirmation()`
+  - Webhook secret + Stripe secret key from `Visati_Core_Settings` (env/wp-config)
+
+### T064 — GA4/GTM/Facebook/TikTok tracking injection
+
+- **File created:** `includes/class-tracking.php`
+- **Hooks:**
+  - `wp_head` (priority 1): GA4 `gtag.js` script
+  - `wp_body_open` (priority 1): GTM `<noscript>` iframe
+  - `wp_footer` (priority 999): GTM `<script>` + Facebook Pixel + TikTok Pixel
+- **Admin fields added:** GTM Container ID, Facebook Pixel ID, TikTok Pixel ID (added to "Tracking & Social" section of Visati Settings page, with save handler)
+- **Config source:** All from `Visati_Core_Settings::get()` (stored in `wp_options`)
+
+### Stripe frontend redirect wired
+
+- **File modified:** `assets/js/application-form.js` — submit handler now calls `POST /visati/v1/checkout-session` with `{application_id}` and redirects to `response.url` (Stripe Checkout). Shows error on failure. Re-enables button for retry.
+- **Flow:** Complete apply → pay: form creates draft → uploads docs → submit → create checkout session → redirect to Stripe → webhook confirms → email sent

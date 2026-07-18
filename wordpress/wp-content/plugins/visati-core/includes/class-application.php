@@ -35,14 +35,14 @@ final class Visati_Core_Application {
 	 * Create a draft application and return its new ID.
 	 *
 	 * @param array $data Sanitized application fields.
-	 * @return string Application ID (VIS-YYYY-XXXXXX).
+	 * @return string|WP_Error Application ID (VIS-YYYY-XXXXXX) or WP_Error on failure.
 	 */
-	public static function create( array $data ): string {
+	public static function create( array $data ) {
 		global $wpdb;
 
 		$id = visati_generate_application_id();
 
-		$wpdb->insert(
+		$result = $wpdb->insert(
 			self::table(),
 			array(
 				'id'                     => $id,
@@ -56,9 +56,14 @@ final class Visati_Core_Application {
 				'date_of_birth'          => $data['date_of_birth'],
 				'passport_expiry'        => $data['passport_expiry'],
 				'travel_date'            => $data['travel_date'],
+				'travelers_data'         => $data['travelers_data'] ?? null,
 				'status'                 => 'draft',
 			)
 		);
+
+		if ( false === $result ) {
+			return new WP_Error( 'db_insert_failed', __( 'Failed to create application.', 'visati-core' ), array( 'db_error' => $wpdb->last_error ) );
+		}
 
 		return $id;
 	}

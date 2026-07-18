@@ -16,19 +16,20 @@ final class Visati_Core_Pages {
 	 * Templates starting with "front-page" live in the theme.
 	 */
 	private static $pages = array(
-		'home'       => '',
-		'visa-types' => '',
-		'apply'      => 'page-apply.php',
-		'track'      => 'page-track.php',
-		'contact'    => '',
-		'faq'        => '',
-		'about'      => '',
-		'services'   => '',
-		'careers'    => '',
-		'blog'       => '',
-		'privacy'    => '',
-		'terms'      => '',
-		'cookies'    => '',
+		'home'          => '',
+		'visa-types'    => '',
+		'apply'         => 'page-apply.php',
+		'track'         => 'page-track.php',
+		'contact'       => '',
+		'faq'           => '',
+		'about'         => '',
+		'services'      => '',
+		'careers'       => '',
+		'blog'          => '',
+		'privacy'       => 'page-policy.php',
+		'terms'         => 'page-policy.php',
+		'cookies'       => 'page-policy.php',
+		'refund-policy' => 'page-policy.php',
 	);
 
 	/**

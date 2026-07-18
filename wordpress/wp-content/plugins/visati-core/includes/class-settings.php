@@ -78,6 +78,14 @@ final class Visati_Core_Settings {
 		return '' !== $val ? (int) $val : 99;
 	}
 
+	/**
+	 * Express processing surcharge in USD (default 27).
+	 */
+	public static function express_surcharge_usd(): int {
+		$val = self::env( array( 'EXPRESS_SURCHARGE_USD' ), '' );
+		return '' !== $val ? (int) $val : 27;
+	}
+
 	/* ── Configuration status (booleans only — never values) ─────────── */
 
 	public static function stripe_is_configured(): bool {

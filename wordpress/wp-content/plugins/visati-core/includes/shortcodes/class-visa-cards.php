@@ -21,7 +21,7 @@ final class Visati_Core_Visa_Cards_Shortcode {
 		$atts = shortcode_atts(
 			array(
 				'count'    => 12,
-				'featured' => '',    // 'yes' = only featured, 'no' = exclude featured, '' = all
+				'featured' => '',
 				'columns'  => 3,
 			),
 			$atts,
@@ -70,16 +70,23 @@ final class Visati_Core_Visa_Cards_Shortcode {
 				$price_usd   = get_post_meta( $visa->ID, '_visati_price_usd', true );
 				$duration    = get_post_meta( $visa->ID, '_visati_duration_days', true );
 				$entry_type  = get_post_meta( $visa->ID, '_visati_entry_type', true );
-				$has_express = get_post_meta( $visa->ID, '_visati_has_express', true );
 				$is_featured = get_post_meta( $visa->ID, '_visati_is_featured', true );
 				$badge_text  = get_post_meta( $visa->ID, '_visati_badge_text', true );
-				$features    = get_post_meta( $visa->ID, '_visati_features', true );
 				$apply_url   = home_url( '/apply?visa=' . rawurlencode( $slug ) );
 			?>
-				<div class="visati-visa-card">
-					<?php if ( $is_featured && $badge_text ) : ?>
-						<span class="visati-visa-card__badge"><?php echo esc_html( $badge_text ); ?></span>
-					<?php endif; ?>
+				<div class="visati-visa-card<?php echo $is_featured ? ' visati-visa-card--featured' : ''; ?>">
+
+					<div class="visati-visa-card__tags">
+						<?php if ( $duration ) : ?>
+							<span class="visati-visa-card__tag"><?php echo esc_html( $duration ); ?> DAYS</span>
+						<?php endif; ?>
+						<?php if ( $entry_type ) : ?>
+							<span class="visati-visa-card__tag"><?php echo esc_html( ucfirst( $entry_type ) ); ?> Entry</span>
+						<?php endif; ?>
+						<?php if ( $is_featured && $badge_text ) : ?>
+							<span class="visati-visa-card__badge"><?php echo esc_html( $badge_text ); ?></span>
+						<?php endif; ?>
+					</div>
 
 					<h3 class="visati-visa-card__title"><?php echo esc_html( $title ); ?></h3>
 
@@ -87,44 +94,23 @@ final class Visati_Core_Visa_Cards_Shortcode {
 						<p class="visati-visa-card__tagline"><?php echo esc_html( $tagline ); ?></p>
 					<?php endif; ?>
 
-					<?php if ( $price_aed ) : ?>
-						<div class="visati-visa-card__price">
-							<?php echo esc_html( visati_format_aed( $price_aed ) ); ?>
-							<?php if ( $price_usd ) : ?>
-								<span>(~$<?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?>)</span>
-							<?php endif; ?>
+					<div class="visati-visa-card__footer">
+						<div class="visati-visa-card__price-block">
+							<span class="visati-visa-card__price-label">Starting at</span>
+							<div class="visati-visa-card__price">
+								<?php if ( $price_aed ) : ?>
+									<span class="visati-visa-card__price-aed">AED <?php echo esc_html( $price_aed ); ?></span>
+								<?php endif; ?>
+								<?php if ( $price_usd ) : ?>
+									<span class="visati-visa-card__price-usd">~$<?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+								<?php endif; ?>
+							</div>
 						</div>
-					<?php endif; ?>
-
-					<div class="visati-visa-card__meta">
-						<?php if ( $duration ) : ?>
-							<span><?php echo esc_html( $duration ); ?> days</span>
-						<?php endif; ?>
-						<?php if ( $entry_type ) : ?>
-							<span><?php echo esc_html( ucfirst( $entry_type ) ); ?> entry</span>
-						<?php endif; ?>
-						<?php if ( $has_express ) : ?>
-							<span>Express avail.</span>
-						<?php endif; ?>
+						<a href="<?php echo esc_url( $apply_url ); ?>" class="visati-visa-card__apply">
+							Apply
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+						</a>
 					</div>
-
-					<?php if ( ! empty( $features ) && is_array( $features ) ) : ?>
-						<ul class="visati-visa-card__features">
-							<?php foreach ( array_slice( $features, 0, 4 ) as $f ) :
-								$text = is_array( $f ) && isset( $f['feature'] ) ? $f['feature'] : ( is_string( $f ) ? $f : '' );
-								if ( '' !== $text ) :
-							?>
-								<li><?php echo esc_html( $text ); ?></li>
-							<?php
-								endif;
-							endforeach; ?>
-						</ul>
-					<?php endif; ?>
-
-					<a href="<?php echo esc_url( $apply_url ); ?>" class="visati-btn">
-						Apply Now
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-					</a>
 				</div>
 			<?php endforeach; ?>
 		</div>

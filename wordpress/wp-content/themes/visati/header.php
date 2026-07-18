@@ -35,11 +35,11 @@ $site_desc  = get_bloginfo( 'description' );
 		<div class="visati-container visati-header__inner">
 
 			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="visati-header__brand" aria-label="<?php echo esc_attr( $site_name ); ?> home">
-				<?php if ( $logo_url ) : ?>
-					<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" class="visati-header__logo" height="36">
-				<?php else : ?>
+				<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="visati-header__logo" height="28">
+				<div class="visati-header__brand-text">
 					<span class="visati-header__wordmark"><?php echo esc_html( $site_name ); ?></span>
-				<?php endif; ?>
+					<span class="visati-header__tagline"><?php echo esc_html( $site_desc ); ?></span>
+				</div>
 			</a>
 
 			<nav class="visati-header__nav" aria-label="<?php esc_attr_e( 'Primary', 'visati' ); ?>">
@@ -75,11 +75,11 @@ $site_desc  = get_bloginfo( 'description' );
 		<div class="visati-drawer__panel" role="dialog" aria-label="<?php esc_attr_e( 'Navigation', 'visati' ); ?>">
 			<div class="visati-drawer__header">
 				<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="visati-header__brand">
-					<?php if ( $logo_url ) : ?>
-						<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" height="28">
-					<?php else : ?>
+					<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="visati-header__logo" height="28">
+					<div class="visati-header__brand-text">
 						<span class="visati-header__wordmark"><?php echo esc_html( $site_name ); ?></span>
-					<?php endif; ?>
+						<span class="visati-header__tagline"><?php echo esc_html( $site_desc ); ?></span>
+					</div>
 				</a>
 				<button class="visati-drawer__close" type="button" aria-label="<?php esc_attr_e( 'Close menu', 'visati' ); ?>">
 					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>

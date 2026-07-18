@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_THEME_VERSION', '0.2.1' );
+define( 'VISATI_THEME_VERSION', '0.3.7' );
 
 /**
  * Theme setup: nav menus and core supports.
@@ -109,7 +109,7 @@ add_action( 'wp_footer', 'visati_render_whatsapp_widget' );
  * @return array
  */
 function visati_plugin_templates( $templates ) {
-	$plugin_dir = plugin_dir_path( dirname( __FILE__ ) ) . 'visati-core/templates';
+	$plugin_dir = WP_CONTENT_DIR . '/plugins/visati-core/templates';
 	if ( is_dir( $plugin_dir ) ) {
 		$files = glob( $plugin_dir . '/*.php' );
 		foreach ( $files as $file ) {
@@ -122,23 +122,61 @@ function visati_plugin_templates( $templates ) {
 add_filter( 'theme_page_templates', 'visati_plugin_templates' );
 
 /**
- * Load plugin templates from the plugin directory.
- *
- * @param string $template      The template path.
- * @param string $template_name The template name (optional).
- * @param array  $args          Template arguments (optional).
- * @return string
+ * Register policy template for Elementor.
  */
-function visati_load_plugin_template( $template, $template_name = '', $args = array() ) {
-	if ( '' === $template_name && ! empty( $args ) ) {
-		$template_name = $args;
-	}
-	if ( is_string( $template_name ) && 0 === strpos( $template_name, 'plugin-templates/' ) ) {
-		$file = plugin_dir_path( dirname( __FILE__ ) ) . 'visati-core/templates/' . basename( $template_name );
-		if ( file_exists( $file ) ) {
-			return $file;
+function visati_elementor_theme_location( $manager ) {
+	$manager->register_all_coreLocations();
+}
+add_action( 'elementor/theme/register_locations', 'visati_elementor_theme_location' );
+
+/**
+ * Load plugin templates from the plugin directory.
+ */
+function visati_load_plugin_template( $template ) {
+	if ( is_page() ) {
+		$page_id = get_queried_object_id();
+		$page_template = get_post_meta( $page_id, '_wp_page_template', true );
+		if ( $page_template && 0 === strpos( $page_template, 'plugin-templates/' ) ) {
+			$file = WP_CONTENT_DIR . '/plugins/visati-core/templates/' . basename( $page_template );
+			if ( file_exists( $file ) ) {
+				return $file;
+			}
 		}
 	}
 	return $template;
 }
 add_filter( 'template_include', 'visati_load_plugin_template', 99 );
+
+/**
+ * Force correct archive template for visa_type CPT.
+ */
+function visati_force_archive_template( $template ) {
+	if ( is_post_type_archive( 'visati_visa_type' ) || is_singular( 'visati_visa_type' ) ) {
+		$archive = get_stylesheet_directory() . '/archive-visa_type.php';
+		$single  = get_stylesheet_directory() . '/single-visa_type.php';
+
+		if ( is_post_type_archive( 'visati_visa_type' ) && file_exists( $archive ) ) {
+			return $archive;
+		}
+		if ( is_singular( 'visati_visa_type' ) && file_exists( $single ) ) {
+			return $single;
+		}
+	}
+
+	// Force policy pages to page-policy.php regardless of DB meta.
+	if ( is_page() ) {
+		$slug = get_post_field( 'post_name', get_queried_object_id() );
+		$policy_slugs = array( 'privacy', 'terms', 'cookies', 'refund-policy' );
+		if ( in_array( $slug, $policy_slugs, true ) ) {
+			$file = get_stylesheet_directory() . '/page-policy.php';
+			if ( file_exists( $file ) ) {
+				return $file;
+			}
+		}
+	}
+
+	return $template;
+}
+add_filter( 'template_include', 'visati_force_archive_template', 98 );
+
+

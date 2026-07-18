@@ -35,6 +35,7 @@ final class Visati_Core {
 	 */
 	private function __construct() {
 		add_action( 'init', array( 'Visati_Core_Post_Types', 'register' ) );
+		add_action( 'init', array( 'Visati_Core_Database', 'ensure_columns' ) );
 		add_action( 'admin_notices', array( 'Visati_Core_Settings', 'admin_config_notice' ) );
 
 		Visati_Core_REST_API::init();
@@ -42,6 +43,8 @@ final class Visati_Core {
 		Visati_Core_Documents_Controller::init();
 		Visati_Core_Inquiries_Controller::init();
 		Visati_Core_Track_Controller::init();
+		Visati_Core_Webhooks_Controller::init();
+		Visati_Core_Tracking::init();
 
 		// Shortcodes.
 		Visati_Core_Apply_Form_Shortcode::init();
@@ -50,9 +53,13 @@ final class Visati_Core {
 		Visati_Core_Testimonials_Shortcode::init();
 		Visati_Core_FAQ_Shortcode::init();
 		Visati_Core_Contact_Form_Shortcode::init();
+		Visati_Core_About_Shortcodes::init();
 
 		// Admin.
 		Visati_Core_Admin_Settings::init();
+		Visati_Core_Admin_Dashboard::init();
+		Visati_Core_Meta_Boxes::init();
+		Visati_Core_Setup_Pages::init();
 	}
 
 	/**

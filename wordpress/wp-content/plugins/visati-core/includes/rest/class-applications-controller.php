@@ -74,7 +74,28 @@ final class Visati_Core_Applications_Controller {
 			'processing_tier' => ( 'express' === ( $d['processing_tier'] ?? '' ) ) ? 'express' : 'standard',
 		);
 
+		/* Travelers array → JSON */
+		if ( ! empty( $d['travelers'] ) && is_array( $d['travelers'] ) ) {
+			$travelers = array();
+			foreach ( $d['travelers'] as $t ) {
+				if ( ! is_array( $t ) ) {
+					continue;
+				}
+				$travelers[] = array(
+					'relationship' => sanitize_text_field( wp_unslash( $t['relationship'] ?? '' ) ),
+					'name'         => sanitize_text_field( wp_unslash( $t['name'] ?? '' ) ),
+					'passport'     => sanitize_text_field( wp_unslash( $t['passport'] ?? '' ) ),
+					'dob'          => sanitize_text_field( wp_unslash( $t['dob'] ?? '' ) ),
+				);
+			}
+			$clean['travelers_data'] = wp_json_encode( $travelers );
+		}
+
 		$id = Visati_Core_Application::create( $clean );
+
+		if ( is_wp_error( $id ) ) {
+			return Visati_Core_REST_API::error( 'create_failed', $id->get_error_message(), 500 );
+		}
 
 		return rest_ensure_response(
 			array(

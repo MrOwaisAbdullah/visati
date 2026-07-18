@@ -49,5 +49,5 @@ next-env.d.ts
 CLAUDE.md
 specs/
 history/
-screenshots/
+# screenshots/
 skills-lock.json

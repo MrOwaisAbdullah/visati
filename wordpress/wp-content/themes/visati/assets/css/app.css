@@ -36,8 +36,8 @@ h1, h2, h3, h4, h5, h6 {
 	font-weight: 700;
 }
 
-a { color: var( --visati-blue ); text-decoration: none; }
-a:hover { color: var( --visati-navy ); }
+a { color: var( --visati-navy ); text-decoration: none; }
+a:hover { color: var( --visati-gold ); }
 
 /* Buttons / CTAs — golden gradient pill */
 .visati-btn {
@@ -50,7 +50,7 @@ a:hover { color: var( --visati-navy ); }
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-weight: 700;
 	padding: 0.85rem 1.75rem;
-	border-radius: 12px;
+	border-radius: 20px;
 	border: 0;
 	cursor: pointer;
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
@@ -63,55 +63,74 @@ a:hover { color: var( --visati-navy ); }
 	color: var( --visati-navy );
 }
 .visati-btn:active { transform: translateY(0); box-shadow: 0 1px 4px rgba(201, 168, 76, 0.3); }
+.visati-btn:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+.visati-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: visati-spin 0.6s linear infinite;
+	vertical-align: middle;
+}
+@keyframes visati-spin {
+	to { transform: rotate(360deg); }
+}
 
 .visati-btn--navy {
-	background: var( --visati-navy );
-	color: var( --visati-white );
-	box-shadow: 0 2px 8px rgba(10, 22, 40, 0.3);
+	background: var( --visati-navy ) !important;
+	color: var( --visati-white ) !important;
+	box-shadow: 0 2px 8px rgba(10, 22, 40, 0.3) !important;
 }
 .visati-btn--navy:hover {
-	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
-	background-size: 200% 200%;
-	background-position: 100% 100%;
-	color: var( --visati-navy );
-	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2);
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
+	background-size: 200% 200% !important;
+	background-position: 100% 100% !important;
+	color: var( --visati-navy ) !important;
+	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2) !important;
 }
 
 .visati-btn--gold {
-	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
-	background-size: 200% 200%;
-	color: var( --visati-navy );
-	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
+	background-size: 200% 200% !important;
+	color: var( --visati-navy ) !important;
+	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 }
 .visati-btn--gold:hover {
-	background-position: 100% 100%;
-	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2);
-	transform: translateY(-2px);
+	background-position: 100% 100% !important;
+	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2) !important;
+	transform: translateY(-2px) !important;
 }
 
 .visati-btn--outline {
-	background: transparent;
-	color: var( --visati-navy );
-	border: 1.5px solid var( --visati-navy );
-	box-shadow: none;
+	background: transparent !important;
+	color: var( --visati-navy ) !important;
+	border: 1.5px solid var( --visati-navy ) !important;
+	box-shadow: none !important;
 }
 .visati-btn--outline:hover {
-	background: var( --visati-navy );
-	color: var( --visati-white );
-	box-shadow: 0 4px 16px rgba(10, 22, 40, 0.3);
-	border-color: var( --visati-navy );
+	background: var( --visati-navy ) !important;
+	color: var( --visati-white ) !important;
+	box-shadow: 0 4px 16px rgba(10, 22, 40, 0.3) !important;
+	border-color: var( --visati-navy ) !important;
 }
 
 .visati-btn--ghost {
-	background: var( --visati-white );
-	color: var( --visati-navy );
-	border: 1.5px solid rgba(10, 22, 40, 0.15);
-	box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+	background: var( --visati-white ) !important;
+	color: var( --visati-navy ) !important;
+	border: 1.5px solid rgba(10, 22, 40, 0.15) !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
 }
 .visati-btn--ghost:hover {
-	background: var( --visati-navy );
-	color: var( --visati-white );
-	box-shadow: 0 4px 16px rgba(10, 22, 40, 0.3);
+	background: var( --visati-navy ) !important;
+	color: var( --visati-white ) !important;
+	box-shadow: 0 4px 16px rgba(10, 22, 40, 0.3) !important;
 }
 
 /* Layout helpers */
@@ -168,36 +187,47 @@ a:hover { color: var( --visati-navy ); }
    ───────────────────────────────────────────────────────── */
 .visati-header {
 	position: sticky;
-	top: 0;
+	top: 12px;
 	z-index: 9999;
-	transition: padding 0.3s ease;
+	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+	margin-bottom: 12px;
 }
 .visati-header__bar {
 	background: var( --visati-navy );
-	transition: all 0.3s ease;
+	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* Sticky: shrink to 85% width, centered, rounded + shadow */
 .visati-header.is-scrolled .visati-header__bar {
-	border-radius: 0 0 16px 16px;
-	box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+	width: 85%;
+	margin: 0 auto;
+	border-radius: 16px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 .visati-header__inner {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
-	height: 56px;
+	height: 64px;
+	max-width: var( --visati-max );
+	margin: 0 auto;
+	padding: 0.5rem 1.5rem;
+	transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.visati-header.is-scrolled .visati-header__inner {
+	height: 52px;
 }
 .visati-header__brand {
 	display: flex;
 	align-items: center;
 	flex-shrink: 0;
 	text-decoration: none;
+	gap: 0.5rem;
 }
-.visati-header__logo { height: 36px; width: auto; display: block; }
+.visati-header__logo { height: 28px !important; width: auto !important; display: block !important; max-width: 140px !important; object-fit: contain; }
 .visati-header__brand-text {
 	display: flex;
 	flex-direction: column;
-	margin-left: 0.5rem;
 	line-height: 1.1;
 }
 .visati-header__wordmark {
@@ -216,7 +246,12 @@ a:hover { color: var( --visati-navy ); }
 	letter-spacing: 0.02em;
 	margin-top: 2px;
 }
+
+/* Desktop nav: visible >= 1024px */
 .visati-header__nav { display: none; }
+@media ( min-width: 1024px ) {
+	.visati-header__nav { display: block; }
+}
 .visati-header__links {
 	list-style: none;
 	margin: 0;
@@ -255,34 +290,40 @@ a:hover { color: var( --visati-navy ); }
 @media ( min-width: 640px ) {
 	.visati-header__cta { display: inline-flex; }
 }
-@media ( min-width: 1024px ) {
-	.visati-header__nav { display: block; }
-}
 
-/* Hamburger */
+/* Hamburger: visible on mobile (<1024px), hidden on desktop */
 .visati-header__toggle {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-items: center;
 	gap: 5px;
-	width: 36px;
-	height: 36px;
-	padding: 6px;
+	width: 40px;
+	height: 40px;
+	padding: 8px;
 	background: transparent;
 	border: 0;
 	cursor: pointer;
+	border-radius: 8px;
+	transition: background 0.2s;
+}
+.visati-header__toggle:hover {
+	background: rgba(255,255,255,0.1);
 }
 .visati-header__toggle span {
 	display: block;
-	width: 100%;
+	width: 20px;
 	height: 2px;
 	background: var( --visati-white );
 	border-radius: 2px;
-	transition: transform 0.25s, opacity 0.25s;
+	transition: transform 0.25s ease, opacity 0.25s ease;
 }
 .visati-header__toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .visati-header__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
 .visati-header__toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+@media ( min-width: 1024px ) {
+	.visati-header__toggle { display: none; }
+}
 
 /* Mobile drawer */
 .visati-drawer {
@@ -535,7 +576,7 @@ body > main > :last-child {
 .visati-footer__legal a:hover { color: var( --visati-white ); }
 
 /* ─────────────────────────────────────────────────────────
-   SHORTCODES — Visa Cards
+   SHORTCODES — Visa Cards (matches Next.js reference)
    ───────────────────────────────────────────────────────── */
 .visati-visa-grid {
 	display: grid;
@@ -550,92 +591,141 @@ body > main > :last-child {
 }
 .visati-visa-card {
 	background: var( --visati-white );
+	border: 1px solid rgba(10, 22, 40, 0.08);
 	border-radius: var( --visati-radius );
-	box-shadow: var( --visati-shadow );
-	padding: 1.75rem;
+	padding: 1.5rem;
 	display: flex;
 	flex-direction: column;
-	transition: transform 0.2s, box-shadow 0.2s;
+	transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 	position: relative;
-	overflow: hidden;
 }
 .visati-visa-card:hover {
 	transform: translateY(-4px);
-	box-shadow: 0 16px 40px rgba(10,22,40,0.12);
+	box-shadow: 0 12px 32px rgba(10,22,40,0.1);
+}
+.visati-visa-card--featured {
+	border: 2px solid var( --visati-gold );
+}
+.visati-visa-card__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+	align-items: center;
+}
+.visati-visa-card__tag {
+	display: inline-flex;
+	align-items: center;
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: var( --visati-navy );
+	background: rgba(10, 22, 40, 0.05);
+	border: 1px solid rgba(10, 22, 40, 0.1);
+	border-radius: 6px;
+	padding: 0.25rem 0.6rem;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
 }
 .visati-visa-card__badge {
-	position: absolute;
-	top: 1rem;
-	right: 1rem;
-	background: var( --visati-gold );
-	color: var( --visati-navy );
+	display: inline-flex;
+	align-items: center;
 	font-size: 0.7rem;
 	font-weight: 700;
-	padding: 0.25rem 0.75rem;
-	border-radius: 999px;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	color: var( --visati-white );
+	background: var( --visati-navy );
+	border-radius: 6px;
+	padding: 0.25rem 0.65rem;
+	letter-spacing: 0.02em;
 }
 .visati-visa-card__title {
-	font-size: 1.1rem;
-	margin-bottom: 0.5rem;
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var( --visati-navy );
+	margin: 0 0 0.5rem;
+	line-height: 1.3;
 }
 .visati-visa-card__tagline {
 	font-size: 0.85rem;
-	color: rgba(26,26,46,0.6);
-	margin-bottom: 1rem;
-	line-height: 1.5;
-}
-.visati-visa-card__price {
-	font-family: "Plus Jakarta Sans", sans-serif;
-	font-size: 1.5rem;
-	font-weight: 800;
-	color: var( --visati-navy );
-	margin-bottom: 0.25rem;
-}
-.visati-visa-card__price span {
-	font-size: 0.8rem;
-	font-weight: 500;
-	color: rgba(26,26,46,0.5);
-}
-.visati-visa-card__meta {
-	display: flex;
-	gap: 1rem;
-	font-size: 0.8rem;
 	color: rgba(26,26,46,0.55);
-	margin-bottom: 1rem;
-}
-.visati-visa-card__features {
-	list-style: none;
-	padding: 0;
 	margin: 0 0 1.25rem;
+	line-height: 1.5;
 	flex: 1;
 }
-.visati-visa-card__features li {
-	font-size: 0.85rem;
-	color: rgba(26,26,46,0.7);
-	padding: 0.3rem 0;
-	padding-left: 1.5rem;
-	position: relative;
+.visati-visa-card__footer {
+	border-top: 1px solid rgba(10, 22, 40, 0.08);
+	padding-top: 1rem;
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
 }
-.visati-visa-card__features li::before {
-	content: "\2713";
-	position: absolute;
-	left: 0;
-	color: var( --visati-whatsapp );
+.visati-visa-card__price-block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+.visati-visa-card__price-label {
+	font-size: 0.65rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: rgba(26,26,46,0.45);
+}
+.visati-visa-card__price {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+.visati-visa-card__price-aed {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: var( --visati-navy );
+}
+.visati-visa-card__price-usd {
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: rgba(26,26,46,0.45);
+}
+.visati-visa-card__apply {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
+	background-size: 200% 200%;
+	color: var( --visati-navy );
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 0.8rem;
 	font-weight: 700;
-}
-.visati-visa-card .visati-btn {
-	width: 100%;
-	justify-content: center;
+	padding: 0.55rem 1.1rem;
+	border-radius: 10px;
 	text-decoration: none;
+	transition: background-position 0.3s, box-shadow 0.3s, transform 0.2s;
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+.visati-visa-card__apply:hover {
+	background-position: 100% 100%;
+	box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);
+	transform: translateY(-1px);
 }
 
 /* ─────────────────────────────────────────────────────────
    SHORTCODES — Quick Apply Card
    ───────────────────────────────────────────────────────── */
-/* Hero two-column: force hero-row into flex row using stable data-id */
+/* Stats bar: rounded top corners */
+[data-id="d3b3e18"] {
+	border-radius: 20px 20px 0 0;
+	overflow: hidden;
+}
+/* Hero: constrain hero-row to max-width, center it */
 [data-id="hero-row"] {
+	max-width: 1200px;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 80px;
+	padding-right: 80px;
 	display: flex !important;
 	flex-direction: row !important;
 	align-items: center !important;
@@ -656,6 +746,26 @@ body > main > :last-child {
 [data-id="c0f5644"] > div:first-child {
 	display: block !important;
 	grid-template-columns: none !important;
+}
+@media ( max-width: 768px ) {
+	[data-id="hero-row"] {
+		flex-direction: column !important;
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+	}
+	[data-id="hero-row"] > [data-id="c5d2869"] {
+		flex: 0 0 auto !important;
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+	.visati-faq-layout {
+		flex-direction: column;
+		gap: 2rem;
+	}
+	.visati-faq-heading {
+		position: static;
+		flex: none;
+	}
 }
 .visati-qa-card {
 	background: var( --visati-white );
@@ -757,6 +867,9 @@ body > main > :last-child {
 /* ─────────────────────────────────────────────────────────
    SHORTCODES — Testimonials
    ───────────────────────────────────────────────────────── */
+.visati-testimonials-wrapper {
+	position: relative;
+}
 .visati-testimonials-track {
 	display: flex;
 	gap: 1.5rem;
@@ -765,8 +878,34 @@ body > main > :last-child {
 	-webkit-overflow-scrolling: touch;
 	padding-bottom: 1rem;
 	scrollbar-width: none;
+	scroll-padding-left: 1rem;
 }
 .visati-testimonials-track::-webkit-scrollbar { display: none; }
+.visati-testimonials-arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	border: 1.5px solid rgba(10,22,40,0.12);
+	background: var( --visati-white );
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: var( --visati-navy );
+	transition: all 0.2s;
+	z-index: 2;
+}
+.visati-testimonials-arrow:hover {
+	background: var( --visati-navy );
+	color: var( --visati-white );
+	border-color: var( --visati-navy );
+}
+.visati-testimonials-arrow--prev { left: -22px; }
+.visati-testimonials-arrow--next { right: -22px; }
 .visati-testimonial-card {
 	min-width: 320px;
 	max-width: 400px;
@@ -812,11 +951,64 @@ body > main > :last-child {
 /* ─────────────────────────────────────────────────────────
    SHORTCODES — FAQ
    ───────────────────────────────────────────────────────── */
+.visati-faq-layout {
+	display: flex;
+	gap: 48px;
+	align-items: flex-start;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 4rem 1.5rem;
+}
+.visati-faq-heading {
+	flex: 0 0 35%;
+	position: sticky;
+	top: 100px;
+}
+.visati-faq-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --visati-gold );
+	margin-bottom: 0.75rem;
+}
+.visati-faq-title {
+	font-size: clamp(2rem, 4vw, 3rem);
+	font-weight: 700;
+	color: var( --visati-navy );
+	line-height: 1.1;
+	margin: 0 0 1rem;
+}
+.visati-faq-desc {
+	font-size: 0.95rem;
+	color: rgba(26,26,46,0.6);
+	line-height: 1.6;
+	margin: 0 0 1.5rem;
+}
+.visati-faq-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 44px;
+	padding: 0 20px;
+	border-radius: 12px;
+	background: var( --visati-navy );
+	color: var( --visati-white );
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background 0.2s;
+}
+.visati-faq-cta:hover { background: #0d1f3c; }
+.visati-faq-right {
+	flex: 1;
+	min-width: 0;
+}
 .visati-faq-search {
 	width: 100%;
 	padding: 0.85rem 1.25rem;
 	border: 2px solid rgba(10,22,40,0.1);
-	border-radius: 999px;
+	border-radius: 20px;
 	font-size: 0.95rem;
 	font-family: inherit;
 	margin-bottom: 1.5rem;
@@ -831,14 +1023,15 @@ body > main > :last-child {
 }
 .visati-faq-cat-btn {
 	padding: 0.45rem 1rem;
-	border-radius: 999px;
-	border: 1.5px solid rgba(10,22,40,0.12);
-	background: transparent;
+	border-radius: 20px;
+	border: 1.5px solid rgba(10,22,40,0.15);
+	background: var( --visati-white );
 	font-size: 0.8rem;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.15s;
 	font-family: inherit;
+	color: var( --visati-navy );
 }
 .visati-faq-cat-btn:hover,
 .visati-faq-cat-btn.is-active {
@@ -848,13 +1041,20 @@ body > main > :last-child {
 }
 .visati-faq-item {
 	border-bottom: 1px solid rgba(10,22,40,0.08);
+	transition: background 0.2s, border-radius 0.2s;
+}
+.visati-faq-item.is-open {
+	background: var( --visati-gold );
+	border-radius: 12px;
+	margin: 0.35rem 0;
+	border-bottom: none;
 }
 .visati-faq-item__q {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	padding: 1.1rem 0;
+	padding: 1.1rem 1.25rem;
 	background: transparent;
 	border: 0;
 	text-align: left;
@@ -864,6 +1064,11 @@ body > main > :last-child {
 	cursor: pointer;
 	font-family: inherit;
 	gap: 1rem;
+	border-radius: 12px;
+}
+.visati-faq-item.is-open .visati-faq-item__q {
+	color: var( --visati-white );
+	padding: 1.1rem 1.25rem;
 }
 .visati-faq-item__q::after {
 	content: "+";
@@ -873,16 +1078,20 @@ body > main > :last-child {
 	transition: transform 0.2s;
 }
 .visati-faq-item.is-open .visati-faq-item__q::after {
+	color: var( --visati-white );
 	transform: rotate(45deg);
 }
 .visati-faq-item__a {
 	display: none;
-	padding: 0 0 1.25rem;
+	padding: 0 1.25rem 1.25rem;
 	font-size: 0.9rem;
 	line-height: 1.7;
 	color: rgba(26,26,46,0.7);
 }
-.visati-faq-item.is-open .visati-faq-item__a { display: block; }
+.visati-faq-item.is-open .visati-faq-item__a {
+	display: block;
+	color: rgba(255,255,255,0.85);
+}
 .visati-faq-empty {
 	text-align: center;
 	padding: 3rem 1rem;
@@ -958,14 +1167,13 @@ body > main > :last-child {
 .visati-track-search {
 	display: flex;
 	gap: 0.75rem;
-	max-width: 500px;
 	margin-bottom: 2rem;
 }
 .visati-track-search input {
 	flex: 1;
 	padding: 0.85rem 1.25rem;
 	border: 2px solid rgba(10,22,40,0.1);
-	border-radius: 999px;
+	border-radius: 20px;
 	font-size: 0.95rem;
 	font-family: inherit;
 }
@@ -1048,16 +1256,19 @@ body > main > :last-child {
    IMPORTANT: Only target content area buttons/links, not admin panel.
    ───────────────────────────────────────────────────────── */
 
-/* Golden gradient button reset — overrides hello-elementor #c36 pink */
-body .visati-page button,
-body .visati-page [type="button"],
-body .visati-page [type="submit"],
-body .visati-page [type="reset"] {
+/* Golden gradient button reset — overrides hello-elementor #c36 pink
+   Only target bare elements without any visati-btn class.
+   Exclude policy page content links. */
+body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value),
+body .visati-page button:not([class*="visati-btn"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button),
+body .visati-page [type="button"]:not([class*="visati-btn"]):not(.visati-combobox__button),
+body .visati-page [type="submit"]:not([class*="visati-btn"]),
+body .visati-page [type="reset"]:not([class*="visati-btn"]) {
 	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
 	background-size: 200% 200% !important;
 	color: var( --visati-navy ) !important;
 	border: none !important;
-	border-radius: 12px !important;
+	border-radius: 20px !important;
 	padding: 0.85rem 1.75rem !important;
 	font-family: "Plus Jakarta Sans", sans-serif !important;
 	font-weight: 700 !important;
@@ -1065,18 +1276,120 @@ body .visati-page [type="reset"] {
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease !important;
 }
-body .visati-page button:hover,
-body .visati-page [type="button"]:hover,
-body .visati-page [type="submit"]:hover,
-body .visati-page [type="reset"]:hover {
+body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):hover,
+body .visati-page button:not([class*="visati-btn"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):hover,
+body .visati-page [type="button"]:not([class*="visati-btn"]):not(.visati-combobox__button):hover,
+body .visati-page [type="submit"]:not([class*="visati-btn"]):hover,
+body .visati-page [type="reset"]:not([class*="visati-btn"]):hover {
 	background-position: 100% 100% !important;
 	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2) !important;
 	transform: translateY(-2px) !important;
 	color: var( --visati-navy ) !important;
 }
 
+/* Nationality combobox */
+.visati-combobox {
+	position: relative;
+	width: 100%;
+}
+.visati-combobox__button {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: flex-start !important;
+	width: 100%;
+	padding: 0.85rem 1rem !important;
+	background: var(--visati-white) !important;
+	background-size: unset !important;
+	border: 1.5px solid rgba(10, 22, 40, 0.12) !important;
+	border-radius: 20px !important;
+	box-shadow: none !important;
+	font-family: "Inter", sans-serif !important;
+	font-size: 0.9rem !important;
+	font-weight: 400 !important;
+	color: rgba(10, 22, 40, 0.4) !important;
+	cursor: pointer !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+	text-align: left !important;
+	gap: 0.5rem;
+	margin: 0;
+	text-decoration: none;
+}
+.visati-combobox__button:hover {
+	border-color: var(--visati-gold) !important;
+	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15) !important;
+}
+.visati-combobox__button.is-filled {
+	color: var(--visati-ink) !important;
+}
+.visati-combobox__flag {
+	display: inline-flex;
+	align-items: center;
+}
+.visati-combobox__flag img {
+	width: 24px;
+	height: 16px;
+	border-radius: 2px;
+	object-fit: cover;
+}
+.visati-combobox__text {
+	flex: 1;
+}
+.visati-combobox__chevron {
+	flex-shrink: 0;
+	opacity: 0.5;
+}
+.visati-combobox__panel {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	margin-top: 4px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 12px;
+	box-shadow: 0 8px 24px rgba(10, 22, 40, 0.15);
+	z-index: 100;
+	max-height: 280px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+.visati-combobox__search {
+	border: none;
+	border-bottom: 1px solid #e2e4e7;
+	padding: 0.65rem 1rem;
+	font-size: 0.85rem;
+	font-family: "Inter", sans-serif;
+	outline: none;
+}
+.visati-combobox__list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	overflow-y: auto;
+	flex: 1;
+}
+.visati-combobox__list li {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	font-size: 0.85rem;
+	transition: background 0.15s ease;
+}
+.visati-combobox__list li:hover {
+	background: var(--visati-mist);
+}
+.visati-combobox__list li img {
+	width: 20px;
+	height: 14px;
+	border-radius: 2px;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
 /* Exclude already-styled components from the blanket reset */
-.visati-combobox__button,
 .visati-header__toggle,
 .visati-drawer__close,
 .visati-announcement-close {
@@ -1101,7 +1414,7 @@ body .visati-page [type="reset"]:hover {
 	background-size: 200% 200% !important;
 	color: #0A1628 !important;
 	border: none !important;
-	border-radius: 12px !important;
+	border-radius: 20px !important;
 	font-weight: 700 !important;
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	padding: 0.5rem 1.15rem !important;
@@ -1123,15 +1436,27 @@ body .visati-page [type="reset"]:hover {
 #site-header .visati-header__toggle {
 	background: transparent !important;
 	border: none !important;
-	padding: 6px !important;
+	padding: 8px !important;
 	cursor: pointer !important;
-	width: 36px !important;
-	height: 36px !important;
+	width: 40px !important;
+	height: 40px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 5px !important;
+	border-radius: 8px !important;
 }
 #site-header .visati-header__toggle span {
 	background: #FFFFFF !important;
+	display: block !important;
+	width: 20px !important;
 	height: 2px !important;
 	border-radius: 2px !important;
+}
+/* Hide hamburger on desktop */
+@media ( min-width: 1024px ) {
+	#site-header .visati-header__toggle { display: none !important; }
 }
 
 /* Override hello-elementor reset bare <a> color on header links */
@@ -1144,12 +1469,1160 @@ body .visati-page [type="reset"]:hover {
 }
 
 /* Override pink links (#c36) from hello-elementor reset.css
-   Only target content area links, not admin or system links.
-   NOTE: Don't use !important here to preserve header/footer specific styles.
-   Only target .visati-page content links, excluding styled components. */
+   Use navy for all content links. */
 .visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a) {
-	color: var( --visati-blue );
+	color: var( --visati-navy );
 }
 .visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):hover {
+	color: var( --visati-gold );
+}
+
+/* ─────────────────────────────────────────────────────────
+   ABOUT PAGE
+   ───────────────────────────────────────────────────────── */
+.visati-section-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --visati-gold );
+	margin-bottom: 0.75rem;
+}
+
+/* Hero */
+.visati-about-hero {
+	background: var( --visati-navy );
+	position: relative;
+	overflow: hidden;
+	padding: 7rem 1.5rem 5rem;
+	text-align: center;
+}
+.visati-about-hero__bg {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+.visati-about-hero__ring {
+	position: absolute;
+	border-radius: 50%;
+	border: 1px solid rgba(255,255,255,0.08);
+}
+.visati-about-hero__ring--1 { width: 480px; height: 480px; top: -128px; right: -128px; }
+.visati-about-hero__ring--2 { width: 288px; height: 288px; top: 32px; right: -64px; }
+.visati-about-hero__ring--3 { width: 256px; height: 256px; bottom: -80px; left: -80px; }
+.visati-about-hero__inner {
+	position: relative;
+	max-width: 800px;
+	margin: 0 auto;
+}
+.visati-about-hero__label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --visati-gold );
+	margin-bottom: 1rem;
+}
+.visati-about-hero__title {
+	font-size: clamp(2rem, 5vw, 3.5rem);
+	font-weight: 700;
+	color: #fff;
+	line-height: 1.15;
+	margin: 0 0 1.5rem;
+}
+.visati-about-hero__desc {
+	font-size: 1rem;
+	color: rgba(255,255,255,0.6);
+	line-height: 1.7;
+	max-width: 640px;
+	margin: 0 auto 2.5rem;
+}
+.visati-about-hero__btns {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+/* Stats */
+.visati-about-stats {
+	border-bottom: 1px solid rgba(10,22,40,0.08);
+}
+.visati-about-stats__grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+}
+.visati-about-stats__item {
+	padding: 2.5rem 1.5rem;
+	text-align: center;
+	border-right: 1px solid rgba(10,22,40,0.08);
+}
+.visati-about-stats__item:last-child { border-right: none; }
+.visati-about-stats__number {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
 	color: var( --visati-navy );
+	margin: 0 0 0.25rem;
+}
+.visati-about-stats__label {
+	font-size: 0.875rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0;
+}
+
+/* Mission */
+.visati-about-mission {
+	padding: 5rem 0;
+}
+.visati-about-mission__grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 4rem;
+	align-items: center;
+}
+.visati-about-mission__title {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-ink );
+	line-height: 1.2;
+	margin: 0 0 1.5rem;
+}
+.visati-about-mission__text {
+	font-size: 0.95rem;
+	color: rgba(26,26,46,0.6);
+	line-height: 1.7;
+	margin: 0 0 1rem;
+}
+.visati-about-mission__list {
+	list-style: none;
+	padding: 0;
+	margin: 2rem 0 0;
+}
+.visati-about-mission__list li {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	font-size: 0.9rem;
+	color: var( --visati-ink );
+	margin-bottom: 0.75rem;
+}
+.visati-about-mission__list li svg {
+	color: var( --visati-gold );
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+/* Mission visual */
+.visati-about-mission__visual {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+.visati-about-mission__img-wrap {
+	border-radius: 16px;
+	overflow: hidden;
+	height: 208px;
+	position: relative;
+}
+.visati-about-mission__img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+.visati-about-mission__img-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(10,22,40,0.3);
+}
+.visati-about-mission__img-caption {
+	position: absolute;
+	bottom: 1rem;
+	left: 1.25rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: rgba(255,255,255,0.8);
+}
+
+/* Trust card */
+.visati-about-mission__trust {
+	background: var( --visati-navy );
+	border-radius: 16px;
+	padding: 1.75rem;
+	position: relative;
+}
+.visati-about-mission__trust-stars {
+	color: var( --visati-gold );
+	font-size: 0.875rem;
+	margin-bottom: 1rem;
+}
+.visati-about-mission__trust-stars span {
+	color: rgba(255,255,255,0.5);
+	font-size: 0.75rem;
+	margin-left: 0.5rem;
+}
+.visati-about-mission__trust-quote {
+	font-size: 0.9rem;
+	color: #fff;
+	line-height: 1.7;
+	margin: 0 0 1.25rem;
+	font-style: normal;
+}
+.visati-about-mission__trust-author {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding-top: 1.25rem;
+	border-top: 1px solid rgba(255,255,255,0.1);
+}
+.visati-about-mission__trust-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: rgba(201,168,76,0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #fff;
+	flex-shrink: 0;
+}
+.visati-about-mission__trust-name {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #fff;
+	margin: 0;
+}
+.visati-about-mission__trust-role {
+	font-size: 0.75rem;
+	color: rgba(255,255,255,0.5);
+	margin: 0.15rem 0 0;
+}
+.visati-about-mission__trust-badge {
+	position: absolute;
+	bottom: -16px;
+	right: -16px;
+	width: 68px;
+	height: 68px;
+	border-radius: 16px;
+	background: var( --visati-gold );
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 12px rgba(201,168,76,0.3);
+}
+.visati-about-mission__trust-badge-num {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #fff;
+	line-height: 1;
+}
+.visati-about-mission__trust-badge-label {
+	font-size: 0.55rem;
+	color: rgba(255,255,255,0.75);
+	text-align: center;
+	line-height: 1.2;
+	margin-top: 2px;
+}
+
+/* Values */
+.visati-about-values {
+	padding: 4rem 0;
+	background: var( --visati-mist );
+	border-top: 1px solid rgba(10,22,40,0.08);
+	border-bottom: 1px solid rgba(10,22,40,0.08);
+}
+.visati-about-values__header {
+	text-align: center;
+	margin-bottom: 3rem;
+}
+.visati-about-values__title {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-ink );
+	margin: 0;
+}
+.visati-about-values__grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.5rem;
+}
+.visati-about-values__card {
+	background: #fff;
+	border: 1px solid rgba(10,22,40,0.08);
+	border-radius: 16px;
+	padding: 1.75rem;
+}
+.visati-about-values__icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	background: rgba(201,168,76,0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var( --visati-gold );
+	margin-bottom: 1.25rem;
+}
+.visati-about-values__card-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var( --visati-ink );
+	margin: 0 0 0.75rem;
+}
+.visati-about-values__card-body {
+	font-size: 0.9rem;
+	color: rgba(26,26,46,0.6);
+	line-height: 1.7;
+	margin: 0;
+}
+
+/* CTA */
+.visati-about-cta {
+	padding: 5rem 0;
+	text-align: center;
+}
+.visati-about-cta__inner {
+	max-width: 640px;
+	margin: 0 auto;
+}
+.visati-about-cta__label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --visati-gold );
+	margin-bottom: 0.75rem;
+}
+.visati-about-cta__title {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-navy );
+	line-height: 1.2;
+	margin: 0 0 1rem;
+}
+.visati-about-cta__desc {
+	font-size: 0.95rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0 0 2rem;
+}
+.visati-about-cta__btns {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+/* About page responsive */
+@media ( max-width: 768px ) {
+	.visati-about-stats__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.visati-about-stats__item:nth-child(2) { border-right: none; }
+	.visati-about-mission__grid {
+		grid-template-columns: 1fr;
+		gap: 2rem;
+	}
+	.visati-about-values__grid {
+		grid-template-columns: 1fr;
+	}
+	.visati-about-hero { padding: 5rem 1.5rem 3.5rem; }
+	.visati-about-mission__trust-badge { display: none; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   CONTACT PAGE
+   ───────────────────────────────────────────────────────── */
+.visati-contact-page {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 3rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 3rem 1.5rem;
+}
+.visati-contact-page__title {
+	font-size: clamp(2rem, 4vw, 3rem);
+	font-weight: 700;
+	color: var( --visati-ink );
+	margin: 0 0 1rem;
+}
+.visati-contact-page__desc {
+	font-size: 0.95rem;
+	color: rgba(26,26,46,0.6);
+	line-height: 1.7;
+	margin: 0 0 1.5rem;
+	max-width: 480px;
+}
+.visati-contact-page__details {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.5rem;
+	margin-top: 2rem;
+}
+.visati-contact-page__detail {
+	display: flex;
+	gap: 0.75rem;
+}
+.visati-contact-page__detail-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: rgba(201,168,76,0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var( --visati-gold );
+	flex-shrink: 0;
+}
+.visati-contact-page__detail-label {
+	display: block;
+	font-size: 0.7rem;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: rgba(26,26,46,0.5);
+	margin-bottom: 0.25rem;
+}
+.visati-contact-page__detail-value {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var( --visati-ink );
+	text-decoration: none;
+	line-height: 1.5;
+}
+a.visati-contact-page__detail-value:hover { text-decoration: underline; }
+.visati-contact-page__detail-note {
+	display: block;
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.5);
+	margin-top: 0.15rem;
+}
+.visati-contact-page__map {
+	border-radius: 16px;
+	overflow: hidden;
+	height: 224px;
+	border: 1px solid rgba(10,22,40,0.08);
+	margin-top: 1.5rem;
+}
+.visati-contact-page__map iframe {
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+.visati-contact-page__form-card {
+	background: var( --visati-mist );
+	border-radius: 16px;
+	padding: 2rem;
+}
+.visati-contact-page__form-title {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var( --visati-ink );
+	margin: 0 0 0.25rem;
+}
+.visati-contact-page__form-desc {
+	font-size: 0.875rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0 0 1.5rem;
+}
+.visati-contact-page__form-note {
+	text-align: center;
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.5);
+	margin-top: 1rem;
+}
+.visati-btn--whatsapp {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: #25D366;
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.875rem;
+	padding: 0 1.5rem;
+	height: 44px;
+	border-radius: 12px;
+	text-decoration: none;
+	transition: background 0.2s;
+}
+.visati-btn--whatsapp:hover { background: #1fb855; }
+@media ( max-width: 768px ) {
+	.visati-contact-page {
+		grid-template-columns: 1fr;
+	}
+	.visati-contact-page__details {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ─────────────────────────────────────────────────────────
+   TRACK PAGE
+   ───────────────────────────────────────────────────────── */
+.visati-page--track .visati-section {
+	padding: 5rem 0 4rem;
+	text-align: center;
+}
+.visati-page--track .visati-container {
+	max-width: 700px;
+	margin: 0 auto;
+}
+.visati-page--track .visati-eyebrow {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --visati-gold );
+}
+.visati-page--track h1 {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-navy );
+	margin: 0.5rem 0 0.75rem;
+}
+.visati-page--track .visati-track-search {
+	display: flex;
+	gap: 0.75rem;
+	justify-content: center;
+	margin: 2rem 0;
+}
+.visati-page--track .visati-track-search input {
+	flex: 1;
+	max-width: 320px;
+	padding: 0 1.25rem;
+	height: 48px;
+	border: 2px solid rgba(10,22,40,0.1);
+	border-radius: 12px;
+	font-size: 0.95rem;
+	font-family: inherit;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	transition: border-color 0.2s;
+}
+.visati-page--track .visati-track-search input:focus {
+	outline: none;
+	border-color: var( --visati-gold );
+}
+.visati-page--track .visati-track-search .visati-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	height: 48px;
+	padding: 0 1.5rem;
+}
+.visati-track-not-found {
+	text-align: center;
+	padding: 2rem;
+	color: rgba(26,26,46,0.5);
+	background: var( --visati-mist );
+	border-radius: 12px;
+}
+.visati-timeline {
+	text-align: left;
+	margin-top: 1rem;
+}
+.visati-timeline-item {
+	padding: 1rem 0;
+	border-bottom: 1px solid rgba(10,22,40,0.08);
+}
+.visati-timeline-item__status {
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var( --visati-navy );
+	text-transform: capitalize;
+}
+.visati-timeline-item.is-current .visati-timeline-item__status {
+	color: var( --visati-gold );
+}
+.visati-timeline-item__note {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.6);
+	margin-top: 0.25rem;
+}
+.visati-timeline-item__date {
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.4);
+	margin-top: 0.15rem;
+}
+.visati-track-status-badge {
+	display: inline-block;
+	padding: 0.25rem 0.75rem;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: capitalize;
+}
+.visati-track-status-badge.is-approved { background: #dcfce7; color: #166534; }
+.visati-track-status-badge.is-rejected { background: #fee2e2; color: #991b1b; }
+.visati-track-status-badge.is-processing { background: #dbeafe; color: #1e40af; }
+.visati-track-status-badge.is-default { background: rgba(10,22,40,0.08); color: rgba(26,26,46,0.6); }
+
+/* ─────────────────────────────────────────────────────────
+   VISA TYPE ARCHIVE
+   ───────────────────────────────────────────────────────── */
+.visati-page--visa-archive .visati-section {
+	padding: 4rem 0;
+}
+.visati-page--visa-archive .visati-container {
+	max-width: 1100px;
+	margin: 0 auto;
+}
+.visati-visa-archive__header {
+	text-align: center;
+	margin-bottom: 3rem;
+}
+.visati-visa-archive__header h1 {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-navy );
+	margin: 0.5rem 0 0.75rem;
+}
+.visati-visa-archive__header p {
+	font-size: 1rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SINGLE VISA TYPE
+   ───────────────────────────────────────────────────────── */
+.visati-page--visa-single .visati-section {
+	padding: 3rem 0 4rem;
+}
+.visati-page--visa-single .visati-container {
+	max-width: 1100px;
+	margin: 0 auto;
+}
+.visati-visa-single__back {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: rgba(26,26,46,0.5);
+	text-decoration: none;
+	margin-bottom: 1.5rem;
+	transition: color 0.2s;
+}
+.visati-visa-single__back:hover {
+	color: var( --visati-navy );
+}
+.visati-visa-single__header {
+	margin-bottom: 2.5rem;
+}
+.visati-visa-single__header h1 {
+	font-size: clamp(1.75rem, 3vw, 2.25rem);
+	font-weight: 700;
+	color: var( --visati-navy );
+	margin: 0.75rem 0;
+}
+.visati-visa-single__tagline {
+	font-size: 1rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0;
+}
+.visati-visa-single__grid {
+	display: grid;
+	grid-template-columns: 1fr 340px;
+	gap: 3rem;
+	align-items: start;
+}
+.visati-visa-single__content {
+	font-size: 0.95rem;
+	color: rgba(26,26,46,0.7);
+	line-height: 1.7;
+}
+.visati-visa-single__content h2,
+.visati-visa-single__content h3 {
+	color: var( --visati-navy );
+}
+.visati-visa-single__price-card {
+	background: var( --visati-mist );
+	border-radius: 16px;
+	padding: 1.75rem;
+	text-align: center;
+}
+.visati-visa-single__price-label {
+	font-size: 0.8rem;
+	color: rgba(26,26,46,0.5);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.visati-visa-single__price {
+	margin: 0.5rem 0 1.25rem;
+}
+.visati-visa-single__price-aed {
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: var( --visati-navy );
+	display: block;
+}
+.visati-visa-single__price-usd {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.5);
+}
+.visati-visa-single__details,
+.visati-visa-single__need-help {
+	background: var( --visati-mist );
+	border-radius: 16px;
+	padding: 1.5rem;
+	margin-top: 1rem;
+}
+.visati-visa-single__details h3,
+.visati-visa-single__need-help h3 {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var( --visati-navy );
+	margin: 0 0 1rem;
+}
+.visati-visa-single__details dl {
+	margin: 0;
+}
+.visati-visa-single__details dt {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: rgba(26,26,46,0.45);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-top: 0.75rem;
+}
+.visati-visa-single__details dd {
+	font-size: 0.95rem;
+	color: var( --visati-navy );
+	font-weight: 500;
+	margin: 0.15rem 0 0;
+}
+.visati-visa-single__need-help p {
+	font-size: 0.85rem;
+	color: rgba(26,26,46,0.6);
+	margin: 0 0 1rem;
+	line-height: 1.5;
+}
+.visati-btn--whatsapp {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: var( --visati-whatsapp );
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.9rem;
+	padding: 0.75rem 1.5rem;
+	border-radius: 12px;
+	text-decoration: none;
+	transition: opacity 0.2s;
+}
+.visati-btn--whatsapp:hover {
+	opacity: 0.9;
+}
+@media ( max-width: 768px ) {
+	.visati-visa-single__grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ─────────────────────────────────────────────────────────
+   POLICY PAGES (Privacy, Terms, Cookies, Refund)
+   ───────────────────────────────────────────────────────── */
+/* Hero section — rendered by page-policy.php template */
+.visati-policy-hero {
+	background: var( --visati-navy );
+	padding: 6rem 1.5rem 3rem;
+	text-align: center;
+	margin-top: -24px;
+}
+.visati-policy-hero .visati-eyebrow {
+	color: var( --visati-gold );
+}
+.visati-policy-hero h1 {
+	font-size: clamp(1.75rem, 4vw, 2.5rem);
+	font-weight: 700;
+	color: #fff;
+	margin: 0.5rem 0 0.75rem;
+}
+.visati-policy-updated {
+	font-size: 0.85rem;
+	color: rgba(255,255,255,0.5);
+	margin: 0;
+}
+/* Card wrapper for policy pages — rendered by page-policy.php template */
+.visati-policy-card {
+	background: var( --visati-white );
+	border-radius: 20px;
+	box-shadow: 0 4px 24px rgba(10, 22, 40, 0.06), 0 1px 4px rgba(10, 22, 40, 0.03);
+	padding: 3rem;
+	margin: -1.5rem auto 3rem;
+	max-width: 800px;
+	position: relative;
+	z-index: 1;
+}
+/* Force policy card links to stay as text — never buttons */
+.visati-policy-card a,
+.visati-policy-card a:not([class]),
+.visati-policy-card p a,
+.visati-policy-card li a,
+.visati-policy-card span a,
+.elementor-widget-text-editor .visati-policy-card a {
+	background: none !important;
+	background-image: none !important;
+	border: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	box-shadow: none !important;
+	transform: none !important;
+	color: var( --visati-navy ) !important;
+	text-decoration: underline !important;
+	text-underline-offset: 2px !important;
+	font-weight: inherit !important;
+	font-family: inherit !important;
+	display: inline !important;
+	line-height: inherit !important;
+}
+.visati-policy-card a:hover,
+.visati-policy-card p a:hover,
+.visati-policy-card li a:hover {
+	background: none !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	transform: none !important;
+	color: var( --visati-gold ) !important;
+}
+@media ( max-width: 768px ) {
+	.visati-policy-hero {
+		padding: 5rem 1.5rem 2rem;
+	}
+	.visati-policy-card {
+		padding: 1.75rem;
+		margin-top: -1rem;
+		border-radius: 16px;
+	}
+}
+@media ( max-width: 639px ) {
+	.visati-policy-hero {
+		padding: 4rem 1rem 1.5rem;
+	}
+	.visati-policy-card {
+		padding: 1.25rem;
+	}
+}
+
+/* ============================================================
+   GLOBAL MOBILE RESPONSIVE
+   ============================================================ */
+
+/* ── Sticky header: full-width on mobile ─────────────── */
+@media ( max-width: 639px ) {
+	.visati-header.is-scrolled .visati-header__bar {
+		width: 100%;
+		border-radius: 0;
+	}
+	.visati-header.is-scrolled .visati-header__inner {
+		height: 56px;
+		padding: 0.4rem 1rem;
+	}
+	.visati-header__inner {
+		padding: 0.4rem 1rem;
+	}
+	.visati-header__logo {
+		height: 22px !important;
+		max-width: 100px !important;
+	}
+	.visati-header__wordmark {
+		font-size: 1rem;
+	}
+	.visati-header__tagline {
+		display: none;
+	}
+}
+
+/* ── Track page mobile ───────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-page--track .visati-section {
+		padding: 3rem 0 2rem;
+	}
+	.visati-page--track .visati-track-search {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+		margin: 1.5rem 0;
+	}
+	.visati-page--track .visati-track-search input {
+		max-width: 100%;
+		width: 100%;
+		height: 48px;
+	}
+	.visati-page--track .visati-track-search .visati-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* ── Single visa type mobile ─────────────────────────── */
+@media ( max-width: 768px ) {
+	.visati-visa-single__grid {
+		grid-template-columns: 1fr;
+		gap: 2rem;
+	}
+	.visati-visa-single__header {
+		margin-bottom: 1.5rem;
+	}
+	.visati-visa-single__price-card {
+		padding: 1.25rem;
+	}
+	.visati-visa-single__details,
+	.visati-visa-single__need-help {
+		padding: 1.25rem;
+	}
+}
+@media ( max-width: 639px ) {
+	.visati-visa-single__back {
+		margin-bottom: 1rem;
+		font-size: 0.8rem;
+	}
+}
+
+/* ── Visa archive mobile ─────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-page--visa-archive .visati-section {
+		padding: 2.5rem 0;
+	}
+	.visati-visa-archive__header {
+		margin-bottom: 2rem;
+	}
+	.visati-visa-archive__header h1 {
+		font-size: 1.5rem;
+	}
+}
+
+/* ── Policy pages mobile ─────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-page--policy .visati-section {
+		padding: 2.5rem 0;
+	}
+	.visati-page--policy .visati-container {
+		padding: 0 1rem;
+	}
+	.visati-page--policy h1 {
+		font-size: 1.5rem;
+	}
+	.visati-page--policy h2 {
+		font-size: 1.1rem;
+		margin: 1.5rem 0 0.5rem;
+	}
+	.visati-page--policy p,
+	.visati-page--policy li {
+		font-size: 0.9rem;
+	}
+}
+
+/* ── Hero / Quick-Apply mobile ───────────────────────── */
+@media ( max-width: 639px ) {
+	[data-id="hero-row"] {
+		padding-left: 1rem !important;
+		padding-right: 1rem !important;
+		gap: 2rem !important;
+	}
+	[data-id="hero-row"] > [data-id="c5d2869"] {
+		flex: 0 0 auto !important;
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+	.visati-qa-card {
+		max-width: 100%;
+		padding: 1.25rem;
+	}
+}
+
+/* ── FAQ mobile ──────────────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-faq-layout {
+		flex-direction: column;
+		gap: 2rem;
+		padding: 0 1rem;
+	}
+	.visati-faq-heading {
+		position: static;
+		flex: none;
+		width: 100%;
+	}
+	.visati-faq-title {
+		font-size: 1.75rem;
+	}
+	.visati-faq-search {
+		padding: 0.75rem 1rem;
+		font-size: 0.9rem;
+	}
+	.visati-faq-categories {
+		gap: 0.35rem;
+	}
+	.visati-faq-cat-btn {
+		padding: 0.35rem 0.75rem;
+		font-size: 0.75rem;
+	}
+	.visati-faq-item__q {
+		padding: 0.9rem 1rem;
+		font-size: 0.9rem;
+	}
+	.visati-faq-item.is-open .visati-faq-item__q {
+		padding: 0.9rem 1rem;
+	}
+	.visati-faq-item__a {
+		padding: 0 1rem 1rem;
+		font-size: 0.85rem;
+	}
+}
+
+/* ── Testimonials mobile ─────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-testimonials-track {
+		gap: 1rem;
+		padding-left: 1rem;
+		scroll-padding-left: 1rem;
+	}
+	.visati-testimonial-card {
+		min-width: 280px;
+		max-width: 300px;
+		padding: 1.25rem;
+	}
+	.visati-testimonials-arrow--prev {
+		left: -8px;
+	}
+	.visati-testimonials-arrow--next {
+		right: -8px;
+	}
+	.visati-testimonials-arrow {
+		width: 36px;
+		height: 36px;
+	}
+}
+
+/* ── Footer mobile ───────────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-footer {
+		padding-top: 2.5rem;
+		padding-bottom: 1.25rem;
+	}
+	.visati-footer__inner {
+		gap: 2rem;
+	}
+	.visati-footer__brand-text {
+		gap: 0;
+	}
+	.visati-footer__wordmark {
+		font-size: 1.1rem;
+	}
+	.visati-footer__desc {
+		max-width: 100%;
+		font-size: 0.8rem;
+	}
+	.visati-footer__social {
+		gap: 0.4rem;
+	}
+	.visati-footer__social-link {
+		width: 32px;
+		height: 32px;
+	}
+	.visati-footer__heading {
+		font-size: 0.65rem;
+	}
+	.visati-footer__link {
+		font-size: 0.8rem;
+	}
+	.visati-footer__contact-row {
+		font-size: 0.8rem;
+	}
+	.visati-footer__bottom {
+		padding-top: 1rem;
+		margin-top: 1.5rem;
+	}
+	.visati-footer__copy {
+		font-size: 0.7rem;
+	}
+	.visati-footer__legal {
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+	.visati-footer__legal a {
+		font-size: 0.65rem;
+	}
+}
+
+/* ── Contact page mobile ─────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-contact-page {
+		padding: 2rem 1rem;
+		gap: 2rem;
+	}
+	.visati-contact-page__title {
+		font-size: 1.5rem;
+	}
+	.visati-contact-page__form-card {
+		padding: 1.25rem;
+	}
+	.visati-contact-page__map {
+		height: 180px;
+	}
+}
+
+/* ── About page mobile ───────────────────────────────── */
+@media ( max-width: 639px ) {
+	.visati-about-hero {
+		padding: 4rem 1rem 2.5rem;
+	}
+	.visati-about-hero__title {
+		font-size: 1.75rem;
+	}
+	.visati-about-hero__desc {
+		font-size: 0.9rem;
+	}
+	.visati-about-hero__btns {
+		flex-direction: column;
+		align-items: center;
+	}
+	.visati-about-stats__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.visati-about-stats__item {
+		padding: 1.5rem 1rem;
+	}
+	.visati-about-stats__number {
+		font-size: 1.5rem;
+	}
+	.visati-about-stats__label {
+		font-size: 0.8rem;
+	}
+	.visati-about-mission {
+		padding: 3rem 0;
+	}
+	.visati-about-mission__grid {
+		gap: 2rem;
+	}
+	.visati-about-mission__title {
+		font-size: 1.5rem;
+	}
+	.visati-about-values {
+		padding: 2.5rem 0;
+	}
+	.visati-about-values__grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+	.visati-about-values__card {
+		padding: 1.25rem;
+	}
+	.visati-about-cta {
+		padding: 3rem 0;
+	}
+	.visati-about-cta__title {
+		font-size: 1.5rem;
+	}
+	.visati-about-cta__btns {
+		flex-direction: column;
+		align-items: center;
+	}
 }

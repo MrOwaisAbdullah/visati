@@ -19,8 +19,16 @@
 
 	var backBtn   = form.querySelector( '[data-action=back]' );
 	var nextBtn   = form.querySelector( '[data-action=next]' );
-	var submitBtn = form.querySelector( '[data-action=submit]' );
 	var errorBox  = form.querySelector( '.visati-error' );
+	var origNextText = nextBtn.textContent;
+	var draftPromise = null;
+	var activeUploads = 0;
+
+	/* ── Traveler DOM refs (declared early so formData can use them) ── */
+	var travelersSection = form.querySelector( '[data-travelers]' );
+	var travelersList    = form.querySelector( '[data-travelers-list]' );
+	var travelersAdd     = form.querySelector( '[data-travelers-add]' );
+	var travelerCount    = 0;
 
 	function showError( msg ) {
 		errorBox.textContent = msg;
@@ -43,17 +51,33 @@
 			progress.style.width = ( ( ( n - 1 ) / 3 ) * 75 ) + '%';
 		}
 		backBtn.hidden   = n === 1;
-		nextBtn.hidden   = n === total;
-		submitBtn.hidden = n !== total;
 		errorBox.hidden  = true;
 		if ( n === total ) {
 			renderReview();
+			nextBtn.textContent = 'Submit & Pay';
+			nextBtn.className = 'visati-btn visati-btn--navy';
+		} else {
+			nextBtn.textContent = origNextText;
+			nextBtn.type = 'button';
+			nextBtn.className = 'visati-btn';
 		}
 		window.scrollTo( { top: form.offsetTop - 24, behavior: 'smooth' } );
 	}
 
 	function validateStep( n ) {
 		var section = form.querySelector( '.visati-step[data-step="' + n + '"]' );
+
+		/* Step 3: check uploaded docs */
+		if ( n === 3 ) {
+			var hasPassport = docs.some( function ( d ) { return d.doc_type === 'passport_copy'; } );
+			var hasPhoto    = docs.some( function ( d ) { return d.doc_type === 'photo'; } );
+			if ( ! hasPassport || ! hasPhoto ) {
+				showError( 'Please upload passport copy and photo.' );
+				return false;
+			}
+			return true;
+		}
+
 		var required = section.querySelectorAll( '[required]' );
 		for ( var i = 0; i < required.length; i++ ) {
 			var el = required[ i ];
@@ -138,11 +162,105 @@
 	}
 	Array.prototype.forEach.call( form.querySelectorAll( '[data-combobox]' ), initCombobox );
 
+	/* ── Traveler helpers ─────────────────────────────── */
+	function getVisaData( slug ) {
+		var visas = ( window.visatiApply && window.visatiApply.visas ) || {};
+		var visa  = visas[ slug ];
+		if ( ! visa ) { return null; }
+		/* Fallback: check visa name for multi-entry keywords if meta is empty */
+		if ( visa.entry_type !== 'multi' && visa.name ) {
+			var lower = visa.name.toLowerCase();
+			if ( lower.indexOf( 'multi' ) !== -1 || lower.indexOf( 'multiple' ) !== -1 ) {
+				visa.entry_type = 'multi';
+			}
+		}
+		return visa;
+	}
+
+	function isMultiEntry( slug ) {
+		var visa = getVisaData( slug );
+		return visa && visa.entry_type === 'multi';
+	}
+
+	function updateTravelersVisibility() {
+		var visaSelect = form.querySelector( 'select[name="visa_type_slug"]' );
+		if ( ! visaSelect || ! travelersSection ) { return; }
+		if ( isMultiEntry( visaSelect.value ) ) {
+			travelersSection.hidden = false;
+		} else {
+			travelersSection.hidden = true;
+			travelersList.innerHTML = '';
+			travelerCount = 0;
+		}
+	}
+
+	function addTravelerCard() {
+		travelerCount++;
+		var n = travelerCount;
+		var card = document.createElement( 'div' );
+		card.className = 'visati-traveler-card';
+		card.dataset.travelerCard = n;
+		card.innerHTML =
+			'<div class="visati-traveler-card__header">' +
+				'<span class="visati-traveler-card__num">Traveler ' + n + '</span>' +
+				'<button type="button" class="visati-traveler-card__remove" data-remove-traveler="' + n + '">Remove</button>' +
+			'</div>' +
+			'<div class="visati-grid">' +
+				'<label class="visati-field">Relationship' +
+					'<select name="traveler_' + n + '_relationship" required>' +
+						'<option value="">Select…</option>' +
+						'<option value="wife">Wife</option>' +
+						'<option value="son">Son</option>' +
+						'<option value="daughter">Daughter</option>' +
+						'<option value="father">Father</option>' +
+						'<option value="mother">Mother</option>' +
+						'<option value="brother">Brother</option>' +
+						'<option value="sister">Sister</option>' +
+						'<option value="other">Other</option>' +
+					'</select>' +
+				'</label>' +
+				'<label class="visati-field">Full name<input name="traveler_' + n + '_name" required placeholder="As in passport"></label>' +
+				'<label class="visati-field">Passport number<input name="traveler_' + n + '_passport" required placeholder="e.g. A1234567" class="visati-mono"></label>' +
+				'<label class="visati-field">Date of birth<input type="date" name="traveler_' + n + '_dob" required></label>' +
+			'</div>';
+		travelersList.appendChild( card );
+
+		card.querySelector( '[data-remove-traveler]' ).addEventListener( 'click', function () {
+			card.remove();
+		} );
+	}
+
+	if ( travelersAdd ) {
+		travelersAdd.addEventListener( 'click', addTravelerCard );
+	}
+
 	/* ── Draft + upload ───────────────────────────────── */
 	function formData() {
 		var fd = new FormData( form );
 		var o = {};
-		fd.forEach( function ( v, k ) { o[ k ] = v; } );
+		fd.forEach( function ( v, k ) {
+			if ( v instanceof File ) { return; }
+			o[ k ] = v;
+		} );
+
+		/* Collect traveler cards into an array */
+		if ( travelersList ) {
+			var cards   = travelersList.querySelectorAll( '.visati-traveler-card' );
+			var travelers = [];
+			cards.forEach( function ( card ) {
+				var rel  = card.querySelector( 'select[name$="_relationship"]' );
+				var name = card.querySelector( 'input[name$="_name"]' );
+				var pass = card.querySelector( 'input[name$="_passport"]' );
+				var dob  = card.querySelector( 'input[name$="_dob"]' );
+				travelers.push( {
+					relationship: rel ? rel.value : '',
+					name:         name ? name.value : '',
+					passport:     pass ? pass.value : '',
+					dob:          dob ? dob.value : '',
+				} );
+			} );
+			o.travelers = travelers;
+		}
 		return o;
 	}
 
@@ -155,11 +273,13 @@
 			} );
 			var j = await r.json();
 			if ( ! r.ok ) {
+				console.error( 'Visati draft creation failed:', j );
 				showError( j.message || 'Could not start application.' );
 				return null;
 			}
 			return j.id;
 		} catch ( e ) {
+			console.error( 'Visati draft creation network error:', e );
 			showError( 'Network error.' );
 			return null;
 		}
@@ -169,8 +289,25 @@
 		if ( appId ) {
 			return appId;
 		}
-		appId = await createDraft();
+		if ( draftPromise ) {
+			return draftPromise;
+		}
+		draftPromise = createDraft();
+		appId = await draftPromise;
+		draftPromise = null;
 		return appId;
+	}
+
+	function setLoading( btn, loading, text ) {
+		if ( loading ) {
+			btn.disabled = true;
+			btn.dataset.origText = btn.textContent;
+			btn.innerHTML = '<span class="visati-spinner"></span> ' + ( text || btn.textContent );
+		} else {
+			btn.disabled = false;
+			btn.textContent = btn.dataset.origText || text || origNextText;
+			delete btn.dataset.origText;
+		}
 	}
 
 	async function uploadFile( input ) {
@@ -178,12 +315,39 @@
 		if ( ! file ) {
 			return;
 		}
+		var docType = input.dataset.docType || 'document';
+		var box = form.querySelector( '[data-doc-box="' + docType + '"]' );
+		if ( box ) {
+			var nameEl = box.querySelector( '[data-doc-name]' );
+			if ( nameEl ) { nameEl.textContent = file.name; }
+			box.classList.add( 'is-filled' );
+			var icon = box.querySelector( 'svg' );
+			if ( file.type && file.type.match( /^image\// ) ) {
+				var reader = new FileReader();
+				reader.onload = function ( ev ) {
+					var preview = box.querySelector( '.visati-doc-upload__preview' );
+					if ( ! preview ) {
+						preview = document.createElement( 'img' );
+						preview.className = 'visati-doc-upload__preview';
+						box.insertBefore( preview, box.firstChild );
+					}
+					preview.src = ev.target.result;
+					if ( icon ) { icon.style.display = 'none'; }
+				};
+				reader.readAsDataURL( file );
+			} else {
+				if ( icon ) { icon.style.display = ''; }
+			}
+		}
 		if ( ! ( await ensureDraft() ) ) {
+			if ( box ) { box.classList.remove( 'is-filled' ); }
 			return;
 		}
+		activeUploads++;
+		setLoading( nextBtn, true, 'Uploading…' );
 		var fd = new FormData();
 		fd.append( 'application_id', appId );
-		fd.append( 'document_type', input.dataset.docType || 'document' );
+		fd.append( 'document_type', docType );
 		fd.append( 'document', file );
 		try {
 			var r = await fetch( restUrl + '/documents', {
@@ -193,16 +357,22 @@
 			} );
 			var j = await r.json();
 			if ( ! r.ok ) {
+				console.error( 'Visati document upload failed:', j );
 				showError( j.message || 'Upload failed.' );
-				return;
+				if ( box ) { box.classList.remove( 'is-filled' ); }
+			} else {
+				docs.push( { filename: j.filename, doc_type: docType } );
+				console.log( 'Visati doc uploaded:', docType, j.filename, '— docs array now has', docs.length, 'items' );
 			}
-			docs.push( { filename: j.filename, doc_type: input.dataset.docType } );
-			var li = document.createElement( 'li' );
-			li.textContent = '✓ ' + j.filename;
-			form.querySelector( '.visati-doc-list' ).appendChild( li );
-			input.value = '';
 		} catch ( e ) {
+			console.error( 'Visati document upload network error:', e );
 			showError( 'Network error during upload.' );
+			if ( box ) { box.classList.remove( 'is-filled' ); }
+		}
+		activeUploads--;
+		if ( activeUploads <= 0 ) {
+			activeUploads = 0;
+			setLoading( nextBtn, false );
 		}
 	}
 
@@ -210,9 +380,14 @@
 		var d = formData();
 		var dl = form.querySelector( '.visati-review' );
 		dl.innerHTML = '';
+		var visaName = d.visa_type_slug || 'N/A';
+		var visas = ( window.visatiApply && window.visatiApply.visas ) || {};
+		if ( visas[ d.visa_type_slug ] && visas[ d.visa_type_slug ].name ) {
+			visaName = visas[ d.visa_type_slug ].name;
+		}
 		var rows = [
-			[ 'Visa', d.visa_type_slug ],
-			[ 'Processing', d.processing_tier ],
+			[ 'Visa', visaName ],
+			[ 'Processing', d.processing_tier === 'express' ? 'Express (12-24h)' : 'Standard (1-3 days)' ],
 			[ 'Name', d.given_name + ' ' + d.surname ],
 			[ 'Nationality', d.nationality ],
 			[ 'Passport', d.passport_number ],
@@ -228,10 +403,89 @@
 			dl.appendChild( dt );
 			dl.appendChild( dd );
 		} );
+
+		/* Travelers */
+		if ( travelersList ) {
+			var cards = travelersList.querySelectorAll( '.visati-traveler-card' );
+			if ( cards.length > 0 ) {
+				var tDt = document.createElement( 'dt' );
+				tDt.textContent = 'Travelers';
+				var tDd = document.createElement( 'dd' );
+				var tLines = [];
+				cards.forEach( function ( card, i ) {
+					var rel   = card.querySelector( 'select[name$="_relationship"]' );
+					var tName = card.querySelector( 'input[name$="_name"]' );
+					var pass  = card.querySelector( 'input[name$="_passport"]' );
+					var dob   = card.querySelector( 'input[name$="_dob"]' );
+					tLines.push( ( i + 1 ) + '. ' + ( rel ? rel.value : '' ) + ' — ' + ( tName ? tName.value : '' ) + ', Passport: ' + ( pass ? pass.value : '' ) + ', DOB: ' + ( dob ? dob.value : '' ) );
+				} );
+				tDd.textContent = tLines.join( '; ' );
+				dl.appendChild( tDt );
+				dl.appendChild( tDd );
+			}
+		}
+	}
+
+	/* ── WhatsApp message builder ──────────────────────── */
+	function buildWhatsAppMessage() {
+		var d = formData();
+		var visaName = d.visa_type_slug || 'N/A';
+		var visas = ( window.visatiApply && window.visatiApply.visas ) || {};
+		if ( visas[ d.visa_type_slug ] && visas[ d.visa_type_slug ].name ) {
+			visaName = visas[ d.visa_type_slug ].name;
+		}
+		var lines = [
+			'*Visa Application Inquiry*',
+			'',
+			'*Visa Type:* ' + visaName,
+			'*Processing:* ' + ( d.processing_tier === 'express' ? 'Express (12-24h)' : 'Standard (1-3 days)' ),
+			'',
+			'*Name:* ' + d.given_name + ' ' + d.surname,
+			'*Nationality:* ' + d.nationality,
+			'*Passport:* ' + d.passport_number,
+			'*Date of Birth:* ' + d.date_of_birth,
+			'*Passport Expiry:* ' + d.passport_expiry,
+			'*Travel Date:* ' + d.travel_date,
+			'*Email:* ' + ( d.applicant_email || '—' ),
+		];
+		if ( travelersList ) {
+			var cards = travelersList.querySelectorAll( '.visati-traveler-card' );
+			if ( cards.length > 0 ) {
+				lines.push( '', '*Travelers (' + cards.length + '):*' );
+				cards.forEach( function ( card, i ) {
+					var rel  = card.querySelector( 'select[name$="_relationship"]' );
+					var tName = card.querySelector( 'input[name$="_name"]' );
+					var pass = card.querySelector( 'input[name$="_passport"]' );
+					var dob  = card.querySelector( 'input[name$="_dob"]' );
+					lines.push( ( i + 1 ) + '. ' + ( rel ? rel.value : '' ) + ' — ' + ( tName ? tName.value : '' ) + ', Passport: ' + ( pass ? pass.value : '' ) + ', DOB: ' + ( dob ? dob.value : '' ) );
+				} );
+			}
+		}
+		lines.push( '', '*Documents:* ' + ( docs.map( function ( x ) { return x.filename; } ).join( ', ' ) || 'None uploaded yet' ) );
+		return lines.join( '\n' );
+	}
+
+	var whatsappBtn = form.querySelector( '[data-action="whatsapp"]' );
+	if ( whatsappBtn ) {
+		whatsappBtn.addEventListener( 'click', function ( e ) {
+			var number = ( window.visatiApply && window.visatiApply.whatsapp_number ) || '';
+			if ( ! number ) {
+				e.preventDefault();
+				showError( 'WhatsApp number not configured. Please contact us directly.' );
+				return;
+			}
+			var msg = buildWhatsAppMessage();
+			var clean = number.replace( /[^0-9]/g, '' );
+			whatsappBtn.href = 'https://wa.me/' + clean + '?text=' + encodeURIComponent( msg );
+		} );
 	}
 
 	/* ── Nav + submit ─────────────────────────────────── */
 	nextBtn.addEventListener( 'click', function () {
+		if ( current === total ) {
+			form.requestSubmit();
+			return;
+		}
 		if ( validateStep( current ) && current < total ) {
 			showStep( current + 1 );
 		}
@@ -241,19 +495,89 @@
 			showStep( current - 1 );
 		}
 	} );
+
+	/* File inputs: change → upload. Use unique names to avoid FormData collisions. */
 	Array.prototype.forEach.call( form.querySelectorAll( 'input[type=file]' ), function ( input ) {
-		input.addEventListener( 'change', function () { uploadFile( input ); } );
+		input.addEventListener( 'change', function () {
+			uploadFile( input );
+			/* Reset input so re-uploading the same file triggers change */
+			input.value = '';
+		} );
 	} );
+
 	form.addEventListener( 'submit', async function ( e ) {
 		e.preventDefault();
 		if ( ! ( await ensureDraft() ) ) {
 			return;
 		}
-		submitBtn.disabled = true;
-		submitBtn.textContent = 'Preparing payment…';
-		showError( 'Application ' + appId + ' ready. Stripe payment handoff is wired in the next step.' );
-		submitBtn.disabled = false;
-		submitBtn.textContent = 'Submit & Pay';
+		setLoading( nextBtn, true, 'Preparing payment…' );
+
+		try {
+			var resp = await fetch( visatiApply.restUrl + '/checkout-session', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': visatiApply.nonce,
+				},
+				body: JSON.stringify( { application_id: appId } ),
+			} );
+			var data = await resp.json();
+
+			if ( data.url ) {
+				window.location.href = data.url;
+			} else {
+				showError( data.message || 'Payment setup failed. Please try again.' );
+				setLoading( nextBtn, false, 'Submit & Pay' );
+			}
+		} catch ( err ) {
+			showError( 'Network error. Please try again.' );
+			setLoading( nextBtn, false, 'Submit & Pay' );
+		}
+	} );
+
+	/* ── Visa type change → show/hide travelers ────────── */
+	var visaSelect = form.querySelector( 'select[name="visa_type_slug"]' );
+	if ( visaSelect ) {
+		visaSelect.addEventListener( 'change', updateTravelersVisibility );
+	}
+
+	/* ── Pre-select from URL params (?visa=&nationality=) ── */
+	(function () {
+		var params = new URLSearchParams( window.location.search );
+		var visaParam = params.get( 'visa' );
+		if ( visaParam && visaSelect ) {
+			var opt = visaSelect.querySelector( 'option[value="' + visaParam + '"]' );
+			if ( opt ) {
+				visaSelect.value = visaParam;
+			}
+		}
+		var natParam = params.get( 'nationality' );
+		if ( natParam ) {
+			var natInput = form.querySelector( 'input[name="nationality"]' );
+			if ( natInput ) {
+				natInput.value = natParam;
+				var cb = natInput.closest( '[data-combobox]' );
+				if ( cb ) {
+					var textEl = cb.querySelector( '[data-combobox-text]' );
+					var flagEl = cb.querySelector( '[data-combobox-flag]' );
+					if ( textEl ) { textEl.textContent = natParam; }
+					if ( flagEl ) { flagEl.innerHTML = '<img src="https://flagcdn.com/' + natParam.toLowerCase() + '.svg" alt="" width="20" height="14">'; }
+					var btn = cb.querySelector( '[data-combobox-button]' );
+					if ( btn ) { btn.classList.add( 'is-filled' ); }
+				}
+			}
+		}
+		/* Apply travelers visibility AFTER pre-select sets visa value */
+		updateTravelersVisibility();
+	})();
+
+	/* ── Upload boxes: click to open file dialog ────────────────────── */
+	Array.prototype.forEach.call( form.querySelectorAll( '[data-doc-box]' ), function ( box ) {
+		box.addEventListener( 'click', function ( e ) {
+			if ( e.target.tagName === 'INPUT' ) { return; }
+			var input = box.querySelector( 'input[type=file]' );
+			if ( input ) { input.click(); }
+		} );
 	} );
 
 	showStep( 1 );

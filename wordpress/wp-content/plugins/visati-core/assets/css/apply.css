@@ -436,3 +436,180 @@
 	margin-top: 1rem;
 	margin-bottom: 0;
 }
+
+/* ── Required / Optional labels ───────────────────────── */
+.visati-field__required {
+	color: #e74c3c;
+	font-weight: 700;
+}
+.visati-field__optional {
+	color: #999;
+	font-weight: 400;
+	font-size: 0.75rem;
+}
+
+/* ── Document upload boxes ────────────────────────────── */
+.visati-doc-upload {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+.visati-doc-upload__field {
+	margin-bottom: 1rem;
+}
+.visati-doc-upload__field .visati-field__label {
+	margin-bottom: 0.35rem;
+}
+.visati-doc-upload__box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 1.5rem 1rem;
+	border: 2px dashed rgba(10, 22, 40, 0.15);
+	border-radius: 12px;
+	background: #fafbfd;
+	cursor: pointer;
+	transition: border-color 0.2s, background 0.2s;
+	text-align: center;
+	min-height: 100px;
+}
+.visati-doc-upload__box:hover {
+	border-color: var(--visati-gold, #C9A84C);
+	background: rgba(201, 168, 76, 0.04);
+}
+.visati-doc-upload__box svg {
+	color: rgba(10, 22, 40, 0.3);
+	flex-shrink: 0;
+}
+.visati-doc-upload__text {
+	font-size: 0.85rem;
+	color: rgba(10, 22, 40, 0.45);
+	font-weight: 400;
+	font-family: "Inter", sans-serif;
+}
+.visati-doc-upload__name {
+	font-size: 0.8rem;
+	color: var(--visati-navy, #0A1628);
+	font-weight: 600;
+	word-break: break-all;
+}
+.visati-doc-upload__box.is-filled {
+	border-style: solid !important;
+	border-color: var(--visati-gold, #C9A84C) !important;
+	background: rgba(201, 168, 76, 0.06) !important;
+	flex-direction: row !important;
+	justify-content: flex-start !important;
+	align-items: center !important;
+	gap: 0.75rem;
+	padding: 1rem;
+	min-height: auto;
+}
+.visati-doc-upload__box.is-filled .visati-doc-upload__text {
+	display: none !important;
+}
+.visati-doc-upload__box.is-filled svg {
+	color: var(--visati-gold, #C9A84C);
+}
+.visati-doc-upload__preview {
+	width: 60px;
+	height: 60px;
+	object-fit: contain;
+	border-radius: 8px;
+	border: 1px solid rgba(10, 22, 40, 0.1);
+	flex-shrink: 0;
+}
+.visati-doc-note {
+	font-size: 0.78rem;
+	color: rgba(26, 26, 46, 0.45);
+	margin-top: 0.5rem;
+	line-height: 1.5;
+}
+
+/* ── Travelers section ────────────────────────────────── */
+.visati-travelers {
+	margin-top: 1.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid rgba(10, 22, 40, 0.08);
+}
+.visati-travelers__title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--visati-ink, #1A1A2E);
+	margin: 0 0 0.25rem;
+}
+.visati-travelers__desc {
+	font-size: 0.82rem;
+	color: rgba(26, 26, 46, 0.5);
+	margin: 0 0 1rem;
+}
+.visati-travelers__add {
+	margin-top: 0.75rem;
+}
+.visati-traveler-card {
+	background: #f8f9fb;
+	border: 1px solid rgba(10, 22, 40, 0.08);
+	border-radius: 12px;
+	padding: 1rem;
+	margin-bottom: 0.75rem;
+	position: relative;
+}
+.visati-traveler-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.75rem;
+}
+.visati-traveler-card__num {
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--visati-navy, #0A1628);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.visati-traveler-card__remove {
+	background: none;
+	border: none;
+	color: #e74c3c;
+	cursor: pointer;
+	font-size: 0.78rem;
+	font-weight: 600;
+	padding: 0;
+	font-family: inherit;
+}
+.visati-traveler-card__remove:hover {
+	text-decoration: underline;
+}
+.visati-traveler-card .visati-grid {
+	gap: 0.75rem;
+}
+
+/* ── Review step actions ──────────────────────────────── */
+.visati-review__actions {
+	margin-top: 1.25rem;
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+.visati-btn--whatsapp {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.25rem;
+	background: #25D366;
+	color: #fff;
+	border: none;
+	border-radius: 20px;
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 0.9rem;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.2s, transform 0.2s;
+}
+.visati-btn--whatsapp:hover {
+	background: #1fb855;
+	color: #fff;
+	transform: translateY(-1px);
+}

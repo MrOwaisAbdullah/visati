@@ -40,7 +40,11 @@ if ( '' === $copyright ) {
 		} ?>
 		<div class="visati-footer__brand">
 			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="visati-footer__brand-link" aria-label="<?php echo esc_attr( $site_name ); ?> home">
-				<img src="<?php echo esc_url( $footer_logo_url ); ?>" alt="<?php echo esc_attr( $site_name ); ?>" height="40" class="visati-footer__logo">
+				<img src="<?php echo esc_url( $footer_logo_url ); ?>" alt="" height="40" width="29" class="visati-footer__logo">
+				<div class="visati-footer__brand-text">
+					<span class="visati-footer__wordmark"><?php echo esc_html( $site_name ); ?></span>
+					<span class="visati-footer__tagline"><?php echo esc_html( $tagline ); ?></span>
+				</div>
 			</a>
 			<p class="visati-footer__desc"><?php echo esc_html( $desc ); ?></p>
 			<div class="visati-footer__social">
