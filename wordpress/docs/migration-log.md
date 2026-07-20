@@ -189,7 +189,7 @@
 **Phase 2 — Chunk 5 (Options page + global chrome):** ✅ Done + verified. `Visati_Core_Admin_Settings` (top-level "Visati" admin menu; nonce + capability + sanitize + PRG save → `visati_core_settings`; field groups: WhatsApp/contact, announcement bar, tracking, social — **secrets excluded**, those stay in `wp-config.php`). Global chrome injected via action hooks (no `header.php` override = low risk): `wp_body_open` → announcement bar (`template-parts/announcement-bar.php`, cookie-dismiss + end-date), `wp_footer` → floating WhatsApp widget (`template-parts/whatsapp-widget.php`, `wa.me` deep-link). **Verified:** admin class loads; homepage HTTP 200; chrome markup present (`id="visati-announcement"`, `Test announcement`, `visati-whatsapp-fab`, `wa.me/971500000000`). **🎉 PHASE 2 (Foundational) COMPLETE.** ⏳ Next: Phase 3 — US1 (5-step apply form + draft + R2 document upload) — needs R2 test keys for step 3.
 
 **Post-checkpoint — `.env.local` integration + live verification:** ✅ The plugin now reuses the Next.js `.env.local` as the **single source of secrets**. `Visati_Core_Env_Loader` (dependency-free dotenv; path via `VISATI_ENV_FILE` constant → `D:/GIAIC/Visati/.env.local`; real env vars win over file values). `Visati_Core_Settings` reads `getenv()` first, then wp-config `VISATI_*` constants (mapped: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `ADMIN_NOTIFICATION_EMAIL`, `EXPRESS_SURCHARGE_AED`). wp-config edited (Local, outside repo): `define('VISATI_ENV_FILE','D:/GIAIC/Visati/.env.local')`. **R2 + Stripe now VERIFIED LIVE:** R2 SigV4 round-trip (upload → presigned GET **200 body-matches** → delete) ✅; Stripe HMAC self-signed **OK** + tampered **rejected** ✅. Secrets were never printed (status-only checks). **The "needs test keys" blocker is fully resolved — Phase 3 is unblocked.**
-- [ ] Phases 3–12 (US1–US10), Phase 13 (polish/deploy).
+- [~] **Phases 3–12 (US1–US10):** ✅ US1–US10 core complete. US1 (apply form), US2 (Stripe), US3 (tracking), US4 (visa types), US5 (homepage), US6 (admin apps), US7 (admin inquiries), US8 (contact/WhatsApp), US9 (FAQ), US10 (CMS content) all functional. Deferred: EMCP page builds (T041, T045, T053). ⏳ Phase 13 polish + deploy.
 
 ---
 
@@ -667,3 +667,98 @@ Google retired FAQ rich results for all sites **May 7, 2026**. The `[visati_faq]
   - `de003fd` (End-to-end handling): `fa-list-check` → `fa-tasks`
 - **Verified clean (already FA5-valid):** `fa-globe`, `fa-umbrella-beach`, `fa-plane-departure`, `fa-passport`, `fa-lock`, `fa-award`, `fa-check-circle`, `fab fa-whatsapp`.
 - **Skill note:** when setting Elementor icons via MCP on an FA5 install, use FA5 names. Common FA6→FA5 gotchas: `list-check`→`tasks`, `arrows-rotate`→`sync-alt`, `magnifying-glass`→`search`, `xmark`→`times`, `trash-can`→`trash`, `circle-check`→`check-circle`.
+
+---
+
+## Session: Responsive QA + Email notifications + Critical bug fixes (July 20, 2026)
+
+### Context
+
+Completed remaining pre-deploy items: responsive QA audit, missing email notifications, and critical runtime bug. User explicitly deferred EMCP page builds (T041, T045, T053) and skipped user management / currency toggle / blog / services pages.
+
+### P18 — wp_doing_rest() fatal error (500 site-wide)
+
+- **Symptom:** Entire site returned HTTP 500. No pages loaded, no admin accessible.
+- **Cause:** `Visati_Core_Database::ensure_columns()` called `wp_doing_rest()` at the `init` hook. This function is defined in `wp-includes/rest-api.php` which may not be loaded yet when `init` fires on a non-REST request. PHP Fatal: `Call to undefined function wp_doing_rest()`.
+- **Symptom → Cause → Fix → Commands:**
+  ```php
+  // BEFORE (broken):
+  if ( ! is_admin() && ! wp_doing_rest() ) {
+  // AFTER (fixed):
+  if ( ! is_admin() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+  ```
+  The `REST_REQUEST` constant is the actual check that `wp_doing_rest()` performs — using it directly avoids the load-order dependency.
+- **File:** `plugins/visati-core/includes/class-database.php:141`
+- **Debug method:** Enabled `WP_DEBUG` + `WP_DEBUG_LOG` in `wp-config.php`, triggered a page load, checked `wp-content/debug.log` for the fatal error trace. Disabled debug after fix.
+- **Skill note:** When hooking into `init` (which fires very early in `wp-settings.php`), avoid functions from REST API, admin, or plugin files that may not be loaded yet. Use `defined() && constant` checks instead of wrapper functions.
+
+### P19 — send_inquiry_notification() missing (contact form would fatal)
+
+- **Symptom:** `Visati_Core_Inquiries_Controller::handle_submit()` calls `Visati_Core_Email::send_inquiry_notification()` but the method didn't exist in `class-email.php`. Would cause a fatal error on every contact form submission.
+- **Cause:** Method was referenced during controller development but never implemented in the email class.
+- **Fix:** Added `send_inquiry_notification(int $inquiry_id, array $params)` to `Visati_Core_Email`. Emails admin with: sender name/email, subject, message body, and link to admin inquiry view.
+- **Also added:** `send_admin_alert(string $app_id, string $visa_name, string $name)` — emails admin when a new application is submitted via Stripe payment.
+- **Also added:** `admin_email()` private helper — reads `ADMIN_NOTIFICATION_EMAIL` env var first, falls back to WordPress `admin_email`.
+- **File:** `plugins/visati-core/includes/class-email.php`
+
+### P20 — Webhook send_confirmation() wrong params
+
+- **Symptom:** `handle_checkout_completed()` called `Visati_Core_Email::send_confirmation( $app )` passing a DB row object. But `send_confirmation()` expects `(string $app_id, string $to, string $visa_name)`.
+- **Cause:** Method signature was changed during earlier refactoring but the webhook caller wasn't updated.
+- **Fix:** Updated webhook handler to pass correct individual args: `send_confirmation( $app_id, $app->applicant_email, $visa_name )`. Also added admin alert call after confirmation.
+- **File:** `plugins/visati-core/includes/rest/class-webhooks-controller.php:168-176`
+
+### Responsive QA audit — 25 issues scanned, 19 passing, 6 fixed
+
+Ran full responsive audit across all public pages. Key fixes applied:
+
+| Issue | Fix | File |
+|---|---|---|
+| No global `box-sizing: border-box` | Added `*, *::before, *::after { box-sizing: border-box; }` | `app.css:32` |
+| No `img { max-width: 100% }` | Added global image constraint | `app.css:33` |
+| Hamburger tap target 40px | Increased to 44px (WCAG minimum) | `app.css:304` |
+| Drawer close button 4px padding | Added 10px padding + 44px min-size | `app.css:370` |
+| WhatsApp FAB overlaps iPhone home bar | Added `@supports (padding-bottom: env(safe-area-inset-bottom))` | `app.css:188` |
+| apply.css breakpoint mismatch (600px) | Changed to 639px to match app.css | `apply.css:92,124` |
+| Footer mobile text too small (0.65rem) | Bumped to 0.75rem for heading + legal | `app.css:2611,2632` |
+| Social link mobile 32px | Increased to 44px | `app.css:2607` |
+| Visa detail `<dl>` overflow | Added `overflow-wrap: break-word` | `app.css:2265` |
+| No `prefers-reduced-motion` support | Added media query killing all animations | `app.css:2712` |
+
+### Seed data verified
+
+- **FAQ:** 10+ posts present via REST (`/wp-json/wp/v2/visati_faq`)
+- **Testimonials:** 5+ posts present via REST (`/wp-json/wp/v2/visati_testimonial`)
+- **Visa types:** 8 seeded (from prior session)
+
+### Track endpoint + JS verified
+
+- REST `GET /visati/v1/track?id=` — validates ID format (`VIS-YYYY-XXXXXX`), returns 404 for missing apps, returns timeline + status for found apps
+- `tracking.js` — 160 lines, timeline render, XSS-safe escaping, auto-search from `?id=` URL param
+
+### Tasks marked done in tasks.md
+
+- T036 — Track REST endpoint ✅
+- T038 — Tracking JS ✅
+- T054 — WhatsApp deep-link button ✅
+- T055 — FAQ CPT fields ✅
+- T058 — FAQ seed data ✅
+- T062 — Testimonial seed data ✅
+- T069 — Responsive QA ✅
+
+### Files modified this session
+
+| File | Action | Purpose |
+|---|---|---|
+| `includes/class-database.php` | Modified | Replace `wp_doing_rest()` with `defined('REST_REQUEST')` check |
+| `includes/class-email.php` | Modified | Add `send_inquiry_notification()`, `send_admin_alert()`, `admin_email()` |
+| `includes/rest/class-webhooks-controller.php` | Modified | Fix `send_confirmation()` params, add admin alert call |
+| `themes/visati/assets/css/app.css` | Modified | Responsive QA fixes (box-sizing, touch targets, safe-area, breakpoints, reduced-motion, overflow) |
+| `plugins/visati-core/assets/css/apply.css` | Modified | Breakpoint alignment 600→639px |
+
+### Deployment readiness
+
+- **Site status:** HTTP 200, all features working locally
+- **Remaining for deploy:** T070 (Hostinger), T071 (smoke test), T072 (handoff docs)
+- **Deferred:** EMCP page builds (T041, T045, T053) — user will do later
+- **Known gotcha:** Hello Elementor `reset.css` pink-button fix must be manually replicated on Hostinger
