@@ -114,9 +114,30 @@
 		var textEl = cb.querySelector( '[data-combobox-text]' );
 		var flagEl = cb.querySelector( '[data-combobox-flag]' );
 
+		function getVisibleItems() {
+			return Array.prototype.slice.call( list.querySelectorAll( 'li' ) ).filter( function ( li ) {
+				return li.style.display !== 'none';
+			} );
+		}
+		function selectItem( li ) {
+			if ( ! li ) return;
+			var val  = li.getAttribute( 'data-value' );
+			var flag = li.getAttribute( 'data-flag' );
+			hidden.value = val;
+			textEl.textContent = val;
+			button.classList.add( 'is-filled' );
+			button.setAttribute( 'aria-expanded', 'false' );
+			flagEl.innerHTML = flag ? '<img src="https://flagcdn.com/' + flag + '.svg" alt="" width="20" height="14">' : '';
+			Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( x ) {
+				x.classList.toggle( 'is-selected', x === li );
+			} );
+			close();
+			button.focus();
+		}
 		function open() {
 			cb.classList.add( 'is-open' );
 			panel.hidden = false;
+			button.setAttribute( 'aria-expanded', 'true' );
 			if ( search ) {
 				setTimeout( function () { search.focus(); }, 0 );
 			}
@@ -124,6 +145,7 @@
 		function close() {
 			cb.classList.remove( 'is-open' );
 			panel.hidden = true;
+			button.setAttribute( 'aria-expanded', 'false' );
 			if ( search ) {
 				search.value = '';
 				filter( '' );
@@ -142,22 +164,49 @@
 		button.addEventListener( 'click', function ( e ) { e.preventDefault(); toggle(); } );
 		if ( search ) {
 			search.addEventListener( 'input', function () { filter( search.value ); } );
+			search.addEventListener( 'keydown', function ( e ) {
+				var items = getVisibleItems();
+				if ( ! items.length ) return;
+				if ( e.key === 'ArrowDown' ) {
+					e.preventDefault();
+					items[0].focus();
+				} else if ( e.key === 'Escape' ) {
+					close();
+					button.focus();
+				}
+			} );
 		}
 		list.addEventListener( 'click', function ( e ) {
 			var li = e.target.closest ? e.target.closest( 'li' ) : null;
-			if ( ! li ) {
-				return;
+			if ( ! li ) return;
+			selectItem( li );
+		} );
+		list.addEventListener( 'keydown', function ( e ) {
+			var items = getVisibleItems();
+			var idx = items.indexOf( document.activeElement );
+			if ( e.key === 'ArrowDown' ) {
+				e.preventDefault();
+				if ( idx < items.length - 1 ) items[ idx + 1 ].focus();
+			} else if ( e.key === 'ArrowUp' ) {
+				e.preventDefault();
+				if ( idx > 0 ) items[ idx - 1 ].focus();
+				else if ( search ) search.focus();
+			} else if ( e.key === 'Enter' ) {
+				e.preventDefault();
+				if ( idx >= 0 ) selectItem( items[ idx ] );
+			} else if ( e.key === 'Escape' ) {
+				close();
+				button.focus();
+			} else if ( e.key === 'Home' ) {
+				e.preventDefault();
+				if ( items.length ) items[0].focus();
+			} else if ( e.key === 'End' ) {
+				e.preventDefault();
+				if ( items.length ) items[ items.length - 1 ].focus();
 			}
-			var val  = li.getAttribute( 'data-value' );
-			var flag = li.getAttribute( 'data-flag' );
-			hidden.value = val;
-			textEl.textContent = val;
-			button.classList.add( 'is-filled' );
-			flagEl.innerHTML = flag ? '<img src="https://flagcdn.com/' + flag + '.svg" alt="" width="20" height="14">' : '';
-			Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( x ) {
-				x.classList.toggle( 'is-selected', x === li );
-			} );
-			close();
+		} );
+		Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( li ) {
+			li.setAttribute( 'tabindex', '-1' );
 		} );
 		document.addEventListener( 'click', function ( e ) {
 			if ( ! cb.contains( e.target ) ) {
@@ -575,12 +624,19 @@
 		updateTravelersVisibility();
 	})();
 
-	/* ── Upload boxes: click to open file dialog ────────────────────── */
+	/* ── Upload boxes: click + keyboard to open file dialog ────────────── */
 	Array.prototype.forEach.call( form.querySelectorAll( '[data-doc-box]' ), function ( box ) {
 		box.addEventListener( 'click', function ( e ) {
 			if ( e.target.tagName === 'INPUT' ) { return; }
 			var input = box.querySelector( 'input[type=file]' );
 			if ( input ) { input.click(); }
+		} );
+		box.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' || e.key === ' ' ) {
+				e.preventDefault();
+				var input = box.querySelector( 'input[type=file]' );
+				if ( input ) { input.click(); }
+			}
 		} );
 	} );
 

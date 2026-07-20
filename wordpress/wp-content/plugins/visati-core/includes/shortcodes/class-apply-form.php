@@ -180,35 +180,35 @@ final class Visati_Core_Apply_Form_Shortcode {
 					<h2>Upload documents</h2>
 					<p>PDF, JPG, or PNG. Max 5 MB each.</p>
 				</header>
-				<div class="visati-doc-upload">
-					<div class="visati-field visati-doc-upload__field">
-						<span class="visati-field__label">Passport copy <span class="visati-field__required">*</span></span>
-						<div class="visati-doc-upload__box" data-doc-box="passport_copy">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-							<span class="visati-doc-upload__text">Choose file or drag here</span>
-							<span class="visati-doc-upload__name" data-doc-name></span>
-							<input type="file" name="doc_passport" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="passport_copy" hidden>
-						</div>
-					</div>
-					<div class="visati-field visati-doc-upload__field">
-						<span class="visati-field__label">Photo <span class="visati-field__required">*</span></span>
-						<div class="visati-doc-upload__box" data-doc-box="photo">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-							<span class="visati-doc-upload__text">Choose file or drag here</span>
-							<span class="visati-doc-upload__name" data-doc-name></span>
-							<input type="file" name="doc_photo" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="photo" hidden>
-						</div>
-					</div>
-					<div class="visati-field visati-doc-upload__field">
-						<span class="visati-field__label">Supporting document <span class="visati-field__optional">(optional)</span></span>
-						<div class="visati-doc-upload__box" data-doc-box="supporting">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-							<span class="visati-doc-upload__text">Choose file or drag here</span>
-							<span class="visati-doc-upload__name" data-doc-name></span>
-							<input type="file" name="doc_supporting" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="supporting" hidden>
-						</div>
+			<div class="visati-doc-upload">
+				<div class="visati-field visati-doc-upload__field">
+					<label class="visati-field__label" for="doc-passport">Passport copy <span class="visati-field__required">*</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="passport_copy" tabindex="0" role="button" aria-label="Upload passport copy">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+						<span class="visati-doc-upload__text">Choose file or drag here</span>
+						<span class="visati-doc-upload__name" data-doc-name></span>
+						<input type="file" id="doc-passport" name="doc_passport" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="passport_copy" hidden>
 					</div>
 				</div>
+				<div class="visati-field visati-doc-upload__field">
+					<label class="visati-field__label" for="doc-photo">Photo <span class="visati-field__required">*</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="photo" tabindex="0" role="button" aria-label="Upload photo">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+						<span class="visati-doc-upload__text">Choose file or drag here</span>
+						<span class="visati-doc-upload__name" data-doc-name></span>
+						<input type="file" id="doc-photo" name="doc_photo" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="photo" hidden>
+					</div>
+				</div>
+				<div class="visati-field visati-doc-upload__field">
+					<label class="visati-field__label" for="doc-supporting">Supporting document <span class="visati-field__optional">(optional)</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="supporting" tabindex="0" role="button" aria-label="Upload supporting document">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+						<span class="visati-doc-upload__text">Choose file or drag here</span>
+						<span class="visati-doc-upload__name" data-doc-name></span>
+						<input type="file" id="doc-supporting" name="doc_supporting" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="supporting" hidden>
+					</div>
+				</div>
+			</div>
 				<ul class="visati-doc-list"></ul>
 				<p class="visati-doc-note">Passport must be valid for 6+ months. Photo must have white background and clearly show your face.</p>
 			</section>
@@ -247,16 +247,16 @@ final class Visati_Core_Apply_Form_Shortcode {
 	private static function render_nationality_field(): void {
 		?>
 		<div class="visati-field visati-combobox" data-combobox>
-			<span class="visati-field__label">Nationality</span>
-			<input type="hidden" name="nationality" value="" required>
-			<button type="button" class="visati-combobox__button" data-combobox-button>
+			<label class="visati-field__label" for="nationality-search">Nationality</label>
+			<input type="hidden" name="nationality" value="" required aria-required="true">
+			<button type="button" class="visati-combobox__button" data-combobox-button aria-haspopup="listbox" aria-expanded="false" aria-label="Select nationality">
 				<span class="visati-combobox__flag" data-combobox-flag></span>
 				<span class="visati-combobox__text" data-combobox-text>Select nationality</span>
 				<svg class="visati-combobox__chevron" viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
 			</button>
 			<div class="visati-combobox__panel" data-combobox-panel hidden>
-				<input type="text" class="visati-combobox__search" data-combobox-search placeholder="Search…">
-				<ul class="visati-combobox__list" data-combobox-list>
+				<input type="text" id="nationality-search" class="visati-combobox__search" data-combobox-search placeholder="Search…" autocomplete="off">
+				<ul class="visati-combobox__list" data-combobox-list role="listbox" aria-label="Nationalities">
 					<?php foreach ( self::NATIONALITIES as $code => $label ) : ?>
 						<li role="option" data-value="<?php echo esc_attr( $label ); ?>" data-flag="<?php echo esc_attr( strtolower( $code ) ); ?>">
 							<img src="https://flagcdn.com/<?php echo esc_attr( strtolower( $code ) ); ?>.svg" alt="" width="20" height="14" loading="lazy">

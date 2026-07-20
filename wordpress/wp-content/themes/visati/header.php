@@ -124,22 +124,46 @@ $site_desc  = get_bloginfo( 'description' );
 	var drawer = document.getElementById('mobile-drawer');
 	var closeBtn = drawer ? drawer.querySelector('.visati-drawer__close') : null;
 	var overlay = drawer ? drawer.querySelector('.visati-drawer__overlay') : null;
+	var panel = drawer ? drawer.querySelector('.visati-drawer__panel') : null;
+
+	function getFocusable(){
+		if(!panel) return [];
+		return Array.prototype.slice.call(panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+	}
 
 	function openDrawer(){
 		if(!drawer) return;
 		drawer.hidden = false;
 		toggle.setAttribute('aria-expanded','true');
 		document.body.style.overflow='hidden';
+		if(panel) panel.setAttribute('aria-hidden','false');
+		var focusable = getFocusable();
+		if(focusable.length) setTimeout(function(){ focusable[0].focus(); }, 50);
 	}
 	function closeDrawer(){
 		if(!drawer) return;
 		drawer.hidden = true;
 		toggle.setAttribute('aria-expanded','false');
 		document.body.style.overflow='';
+		if(panel) panel.setAttribute('aria-hidden','true');
+		toggle.focus();
 	}
 	if(toggle) toggle.addEventListener('click', openDrawer);
 	if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
 	if(overlay) overlay.addEventListener('click', closeDrawer);
-	document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDrawer(); });
+	document.addEventListener('keydown',function(e){
+		if(e.key==='Escape'){ closeDrawer(); return; }
+		if(e.key==='Tab' && !drawer.hidden && panel){
+			var focusable = getFocusable();
+			if(!focusable.length) return;
+			var first = focusable[0];
+			var last = focusable[focusable.length - 1];
+			if(e.shiftKey && document.activeElement === first){
+				e.preventDefault(); last.focus();
+			} else if(!e.shiftKey && document.activeElement === last){
+				e.preventDefault(); first.focus();
+			}
+		}
+	});
 })();
 </script>

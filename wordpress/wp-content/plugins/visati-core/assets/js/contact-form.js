@@ -13,19 +13,26 @@
 
 			/* Clear previous errors */
 			form.querySelectorAll('.visati-field').forEach(function(f){ f.classList.remove('has-error'); });
+			form.querySelectorAll('[aria-invalid]').forEach(function(el){ el.setAttribute('aria-invalid','false'); });
 
 			/* Validate required */
 			var valid = true;
+			var firstError = null;
 			['name','email','subject','message'].forEach(function(name){
 				var field = form.querySelector('[name="'+name+'"]');
 				if(!field) return;
 				var val = field.value.trim();
 				if(!val || (name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val))){
 					field.closest('.visati-field').classList.add('has-error');
+					field.setAttribute('aria-invalid','true');
 					valid = false;
+					if(!firstError) firstError = field;
 				}
 			});
-			if(!valid) return;
+			if(!valid){
+				if(firstError) firstError.focus();
+				return;
+			}
 
 			/* Disable button */
 			var btn = form.querySelector('button[type="submit"]');
@@ -75,6 +82,7 @@
 		form.querySelectorAll('.visati-field input, .visati-field textarea').forEach(function(el){
 			el.addEventListener('input', function(){
 				el.closest('.visati-field').classList.remove('has-error');
+				el.setAttribute('aria-invalid','false');
 			});
 		});
 	});

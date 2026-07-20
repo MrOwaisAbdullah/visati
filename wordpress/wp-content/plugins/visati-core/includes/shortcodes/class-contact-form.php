@@ -32,14 +32,14 @@ final class Visati_Core_Contact_Form_Shortcode {
 
 			<div class="visati-field">
 				<label for="cf-name">Name <span aria-hidden="true">*</span></label>
-				<input type="text" id="cf-name" name="name" required autocomplete="name">
-				<div class="visati-field-error">Please enter your name.</div>
+				<input type="text" id="cf-name" name="name" required autocomplete="name" aria-describedby="cf-name-error" aria-invalid="false">
+				<div class="visati-field-error" id="cf-name-error">Please enter your name.</div>
 			</div>
 
 			<div class="visati-field">
 				<label for="cf-email">Email <span aria-hidden="true">*</span></label>
-				<input type="email" id="cf-email" name="email" required autocomplete="email">
-				<div class="visati-field-error">Please enter a valid email address.</div>
+				<input type="email" id="cf-email" name="email" required autocomplete="email" aria-describedby="cf-email-error" aria-invalid="false">
+				<div class="visati-field-error" id="cf-email-error">Please enter a valid email address.</div>
 			</div>
 
 			<div class="visati-field">
@@ -49,14 +49,14 @@ final class Visati_Core_Contact_Form_Shortcode {
 
 			<div class="visati-field">
 				<label for="cf-subject">Subject <span aria-hidden="true">*</span></label>
-				<input type="text" id="cf-subject" name="subject" required>
-				<div class="visati-field-error">Please enter a subject.</div>
+				<input type="text" id="cf-subject" name="subject" required aria-describedby="cf-subject-error" aria-invalid="false">
+				<div class="visati-field-error" id="cf-subject-error">Please enter a subject.</div>
 			</div>
 
 			<div class="visati-field">
 				<label for="cf-message">Message <span aria-hidden="true">*</span></label>
-				<textarea id="cf-message" name="message" rows="5" required></textarea>
-				<div class="visati-field-error">Please enter your message.</div>
+				<textarea id="cf-message" name="message" rows="5" required aria-describedby="cf-message-error" aria-invalid="false"></textarea>
+				<div class="visati-field-error" id="cf-message-error">Please enter your message.</div>
 			</div>
 
 			<button type="submit" class="visati-btn">
