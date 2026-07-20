@@ -143,7 +143,10 @@ final class Visati_Core_Settings {
 	 * @return mixed
 	 */
 	public static function get( string $key, $default = '' ) {
-		$opts = get_option( self::OPTION, array() );
+		static $opts = null;
+		if ( null === $opts ) {
+			$opts = get_option( self::OPTION, array() );
+		}
 		return isset( $opts[ $key ] ) ? $opts[ $key ] : $default;
 	}
 

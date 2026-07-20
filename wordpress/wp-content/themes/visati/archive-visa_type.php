@@ -21,7 +21,8 @@ get_header();
 			<?php
 			$visas = new WP_Query( array(
 				'post_type'      => 'visati_visa_type',
-				'posts_per_page' => -1,
+				'posts_per_page' => 100,
+				'no_found_rows'  => true,
 				'orderby'        => 'menu_order title',
 				'order'          => 'ASC',
 				'post_status'    => 'publish',

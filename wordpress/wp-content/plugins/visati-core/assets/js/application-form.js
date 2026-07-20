@@ -61,6 +61,11 @@
 			nextBtn.type = 'button';
 			nextBtn.className = 'visati-btn';
 		}
+		var liveRegion = document.getElementById( 'step-live' );
+		if ( liveRegion ) {
+			var labels = [ 'Visa Selection', 'Personal Details', 'Documents', 'Review & Submit' ];
+			liveRegion.textContent = 'Step ' + n + ' of ' + total + ': ' + ( labels[ n - 1 ] || '' );
+		}
 		window.scrollTo( { top: form.offsetTop - 24, behavior: 'smooth' } );
 	}
 
@@ -467,16 +472,15 @@
 
 	var whatsappBtn = form.querySelector( '[data-action="whatsapp"]' );
 	if ( whatsappBtn ) {
-		whatsappBtn.addEventListener( 'click', function ( e ) {
+		whatsappBtn.addEventListener( 'click', function () {
 			var number = ( window.visatiApply && window.visatiApply.whatsapp_number ) || '';
 			if ( ! number ) {
-				e.preventDefault();
 				showError( 'WhatsApp number not configured. Please contact us directly.' );
 				return;
 			}
 			var msg = buildWhatsAppMessage();
 			var clean = number.replace( /[^0-9]/g, '' );
-			whatsappBtn.href = 'https://wa.me/' + clean + '?text=' + encodeURIComponent( msg );
+			window.open( 'https://wa.me/' + clean + '?text=' + encodeURIComponent( msg ), '_blank', 'noopener' );
 		} );
 	}
 

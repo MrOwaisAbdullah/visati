@@ -27,6 +27,7 @@
 .visati-stat-card--submitted .visati-stat-card__number { color: #1659FF; }
 .visati-stat-card--approved .visati-stat-card__number { color: #25D366; }
 .visati-stat-card--rejected .visati-stat-card__number { color: #e74c3c; }
+.visati-stat-card--revenue .visati-stat-card__number { color: #0A1628; }
 
 .visati-admin-grid {
 	display: grid;
@@ -66,6 +67,9 @@
 .visati-status-badge--rejected { background: #F8D7DA; color: #721C24; }
 .visati-status-badge--new { background: #E2E3FF; color: #383D80; }
 .visati-status-badge--resolved { background: #D4EDDA; color: #155724; }
+.visati-status-badge--succeeded { background: #D4EDDA; color: #155724; }
+.visati-status-badge--pending { background: #FFF3CD; color: #856404; }
+.visati-status-badge--failed { background: #F8D7DA; color: #721C24; }
 
 /* Application detail */
 .visati-app-detail {
@@ -310,4 +314,32 @@
 	background: #f1f1f1;
 	padding: 2px 5px;
 	border-radius: 3px;
+}
+
+/* Payments table (application detail) */
+.visati-payments-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 4px;
+}
+.visati-payments-table th,
+.visati-payments-table td {
+	padding: 8px 12px;
+	border: 1px solid #ddd;
+	text-align: left;
+	font-size: 13px;
+}
+.visati-payments-table th {
+	background: #f1f1f1;
+	font-weight: 600;
+}
+.visati-payments-table code {
+	background: #f1f1f1;
+	padding: 2px 5px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+.visati-no-payment {
+	color: #777;
+	font-style: italic;
 }

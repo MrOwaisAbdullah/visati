@@ -9,6 +9,9 @@
  * @var int    $rejected_apps
  * @var int    $total_inquiries
  * @var int    $new_inquiries
+ * @var float  $total_revenue
+ * @var float  $revenue_30d
+ * @var int    $paid_count
  * @var array  $recent_apps
  * @var array  $recent_inquiries
  */
@@ -48,6 +51,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="visati-stat-card visati-stat-card--pending">
 			<div class="visati-stat-card__number"><?php echo esc_html( $new_inquiries ); ?></div>
 			<div class="visati-stat-card__label">New Inquiries</div>
+		</div>
+		<div class="visati-stat-card visati-stat-card--revenue">
+			<div class="visati-stat-card__number">AED <?php echo esc_html( number_format( $total_revenue, 0 ) ); ?></div>
+			<div class="visati-stat-card__label">Total Revenue</div>
+		</div>
+		<div class="visati-stat-card visati-stat-card--revenue">
+			<div class="visati-stat-card__number">AED <?php echo esc_html( number_format( $revenue_30d, 0 ) ); ?></div>
+			<div class="visati-stat-card__label">Revenue (30d)</div>
+		</div>
+		<div class="visati-stat-card visati-stat-card--approved">
+			<div class="visati-stat-card__number"><?php echo esc_html( $paid_count ); ?></div>
+			<div class="visati-stat-card__label">Paid Applications</div>
 		</div>
 	</div>
 

@@ -887,6 +887,8 @@ body > main > :last-child {
 	transform: translateY(-50%);
 	width: 44px;
 	height: 44px;
+	padding: 0;
+	box-sizing: border-box;
 	border-radius: 50%;
 	border: 1.5px solid rgba(10,22,40,0.12);
 	background: var( --visati-white );
@@ -898,6 +900,10 @@ body > main > :last-child {
 	color: var( --visati-navy );
 	transition: all 0.2s;
 	z-index: 2;
+	line-height: 0;
+}
+.visati-testimonials-arrow svg {
+	display: block;
 }
 .visati-testimonials-arrow:hover {
 	background: var( --visati-navy );
@@ -1259,11 +1265,11 @@ body > main > :last-child {
 /* Golden gradient button reset — overrides hello-elementor #c36 pink
    Only target bare elements without any visati-btn class.
    Exclude policy page content links. */
-body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value),
-body .visati-page button:not([class*="visati-btn"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button),
-body .visati-page [type="button"]:not([class*="visati-btn"]):not(.visati-combobox__button),
-body .visati-page [type="submit"]:not([class*="visati-btn"]),
-body .visati-page [type="reset"]:not([class*="visati-btn"]) {
+body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value),
+body .visati-page button:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button),
+body .visati-page [type="button"]:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button),
+body .visati-page [type="submit"]:not([class*="visati-btn"]):not([class*="elementor-button"]),
+body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="elementor-button"]) {
 	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
 	background-size: 200% 200% !important;
 	color: var( --visati-navy ) !important;
@@ -1276,11 +1282,11 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]) {
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease !important;
 }
-body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):hover,
-body .visati-page button:not([class*="visati-btn"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):hover,
-body .visati-page [type="button"]:not([class*="visati-btn"]):not(.visati-combobox__button):hover,
-body .visati-page [type="submit"]:not([class*="visati-btn"]):hover,
-body .visati-page [type="reset"]:not([class*="visati-btn"]):hover {
+body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):hover,
+body .visati-page button:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):hover,
+body .visati-page [type="button"]:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):hover,
+body .visati-page [type="submit"]:not([class*="visati-btn"]):not([class*="elementor-button"]):hover,
+body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="elementor-button"]):hover {
 	background-position: 100% 100% !important;
 	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2) !important;
 	transform: translateY(-2px) !important;
@@ -1399,6 +1405,50 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]):hover {
 	border: unset !important;
 	color: unset !important;
 }
+}
+
+/* ============================================================
+   ACCESSIBILITY — skip link + focus-visible
+   ============================================================ */
+.visati-skip-link {
+	position: absolute;
+	top: -60px;
+	left: 0;
+	background: var(--visati-navy);
+	color: #fff;
+	padding: 0.75rem 1.5rem;
+	z-index: 99999;
+	font-weight: 600;
+	text-decoration: none;
+	border-radius: 0 0 8px 0;
+	transition: top 0.2s ease;
+}
+.visati-skip-link:focus {
+	top: 0;
+	outline: 3px solid var(--visati-gold);
+	outline-offset: 2px;
+}
+
+.visati-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+:focus-visible {
+	outline: 3px solid var(--visati-gold);
+	outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: none;
 }
 
 /* ============================================================
@@ -2061,6 +2111,9 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 .visati-track-status-badge.is-rejected { background: #fee2e2; color: #991b1b; }
 .visati-track-status-badge.is-processing { background: #dbeafe; color: #1e40af; }
 .visati-track-status-badge.is-default { background: rgba(10,22,40,0.08); color: rgba(26,26,46,0.6); }
+.visati-track-outcome { font-size: 0.95rem; font-weight: 600; }
+.visati-track-outcome--approved { color: #166534; }
+.visati-track-outcome--rejected { color: #991b1b; }
 
 /* ─────────────────────────────────────────────────────────
    VISA TYPE ARCHIVE

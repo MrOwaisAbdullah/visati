@@ -35,6 +35,7 @@ final class Visati_Core_FAQ_Shortcode {
 		$args = array(
 			'post_type'      => 'visati_faq',
 			'posts_per_page' => (int) $atts['count'],
+			'no_found_rows'  => true,
 			'orderby'        => 'menu_order title',
 			'order'          => 'ASC',
 			'post_status'    => 'publish',
@@ -81,20 +82,22 @@ final class Visati_Core_FAQ_Shortcode {
 
 				<input type="search" class="visati-faq-search" placeholder="Search FAQ..." aria-label="Search FAQ">
 
-				<div class="visati-faq-list" role="list">
-					<?php foreach ( $faqs as $faq ) :
+				<div class="visati-faq-list">
+					<?php foreach ( $faqs as $i => $faq ) :
 						$question = get_post_meta( $faq->ID, '_visati_faq_question', true ) ?: $faq->post_title;
 						$answer   = get_post_meta( $faq->ID, '_visati_faq_answer', true );
 						if ( ! $answer ) {
 							$answer = apply_filters( 'the_content', $faq->post_content );
 						}
 						$cat = get_post_meta( $faq->ID, '_visati_faq_category', true );
+						$faq_id = 'faq-q-' . $i;
+						$ans_id = 'faq-a-' . $i;
 					?>
-						<div class="visati-faq-item" data-category="<?php echo esc_attr( $cat ); ?>" role="listitem">
-							<button class="visati-faq-item__q" aria-expanded="false">
+						<div class="visati-faq-item" data-category="<?php echo esc_attr( $cat ); ?>">
+							<button class="visati-faq-item__q" id="<?php echo esc_attr( $faq_id ); ?>" aria-expanded="false" aria-controls="<?php echo esc_attr( $ans_id ); ?>">
 								<span><?php echo esc_html( $question ); ?></span>
 							</button>
-							<div class="visati-faq-item__a" role="region">
+							<div class="visati-faq-item__a" id="<?php echo esc_attr( $ans_id ); ?>" role="region" aria-labelledby="<?php echo esc_attr( $faq_id ); ?>">
 								<?php echo wp_kses_post( $answer ); ?>
 							</div>
 						</div>

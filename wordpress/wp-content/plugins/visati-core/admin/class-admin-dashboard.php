@@ -87,6 +87,7 @@ class Visati_Core_Admin_Dashboard {
 
 		$app_table = $wpdb->prefix . 'visati_applications';
 		$inq_table = $wpdb->prefix . 'visati_inquiries';
+		$pay_table = $wpdb->prefix . 'visati_payments';
 
 		// Stat cards.
 		$total_apps     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$app_table}" );
@@ -96,6 +97,11 @@ class Visati_Core_Admin_Dashboard {
 		$rejected_apps  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$app_table} WHERE status = %s AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)", 'rejected' ) );
 		$total_inquiries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$inq_table}" );
 		$new_inquiries   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$inq_table} WHERE status = %s", 'new' ) );
+
+		// Revenue (successful payments only).
+		$total_revenue    = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s", 'succeeded' ) );
+		$revenue_30d      = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)", 'succeeded' ) );
+		$paid_count       = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$pay_table} WHERE status = %s", 'succeeded' ) );
 
 		// Recent applications.
 		$recent_apps = $wpdb->get_results(

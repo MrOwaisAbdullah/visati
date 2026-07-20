@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_THEME_VERSION', '0.3.7' );
+define( 'VISATI_THEME_VERSION', '0.4.0' );
 
 /**
  * Theme setup: nav menus and core supports.
@@ -178,5 +178,103 @@ function visati_force_archive_template( $template ) {
 	return $template;
 }
 add_filter( 'template_include', 'visati_force_archive_template', 98 );
+
+/**
+ * Output JSON-LD structured data for SEO.
+ * Organization schema on all pages; FAQPage schema when on the FAQ page.
+ *
+ * @return void
+ */
+function visati_json_ld_schemas(): void {
+	$site_url  = home_url();
+	$site_name = get_bloginfo( 'name' );
+	$logo_url  = Visati_Core_Settings::get( 'logo_url', '' );
+	if ( ! $logo_url ) {
+		$logo_url = $site_url . '/wp-content/themes/visati/assets/images/logo-mark.svg';
+	}
+	$phone     = preg_replace( '/[^0-9+]/', '', Visati_Core_Settings::get( 'phone', '' ) );
+	$email     = Visati_Core_Settings::get( 'email', '' );
+	$whatsapp  = preg_replace( '/[^0-9+]/', '', Visati_Core_Settings::get( 'whatsapp_number', '' ) );
+
+	// ─── Organization ──────────────────────────────────────────────
+	$org = array(
+		'@context' => 'https://schema.org',
+		'@type'    => 'Organization',
+		'name'     => $site_name,
+		'url'      => $site_url,
+		'logo'     => $logo_url,
+		'description' => __( 'Trusted UAE visa consultancy — 99% approval rate, fast processing, dedicated consultant support.', 'visati' ),
+	);
+
+	if ( $phone ) {
+		$org['contactPoint'] = array(
+			'@type'       => 'ContactPoint',
+			'telephone'   => $phone,
+			'contactType' => 'customer service',
+			'areaServed'  => 'AE',
+			'availableLanguage' => array( 'English', 'Arabic' ),
+		);
+	}
+
+	// LocalBusiness is more specific — use it when we have address data.
+	$address = Visati_Core_Settings::get( 'address', '' );
+	if ( $address ) {
+		$org['@type']       = 'LocalBusiness';
+		$org['address']     = array(
+			'@type'           => 'PostalAddress',
+			'streetAddress'   => $address,
+			'addressCountry'  => 'AE',
+		);
+		$org['geo']         = array(
+			'@type'       => 'GeoCoordinates',
+			'latitude'    => 25.2048,
+			'longitude'   => 55.2708,
+		);
+	}
+
+	echo '<script type="application/ld+json">' . wp_json_encode( $org, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+
+	// ─── FAQPage (only on pages with FAQ shortcode content) ───────
+	if ( is_front_page() || is_page() ) {
+		$page_id = get_queried_object_id();
+		$content = $page_id ? get_post_field( 'post_content', $page_id ) : '';
+		if ( $content && ( has_shortcode( $content, 'visati_faq' ) || has_shortcode( $content, 'visati_contact_page' ) ) ) {
+			$faqs = get_posts( array(
+				'post_type'      => 'visati_faq',
+				'post_status'    => 'publish',
+				'numberposts'    => 50,
+				'no_found_rows'  => true,
+				'orderby'        => 'menu_order',
+				'order'          => 'ASC',
+			) );
+
+			if ( $faqs ) {
+				$faq_schema = array(
+					'@context'   => 'https://schema.org',
+					'@type'      => 'FAQPage',
+					'mainEntity' => array(),
+				);
+				foreach ( $faqs as $faq ) {
+					$question = get_post_meta( $faq->ID, '_visati_faq_question', true );
+					$answer   = get_post_meta( $faq->ID, '_visati_faq_answer', true );
+					if ( $question && $answer ) {
+						$faq_schema['mainEntity'][] = array(
+							'@type'          => 'Question',
+							'name'           => $question,
+							'acceptedAnswer' => array(
+								'@type' => 'Answer',
+								'text'  => wp_strip_all_tags( $answer ),
+							),
+						);
+					}
+				}
+				if ( ! empty( $faq_schema['mainEntity'] ) ) {
+					echo '<script type="application/ld+json">' . wp_json_encode( $faq_schema, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+				}
+			}
+		}
+	}
+}
+add_action( 'wp_head', 'visati_json_ld_schemas', 1 );
 
 

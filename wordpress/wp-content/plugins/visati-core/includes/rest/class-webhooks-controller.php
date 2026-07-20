@@ -26,7 +26,13 @@ class Visati_Core_Webhooks_Controller {
 		register_rest_route( 'visati/v1', '/checkout-session', array(
 			'methods'             => 'POST',
 			'callback'            => array( __CLASS__, 'create_checkout' ),
-			'permission_callback' => array( 'Visati_Core_REST_API', 'permission_public' ),
+			'permission_callback' => function () {
+				// Require REST nonce — sent by apply form JS via X-WP-Nonce header.
+				if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) ) {
+					return false;
+				}
+				return wp_verify_nonce( wp_unslash( $_SERVER['HTTP_X_WP_NONCE'] ), 'wp_rest' );
+			},
 		) );
 	}
 
@@ -127,7 +133,7 @@ class Visati_Core_Webhooks_Controller {
 		// Idempotency: skip if already submitted.
 		global $wpdb;
 		$app_table = $wpdb->prefix . 'visati_applications';
-		$app       = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$app_table} WHERE application_id = %s", $app_id ) );
+		$app       = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$app_table} WHERE id = %s", $app_id ) );
 
 		if ( ! $app || 'submitted' === $app->status ) {
 			return;
@@ -138,9 +144,9 @@ class Visati_Core_Webhooks_Controller {
 		// Update status → submitted.
 		$wpdb->update( $app_table,
 			array( 'status' => 'submitted', 'updated_at' => $now ),
-			array( 'application_id' => $app_id ),
+			array( 'id' => $app->id ),
 			array( '%s', '%s' ),
-			array( '%s' )
+			array( '%d' )
 		);
 
 		// Append status history.
@@ -151,15 +157,13 @@ class Visati_Core_Webhooks_Controller {
 		), array( '%s', '%s', '%s' ) );
 
 		// Record payment.
-		$amount = (int) ( $session['amount_total'] ?? 0 );
+		$amount_aed = ( (int) ( $session['amount_total'] ?? 0 ) ) / 100; // Stripe sends cents.
 		$wpdb->insert( $wpdb->prefix . 'visati_payments', array(
-			'application_id'    => $app_id,
-			'stripe_session_id' => $session['id'] ?? '',
-			'stripe_payment_id' => $session['payment_intent'] ?? '',
-			'amount_cents'      => $amount,
-			'currency'          => strtoupper( $session['currency'] ?? 'aed' ),
-			'status'            => 'completed',
-		), array( '%s', '%s', '%s', '%d', '%s', '%s' ) );
+			'application_id'          => $app_id,
+			'stripe_payment_intent_id' => $session['payment_intent'] ?? '',
+			'amount_aed'              => $amount_aed,
+			'status'                  => 'succeeded',
+		), array( '%s', '%s', '%f', '%s' ) );
 
 		// Send confirmation email.
 		if ( class_exists( 'Visati_Core_Email' ) ) {
@@ -181,7 +185,7 @@ class Visati_Core_Webhooks_Controller {
 		global $wpdb;
 		$payments_table = $wpdb->prefix . 'visati_payments';
 		$payment = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$payments_table} WHERE stripe_payment_id = %s", $pi['id'] ?? '' )
+			$wpdb->prepare( "SELECT * FROM {$payments_table} WHERE stripe_payment_intent_id = %s", $pi['id'] ?? '' )
 		);
 
 		if ( ! $payment ) {

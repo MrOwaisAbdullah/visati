@@ -163,4 +163,142 @@ foreach ( $testimonials as $t ) {
 	}
 }
 
-echo "\nSeeded {$testimonial_count} testimonials.\n";
+echo "\nSeeded {$testimonial_count} testimonials.\n\n";
+
+// ─── Visa Types ────────────────────────────────────────────────────
+
+$visa_types = array(
+	array(
+		'title'        => '14-Day Single Entry',
+		'slug'         => '14-day-single-entry',
+		'tagline'      => 'Quick visit or short business trip',
+		'price_aed'    => 200,
+		'price_usd'    => 55,
+		'duration'     => 14,
+		'entry_type'   => 'single',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 1,
+	),
+	array(
+		'title'        => '14-Day Multiple Entry',
+		'slug'         => '14-day-multiple-entry',
+		'tagline'      => 'Flexible short trips across borders',
+		'price_aed'    => 320,
+		'price_usd'    => 87,
+		'duration'     => 14,
+		'entry_type'   => 'multi',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 2,
+	),
+	array(
+		'title'        => '30-Day Single Entry',
+		'slug'         => '30-day-single-entry',
+		'tagline'      => 'Most popular for holidays and family visits',
+		'price_aed'    => 250,
+		'price_usd'    => 68,
+		'duration'     => 30,
+		'entry_type'   => 'single',
+		'is_featured'  => true,
+		'badge_text'   => 'Most Popular',
+		'order'        => 3,
+	),
+	array(
+		'title'        => '30-Day Multiple Entry',
+		'slug'         => '30-day-multiple-entry',
+		'tagline'      => 'Ideal for business with multiple Gulf trips',
+		'price_aed'    => 390,
+		'price_usd'    => 106,
+		'duration'     => 30,
+		'entry_type'   => 'multi',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 4,
+	),
+	array(
+		'title'        => '60-Day Single Entry',
+		'slug'         => '60-day-single-entry',
+		'tagline'      => 'Extended stays for longer visits',
+		'price_aed'    => 350,
+		'price_usd'    => 95,
+		'duration'     => 60,
+		'entry_type'   => 'single',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 5,
+	),
+	array(
+		'title'        => '60-Day Multiple Entry',
+		'slug'         => '60-day-multiple-entry',
+		'tagline'      => 'Maximum flexibility for extended trips',
+		'price_aed'    => 490,
+		'price_usd'    => 133,
+		'duration'     => 60,
+		'entry_type'   => 'multi',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 6,
+	),
+	array(
+		'title'        => '90-Day Single Entry',
+		'slug'         => '90-day-single-entry',
+		'tagline'      => 'Long-term visits and extended family stays',
+		'price_aed'    => 550,
+		'price_usd'    => 150,
+		'duration'     => 90,
+		'entry_type'   => 'single',
+		'is_featured'  => false,
+		'badge_text'   => '',
+		'order'        => 7,
+	),
+	array(
+		'title'        => '30-Day Tourist Visa',
+		'slug'         => '30-day-tourist-visa',
+		'tagline'      => 'Explore Dubai, Abu Dhabi & beyond',
+		'price_aed'    => 275,
+		'price_usd'    => 75,
+		'duration'     => 30,
+		'entry_type'   => 'single',
+		'is_featured'  => true,
+		'badge_text'   => 'Best Value',
+		'order'        => 8,
+	),
+);
+
+$visa_count = 0;
+foreach ( $visa_types as $v ) {
+	// Skip if a visa type with the same slug already exists.
+	$existing = get_posts( array(
+		'post_type'   => 'visati_visa_type',
+		'name'        => $v['slug'],
+		'post_status' => 'publish',
+		'numberposts' => 1,
+	) );
+	if ( $existing ) {
+		echo "SKIP (exists): {$v['title']}\n";
+		continue;
+	}
+
+	$id = wp_insert_post( array(
+		'post_type'    => 'visati_visa_type',
+		'post_title'   => $v['title'],
+		'post_name'    => $v['slug'],
+		'post_status'  => 'publish',
+		'menu_order'   => $v['order'],
+	) );
+
+	if ( $id && ! is_wp_error( $id ) ) {
+		update_post_meta( $id, '_visati_tagline', $v['tagline'] );
+		update_post_meta( $id, '_visati_price_aed', $v['price_aed'] );
+		update_post_meta( $id, '_visati_price_usd', $v['price_usd'] );
+		update_post_meta( $id, '_visati_duration_days', $v['duration'] );
+		update_post_meta( $id, '_visati_entry_type', $v['entry_type'] );
+		update_post_meta( $id, '_visati_is_featured', $v['is_featured'] ? 'on' : '' );
+		update_post_meta( $id, '_visati_badge_text', $v['badge_text'] );
+		echo "✓ Visa Type: {$v['title']}\n";
+		++$visa_count;
+	}
+}
+
+echo "\nSeeded {$visa_count} visa types.\n";

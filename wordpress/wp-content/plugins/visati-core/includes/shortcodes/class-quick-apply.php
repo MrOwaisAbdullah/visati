@@ -13,7 +13,6 @@ final class Visati_Core_Quick_Apply_Shortcode {
 
 	public static function init(): void {
 		add_shortcode( 'visati_quick_apply', array( __CLASS__, 'render' ) );
-		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
 	public static function enqueue_assets(): void {
@@ -21,10 +20,13 @@ final class Visati_Core_Quick_Apply_Shortcode {
 	}
 
 	public static function render(): string {
+		wp_enqueue_style( 'visati-apply', VISATI_CORE_URL . 'assets/css/apply.css', array(), VISATI_CORE_VERSION );
+
 		$visas = get_posts(
 			array(
 				'post_type'      => 'visati_visa_type',
 				'posts_per_page' => 50,
+				'no_found_rows'  => true,
 				'orderby'        => 'menu_order title',
 				'order'          => 'ASC',
 				'post_status'    => 'publish',

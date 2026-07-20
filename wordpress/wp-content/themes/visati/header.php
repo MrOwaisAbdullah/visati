@@ -29,6 +29,7 @@ $site_desc  = get_bloginfo( 'description' );
 </head>
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
+<a href="#primary" class="visati-skip-link"><?php esc_html_e( 'Skip to content', 'visati' ); ?></a>
 
 <header id="site-header" class="visati-header" role="banner">
 	<div class="visati-header__bar">

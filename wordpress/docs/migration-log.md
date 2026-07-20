@@ -450,3 +450,220 @@
 
 - **File modified:** `assets/js/application-form.js` — submit handler now calls `POST /visati/v1/checkout-session` with `{application_id}` and redirects to `response.url` (Stripe Checkout). Shows error on failure. Re-enables button for retry.
 - **Flow:** Complete apply → pay: form creates draft → uploads docs → submit → create checkout session → redirect to Stripe → webhook confirms → email sent
+
+---
+
+## Session: Homepage HTML → native Elementor widgets (July 18, 2026)
+
+### Goal — convert homepage HTML widgets to native Elementor widgets
+
+- **Context:** Homepage (post ID 18) was originally built mostly as raw **HTML widgets** inside Elementor containers, not native widgets. Client self-editing is harder with HTML blobs. Decision: convert *simple* sections to native widgets; keep HTML only where the design can't be reproduced with pure widgets. Dynamic shortcodes stay as-is (`[visati_quick_apply]`, `[visati_visa_cards]`, `[visati_testimonials]`, `[visati_faq]`). Complex custom-layout sections stay HTML (feature dark card `c29c344`, process steps `6b01df9`, why-choose `c020c37`, global-reach map). Approach: convert one section first for review, then proceed.
+
+### Trust-stats section → 4 native Counter widgets
+
+- **Before:** single HTML widget `e0cd7e8` inside navy container `7b94321` (under hero) — a 4-col CSS grid of `<p>` number + `<p>` label.
+- **After:** 4 native `counter` widgets in container `7b94321` (set to flex row):
+  - `210f2b5` — ending 1000, suffix `+`, thousand separator → **1,000+** / Happy Travelers
+  - `6b176ee` — ending 99, suffix `%` → **99%** / Approval Rate
+  - `d5f598d` — prefix `24–`, ending 72, suffix `h` → **24–72h** / Avg. Processing (range rendered via prefix/suffix since Counter animates one number)
+  - `f27dbd1` — ending 100, suffix `+` → **100+** / Google Reviews
+- **Styling (match Next.js design):** number 36px / 700 / `#FFFFFF` / Plus Jakarta Sans; title 12px / `rgba(255,255,255,0.5)`. Numbers animate up on scroll (duration 2000ms).
+- **Then:** removed old HTML widget `e0cd7e8`.
+
+### Responsive fix — stats 2×2 on mobile
+
+- Parent `7b94321`: `flex_wrap: wrap`, `flex_justify_content: center`, gaps 32px desktop / 24px col + 28px row mobile.
+- Each counter: `_element_width: initial` with custom width **20% desktop/tablet**, **40% mobile** → single row on desktop, clean **2×2 grid** on mobile.
+
+### Tooling / method notes 💎
+
+- **Did this via live EMCP MCP tools, not a PHP import script:** `emcp-tools-add-free-widget` (widget_type `counter`, parent `7b94321`), `emcp-tools-update-element`/`update-widget` for settings, `emcp-tools-remove-element` for the old HTML. Cleaner than editing `_elementor_data` JSON directly.
+- Cleared Elementor CSS cache after edits: `bash wordpress/scripts/wp-local.sh elementor flush-css`.
+- **Counter widget key settings:** `starting_number`, `ending_number`, `prefix`, `suffix`, `thousand_separator: "yes"`, `duration`; styling via `number_color` + `typography_number_*` and `title_color` + `typography_title_*` (with `typography_*_typography: "custom"`).
+- **Blocker (infra, not project):** harness auto-approval safety classifier (runs on `claude-opus-4-8`) was temporarily unavailable → in auto permission mode all MCP/Bash tool calls were blocked ("auto mode cannot determine the safety of…"). Read-only file tools unaffected. **Fix:** user toggled off auto mode to approve tool calls manually; alternatively run commands via the `! <cmd>` prompt prefix. Reconnecting MCP (`/mcp`) was *not* the fix — MCP was connected throughout.
+
+### Remaining simple sections to convert (next)
+
+- Hero text `c0f5644`, section headings `0141353` / `a2cafeb` / `090053e`, CTA banner `83b3fcc`.
+
+---
+
+## Session: Section headers HTML → native widgets (July 18, 2026)
+
+### Goal — convert 3 section-header HTML widgets to native widgets (easy→medium)
+
+Ranked remaining simple sections easy→hard first; did the 3 easiest. Left the hard one (`c020c37` "VISATI Difference" 2×2 icon-box grid) and the CTA banner `83b3fcc` for later.
+
+### #1 "Four simple steps." header (`a2cafeb`) → 2 Heading widgets — EASY
+
+- Into column container `5895884` (before process grid `6b01df9`):
+  - `909ac0e` Heading — "The Process", tag `p`, center, `#C9A84C`, 12px/600/uppercase/1.44px letter-spacing, 12px bottom margin
+  - `3bb17b5` Heading — "Four simple steps.", tag `h2`, center, `#0A1628`, 700, resp font 48/40/28px (desktop/tablet/mobile), 56px bottom margin
+- Removed HTML `a2cafeb`.
+
+### #2 "Visa Types" header (`0141353`) → 2 Headings + Button — EASY
+
+- Left/right split. Structure inside `9eb7cb5` (before visa-cards shortcode `b7c4811`):
+  - Row `7fef307` ("Visa Types Header Row"): `flex_direction:row`, `space-between`, `align_items:flex-end`, `flex_wrap:wrap`, 40px bottom margin
+    - Column `bb53974` ("Visa Types Heading Group"): `flex_direction:column`, `_element_width:auto` → eyebrow `515fc7d` + H2 `3a626e7` ("Pick the visa that fits<br> your trip.")
+    - Button `364b2ea` — "Compare all", link `/visa-types`, transparent bg, `#C9A84C` text, `fas fa-arrow-right` icon right, zero padding (text-link look)
+- Removed HTML `0141353`.
+
+### #3 "Testimonials" header (`090053e`) → Headings + Star Rating — MEDIUM
+
+- Same split, inside `9c22c19`:
+  - Row `45993d8` ("Testimonials Header Row")
+    - Column `d35cd4d`: eyebrow `8f6ca04` ("Testimonials") + H2 `68e46cf` ("Loved by travellers.")
+    - Column `8bc5af0` ("Rating Group"): `flex_align_items:flex-end` (right-aligned) → `star-rating` `bf08625` (rating 4.9, scale 5, `star_fontawesome`, marked `#C9A84C` / unmarked `rgba(201,168,76,0.25)`, 16px, align right) + subtext Heading `3449603` ("Based on 100+ reviews on Trustpilot & Google", 12px, `rgba(26,26,46,0.5)`, right)
+- Removed HTML `090053e`.
+
+### Method notes 💎
+
+- **No "add empty container" tool exists.** To build nested flex layouts (left/right splits) with EMCP: `emcp-tools-duplicate-element` on any existing container, then `emcp-tools-remove-element` on the copied children to empty it, then `emcp-tools-move-element` into place and `update-element` to set flex. Duplicating **always deep-copies children** (and drops the copy as the next sibling of the source) — so after each duplicate, re-run `find-element` to grab the new child IDs and delete them.
+- Reused this by duplicating a fully-built row (`7fef307` → `45993d8`) for #3, then just editing the copied widgets' text instead of rebuilding.
+- `star-rating` widget key params: `rating`, `rating_scale`, `star_style` (`star_fontawesome`), `stars_color`, `stars_unmarked_color`, `star_size`, `align`.
+- Heading widget does eyebrow labels well: set `header_size:"p"` + custom typography (uppercase, letter-spacing, small size, brand color).
+- Cache flush after: `bash wordpress/scripts/wp-local.sh elementor flush-css`.
+
+### Remaining (deferred, harder)
+
+- `c020c37` "The VISATI Difference" — 40/60 split, left text+button, right 2×2 grid of 4 icon-boxes (colored SVG tiles). Best as 4 native Icon Box widgets in nested containers.
+- `83b3fcc` CTA banner — eyebrow+H2+text left, WhatsApp button (green, brand icon, `wa.me` link) + "Send Inquiry" outline button right.
+
+---
+
+## Session: Mobile responsiveness pass — section padding + header/hero/stats (July 18, 2026)
+
+### Context
+
+User manually adjusted several homepage sections (post 18) in the Elementor editor, then asked to fix remaining mobile issues and log everything. State inspected via `emcp-tools-get-element-settings` before touching anything.
+
+### User's own changes (verified in element settings, kept as-is)
+
+- **Header rows side-by-side:** `7fef307` (Visa Types) & `45993d8` (Testimonials) — left/right columns now truly inline. Widths set per-column via `_element_width:"initial"` + `_element_custom_width` (desktop) + `_element_custom_width_mobile:100%`. Testimonials: left `d35cd4d` 55% / right `8bc5af0` 40% desktop, both 100% mobile.
+- **"4.9" added** to testimonials rating group `8bc5af0` (Heading `1cf8527`, prior session) — stars → 4.9 → review-count subtext, right-aligned.
+- **Hero form stacked / hero row:** `hero-row` is `flex_wrap:nowrap` at desktop; Quick-Apply shortcode `c5d2869` given `_element_custom_width:39%` so form + hero text sit side-by-side, stacking on smaller breakpoints.
+- **Stats row responsive:** `7b94321` — `flex_wrap:wrap`, centered, desktop gap 32px, mobile gap 24px col / 28px row (→ 2×2 on mobile from prior session).
+
+### 💎 Problem — sections narrow/cramped on mobile
+
+- **Symptom:** All content sections looked squeezed into a narrow center strip on mobile; big empty gutters left/right.
+- **Cause:** Every section **column wrapper** carried desktop side padding `right:80 / left:80` px with **no responsive override**. On a ~375px phone that's 160px of gutter (~43% of the viewport) — content crushed into the remaining ~215px. The row/column widths were fine; padding was the culprit.
+- **Fix:** Added `padding_mobile` = `{top:0, right:20, bottom:0, left:20}` to every section wrapper. Elementor stores responsive control values under `<control>_mobile` / `_tablet` keys — setting `padding_mobile` overrides desktop `padding` at the mobile breakpoint only.
+- **Wrappers fixed (6):** `9eb7cb5` (Visa Types), `9c22c19` (Testimonials), `10d1b02` (VISATI Difference), `b35db8f` (CTA banner), `5895884` (Process), `7b94321` (Stats). *(Policy/other wrappers `6d2ed02` already had 20px — left alone.)*
+
+### Method notes
+
+- **Responsive overrides via MCP:** append `_mobile` / `_tablet` to any control key, e.g. `padding_mobile`, `flex_gap_mobile`, `_element_custom_width_mobile`, `typography_font_size_tablet`. Desktop value stays in the base key. No separate "responsive mode" needed — just send the suffixed key through `update-element` / `update-widget`.
+- Section side padding lives on the **inner column container**, not the outer full-bleed background container (those carry only top/bottom padding + bg color). Fix padding on the inner one.
+- Cache flush after: `bash wordpress/scripts/wp-local.sh elementor flush-css`.
+
+### To verify on device
+
+- Header rows: confirm they stay 2-up on tablet and stack cleanly on phone (columns → 100%).
+- Hero: form should drop below hero text on mobile (nowrap row → check it wraps at tablet/mobile, may need `flex_wrap_mobile:wrap` if it doesn't).
+
+### 💎 Follow-up — hero row overflowing right on mobile (predicted above, confirmed)
+
+- **Symptom:** On mobile the hero form didn't stack under the hero text — it overflowed off the right edge (horizontal scroll).
+- **Cause:** `hero-row` was `flex_wrap:nowrap` with no responsive override. With nowrap, hero text `c0f5644` + Quick-Apply form `c5d2869` (`_element_custom_width:39%`) were forced onto one line at every breakpoint; on a narrow viewport the 39% form spilled past the right edge instead of wrapping.
+- **Fix (3 edits):**
+  - `hero-row`: `flex_wrap_tablet:"wrap"` + `flex_wrap_mobile:"wrap"` (desktop stays `nowrap`).
+  - `c0f5644` (hero text): `_element_width:"initial"`, `_element_custom_width_tablet/_mobile:100%`, `_flex_size:"none"` (stop flex from stretching it).
+  - `c5d2869` (form): `_element_width:"initial"`, `_element_custom_width_tablet/_mobile:100%` (keeps desktop 39%).
+- **Skill note:** A `flex_direction:row` container needs BOTH `flex_wrap_mobile:wrap` on the parent AND `100%` custom width on each child for a clean stack — wrap alone lets children keep their desktop % width and sit narrow/overflow; width alone without wrap can't move them to a new line.
+
+---
+
+## Session: CTA banner HTML → native widgets (July 18, 2026)
+
+### Goal — convert final deferred section, CTA banner `83b3fcc`, to native widgets
+
+Last remaining HTML-widget section on homepage (post 18). Navy full-bleed banner, split layout: left text block, right two buttons.
+
+### Structure built
+
+- Navy outer `4a6bd7b` → side-padding wrapper `b35db8f` → **CTA Banner Row** `130892e` (`flex_direction:row`, `space-between`, `flex_align_items:center`, `flex_wrap:wrap`):
+  - **CTA Text** `53c9f50` (`flex_direction:column`, 60% desktop / 100% tablet+mobile):
+    - eyebrow `6198867` Heading — "Need Help?", `p` tag, gold `#C9A84C`, uppercase (inherited from dup)
+    - H2 `b81736a` — "Talk to a visa consultant.", white `#ffffff`, 700, resp 30/26/22px
+    - paragraph `3b8e0a9` Text Editor — muted white `rgba(255,255,255,0.6)`, 14px
+  - **CTA Buttons** `daf126c` (`flex_direction:row`, `flex_wrap:wrap`, 12px gap):
+    - `194f2a2` Button — "Chat on WhatsApp", green `#25D366`, white text, `fab fa-whatsapp` icon left, link `https://wa.me/971500000000` (⚠️ PLACEHOLDER number), 10px radius
+    - `52e9fd1` Button — "Send Inquiry", transparent bg, 1px `rgba(255,255,255,0.25)` border, white text, link `/contact`, 10px radius
+- Removed HTML `83b3fcc`.
+
+### Method notes
+
+- Reused the split-row pattern a 3rd time by duplicating Visa Types row `7fef307`. The dup's leftover copied button (`194f2a2`) was **moved** into a new button-group container and repurposed as the WhatsApp button — avoids adding+deleting.
+- Button-group container `daf126c` made by duplicating the left text column `53c9f50` then removing its 3 copied widgets and switching `flex_direction` to `row`.
+- WhatsApp brand icon: `selected_icon` = `{value:"fab fa-whatsapp", library:"fa-brands"}`. Outline button = transparent `background_color` + `border_border:"solid"` + `border_width` + `border_color`.
+- `flush-css` ran slow this time (WP-CLI boot >120s, completed in background) — succeeded.
+
+### ⚠️ Needs real values
+
+- WhatsApp number is placeholder `971500000000` — swap for the real business number.
+- "Send Inquiry" → `/contact` — confirm destination (could be a form anchor or dedicated page).
+
+### 🎉 Homepage HTML→native migration COMPLETE
+
+All originally-HTML section headers/banners on post 18 are now native widgets. Remaining HTML widget still on page: `c020c37` ("The VISATI Difference" 2×2 icon-box grid) — a full content block, not a header; convert separately when prioritized.
+
+---
+
+## Session: SEO content sections A–F + hero/VISATI-Difference native conversion (July 19, 2026)
+
+### Context
+
+Site not yet deployed → good window to make the homepage content-rich before launch. Benchmarked against competitor **dubaivisa.com** (their edge is substantive text: intro paragraph, "What Is a Dubai Visa?" explainer, visa-type breakdown, FAQ). Homepage was visually complete but text-light — weak for Google + AI Overviews / LLM citation. Decision: add 6 new content sections, all native Elementor widgets, copy run through the `humanizer-main` skill (no AI tells: no "testament", rule-of-three, em-dashes, copula avoidance).
+
+### Locked constraints (user)
+
+- Nationalities served = **worldwide** (do not invent a country list).
+- Processing time = pull from Next.js source, **not invented** → `src/components/home/HomeFAQ.tsx:11`: "Most UAE visas are processed in 24–72 hours. Express same-day options are available for urgent travel."
+- **No credentials invented** — license/years/certs left as an explicit placeholder card for the client to fill.
+
+### 6 sections built (all native widgets, placed after FAQ, before contact CTA)
+
+- **A — Intro** (`d66227a`, white): H2 "Your Dubai visa, handled start to finish" `439abed` + 2-paragraph Text Editor `5e36cb1`. Centered ~760px readable column. Prose block (kept as plain text, not cards).
+- **B — Visa Types Explained** (`89a95a3`, grey): centered H2 `0110989` + intro `d5f9ff3` + 4 icon-box cards grid `bb970ae` (Tourist / Multiple-Entry / Transit / Visa-free-on-arrival).
+- **C — Who We Help** (`dfde7aa`, white): centered globe icon `fa03663` + H2 `3886113` + "worldwide" text `9282c8b`.
+- **D — What You Need** (`3c28c4a`, grey): H2 `280e43d` + intro `c223194` + checkmark icon-list `8221d1b` (passport / photo / travel details) + processing-time Text Editor `2e4f3ff` (from Next.js source).
+- **E — Why Choose Visati** (`cb099f7`, white): H2 `36b0d20` + intro `3814593` + 4 icon-box cards (`de003fd`/`f961b35`/`2713147`/`a6a5629`) — one card holds the **credentials placeholder**.
+- **F — Closing CTA** (`485e3e3`, navy `#0A1628`): white centered H2 `f0d907e` + text `82bdc3a` + 4 internal-link buttons in group `74058b7` — Apply Now `/apply` (gold), Visa Types `/visa-types` (outline), Read FAQ `/faq` (outline), Contact Us `/contact` (outline). Internal-linking hub for crawl equity.
+
+Alternating white/grey backgrounds for visual rhythm. Section A prose is plain; B–F use cards/icons/lists so they read as designed, not a text wall.
+
+### Method notes 💎
+
+- **No "add empty container" tool in EMCP.** Reused the established trick: duplicate an existing section shell (Section A `d66227a`, or the card grid `802177d` / button group `daf126c`), then `remove-element` the copied children and repurpose. Card grids were fastest to clone from the VISATI-Difference grid since they already had the bordered icon-box styling.
+- After cloning a grid that previously sat beside text (56% width), reset it to full width + `flex_justify_content:center` when standalone.
+- SEO copy sourced from repo, not invented — processing time from `HomeFAQ.tsx`, positioning from `src/app/layout.tsx` meta.
+- `flush-css` again ran >120s and completed in background (WP-CLI boot latency on Local) — succeeded.
+
+### ⚠️ Needs real values before launch
+
+- **Credentials card** (Section E) — placeholder text pending real license no. / years / certifications.
+- WhatsApp number still `971500000000` (from prior CTA session).
+- Section D visa durations use "commonly 30/60 day, 48/96h" — confirm exact offerings.
+
+### FAQ schema note (from SEO skill)
+
+Google retired FAQ rich results for all sites **May 7, 2026**. The `[visati_faq]` accordion is good UX + AI-citation value — keep it, but expect no SERP rich snippet. Don't add new FAQPage schema for Google SERP benefit.
+
+### Also converted earlier this session (HTML → native)
+
+- **Hero** `c0f5644` → native column `73be17e` (badges row, H1, subheading, CTA row, social-proof chip, trust icon-list). Beside Quick Apply form `c5d2869` in `hero-row`.
+- **VISATI Difference** `c020c37` → native row `5ebf11e` (40% text column + button + 2×2 icon-box grid `802177d`).
+- Only HTML widgets left on post 18: `c29c344` (Global Reach panel) and `6b01df9` (process grid) — both given scoped responsive `<style>` blocks (2-col→1-col reflow, connector line hidden ≤768px).
+- Testimonial arrows fixed: `padding:0` + `box-sizing` (true circle) + `svg{display:block}` + `line-height:0` (chevron centered).
+
+### Blocker — Font Awesome 6 icon names on Elementor 4.1.5 (ships FA5) 💎
+
+- **Symptom:** PHP warnings on the homepage — `Undefined array key "list-check"` and `"arrows-rotate"` in `elementor/core/page-assets/data-managers/font-icon-svg/font-awesome.php` (lines 45/48/49/50), then null-offset warnings as it tried to read the missing SVG entry.
+- **Cause:** I set two icon-box `selected_icon` values using **Font Awesome 6** names (`fas fa-list-check`, `fas fa-arrows-rotate`). Elementor 4.1.5 bundles **Font Awesome 5**, whose SVG data map has no such keys → lookup returns null.
+- **Fix:** swapped to FA5-valid equivalents via `update-widget`:
+  - `2b74674` (Multiple-Entry Visa): `fa-arrows-rotate` → `fa-sync-alt`
+  - `de003fd` (End-to-end handling): `fa-list-check` → `fa-tasks`
+- **Verified clean (already FA5-valid):** `fa-globe`, `fa-umbrella-beach`, `fa-plane-departure`, `fa-passport`, `fa-lock`, `fa-award`, `fa-check-circle`, `fab fa-whatsapp`.
+- **Skill note:** when setting Elementor icons via MCP on an FA5 install, use FA5 names. Common FA6→FA5 gotchas: `list-check`→`tasks`, `arrows-rotate`→`sync-alt`, `magnifying-glass`→`search`, `xmark`→`times`, `trash-can`→`trash`, `circle-check`→`check-circle`.

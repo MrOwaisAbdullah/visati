@@ -47,7 +47,13 @@ final class Visati_Core_Documents_Controller {
 				array(
 					'methods'             => 'POST',
 					'callback'            => array( __CLASS__, 'upload' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => function () {
+					// Require REST nonce — sent by apply form JS via X-WP-Nonce header.
+					if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) ) {
+						return false;
+					}
+					return wp_verify_nonce( wp_unslash( $_SERVER['HTTP_X_WP_NONCE'] ), 'wp_rest' );
+				},
 				),
 			)
 		);

@@ -6,6 +6,7 @@
  * @var string $visa_name
  * @var array  $history
  * @var array  $signed_docs
+ * @var array  $payments
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -82,6 +83,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<?php endforeach; ?>
 				</ul>
 			<?php endif; ?>
+
+		<h2>Payment</h2>
+		<?php if ( ! empty( $payments ) ) : ?>
+			<table class="visati-payments-table">
+				<thead>
+					<tr>
+						<th>Amount</th>
+						<th>Status</th>
+						<th>Stripe Payment Intent</th>
+						<th>Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $payments as $pay ) : ?>
+						<tr>
+							<td><strong>AED <?php echo esc_html( number_format( (float) $pay->amount_aed, 2 ) ); ?></strong></td>
+							<td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $pay->status ); ?>"><?php echo esc_html( ucfirst( $pay->status ) ); ?></span></td>
+							<td><code><?php echo esc_html( $pay->stripe_payment_intent_id ); ?></code></td>
+							<td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $pay->created_at ) ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php else : ?>
+			<p class="visati-no-payment">No payment recorded for this application yet.</p>
+		<?php endif; ?>
 
 		<?php if ( ! empty( $signed_docs ) ) : ?>
 			<h2>Documents</h2>

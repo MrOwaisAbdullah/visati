@@ -137,6 +137,11 @@ class Visati_Core_Database {
 		}
 		$done = true;
 
+		// Only run in admin or during REST API requests (schema changes need write context).
+		if ( ! is_admin() && ! wp_doing_rest() ) {
+			return;
+		}
+
 		global $wpdb;
 		$prefix = $wpdb->prefix;
 		$table  = $prefix . 'visati_applications';

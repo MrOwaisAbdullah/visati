@@ -35,6 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			array(
 				'post_type'      => 'visati_testimonial',
 				'posts_per_page' => (int) $atts['count'],
+				'no_found_rows'  => true,
 				'orderby'        => 'menu_order title',
 				'order'          => 'ASC',
 				'post_status'    => 'publish',

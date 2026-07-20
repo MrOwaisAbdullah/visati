@@ -71,7 +71,7 @@ $apply_url  = home_url( '/apply?visa=' . rawurlencode( $slug ) );
 					</div>
 
 					<div class="visati-visa-single__details">
-						<h3>Visa Details</h3>
+						<h2>Visa Details</h2>
 						<dl>
 							<?php if ( $duration ) : ?>
 								<dt>Duration</dt>
@@ -87,7 +87,7 @@ $apply_url  = home_url( '/apply?visa=' . rawurlencode( $slug ) );
 					</div>
 
 					<div class="visati-visa-single__need-help">
-						<h3>Need Help?</h3>
+						<h2>Need Help?</h2>
 						<p>Our visa experts are available to answer your questions.</p>
 						<a href="https://wa.me/971555934985" class="visati-btn--whatsapp" style="width:100%;justify-content:center;" target="_blank" rel="noopener">
 							Chat on WhatsApp

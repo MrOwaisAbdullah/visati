@@ -1,0 +1,3 @@
+- [Fix pink buttons/links from Hello Elementor](history/prompts/general/001-fix-pink-buttons-links.general.prompt.md) — Resolved P8: scoped !important CSS overrides for buttons/links, preserving admin panel
+- [Homepage widget conversion](homepage-widget-conversion.md) — converting homepage HTML widgets → native Elementor widgets; stats done as counters
+- [WP-Local CLI runner](wp-local-cli-runner.md) — how to run WP-CLI against the Local "visati" site

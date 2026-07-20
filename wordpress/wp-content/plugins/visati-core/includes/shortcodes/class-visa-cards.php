@@ -31,6 +31,7 @@ final class Visati_Core_Visa_Cards_Shortcode {
 		$args = array(
 			'post_type'      => 'visati_visa_type',
 			'posts_per_page' => (int) $atts['count'],
+			'no_found_rows'  => true,
 			'orderby'        => 'menu_order title',
 			'order'          => 'ASC',
 			'post_status'    => 'publish',

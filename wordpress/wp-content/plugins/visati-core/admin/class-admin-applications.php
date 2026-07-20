@@ -55,6 +55,7 @@ class Visati_Core_Admin_Applications {
 		$app_table     = $wpdb->prefix . 'visati_applications';
 		$history_table = $wpdb->prefix . 'visati_status_history';
 		$docs_table    = $wpdb->prefix . 'visati_documents';
+		$payments_table = $wpdb->prefix . 'visati_payments';
 
 		$app = $wpdb->get_row(
 			$wpdb->prepare( "SELECT * FROM {$app_table} WHERE id = %s", $app_id )
@@ -78,6 +79,11 @@ class Visati_Core_Admin_Applications {
 		// Documents.
 		$documents = $wpdb->get_results(
 			$wpdb->prepare( "SELECT * FROM {$docs_table} WHERE application_id = %s ORDER BY uploaded_at ASC", $app_id )
+		);
+
+		// Payments.
+		$payments = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$payments_table} WHERE application_id = %s ORDER BY created_at DESC", $app_id )
 		);
 
 		// Handle status update.
