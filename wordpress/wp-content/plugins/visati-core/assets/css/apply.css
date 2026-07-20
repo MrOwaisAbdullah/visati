@@ -89,7 +89,7 @@
 }
 .visati-stepper__item.is-active .visati-stepper__meta,
 .visati-stepper__item.is-done .visati-stepper__meta { color: var( --visati-ink, #1A1A2E ); }
-@media ( max-width: 600px ) {
+@media ( max-width: 639px ) {
 	.visati-stepper__meta { display: none; }
 }
 
@@ -121,7 +121,7 @@
 	gap: 1rem 1.25rem;
 }
 .visati-grid__full { grid-column: 1 / -1; }
-@media ( max-width: 600px ) {
+@media ( max-width: 639px ) {
 	.visati-grid { grid-template-columns: 1fr; }
 }
 .visati-field {

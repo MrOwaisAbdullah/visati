@@ -167,8 +167,12 @@ class Visati_Core_Webhooks_Controller {
 
 		// Send confirmation email.
 		if ( class_exists( 'Visati_Core_Email' ) ) {
-			$app->status = 'submitted';
-			Visati_Core_Email::send_confirmation( $app );
+			$visa_type_obj = get_page_by_path( $app->visa_type_slug, OBJECT, 'visati_visa_type' );
+			$visa_name     = $visa_type_obj ? $visa_type_obj->post_title : '';
+			$app_name      = trim( ( $app->given_name ?? '' ) . ' ' . ( $app->surname ?? '' ) );
+
+			Visati_Core_Email::send_confirmation( $app_id, $app->applicant_email, $visa_name );
+			Visati_Core_Email::send_admin_alert( $app_id, $visa_name, $app_name );
 		}
 	}
 

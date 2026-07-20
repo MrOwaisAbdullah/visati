@@ -73,6 +73,89 @@ final class Visati_Core_Email {
 		return self::mail( $to, $subject, self::wrap( $body, $app_id ) );
 	}
 
+	/**
+	 * Send admin alert when a new application is submitted.
+	 *
+	 * @param string $app_id    Application ID (VIS-YYYY-XXXXXX).
+	 * @param string $visa_name Visa type name.
+	 * @param string $name      Applicant name.
+	 * @return bool
+	 */
+	public static function send_admin_alert( string $app_id, string $visa_name, string $name = '' ): bool {
+		$admin = self::admin_email();
+		if ( ! $admin ) {
+			return false;
+		}
+
+		$subject = sprintf(
+			/* translators: %s: application ID */
+			__( 'New Visati application submitted — %s', 'visati-core' ),
+			$app_id
+		);
+
+		$track_url = esc_url( admin_url( 'admin.php?page=visati-applications&action=view&id=' . rawurlencode( $app_id ) ) );
+
+		$body = '<p>' . esc_html__( 'A new visa application has been submitted and is awaiting review.', 'visati-core' ) . '</p>'
+			. '<p><strong>' . esc_html__( 'Reference:', 'visati-core' ) . '</strong> '
+			. '<span style="font-family:monospace;font-weight:700;">' . esc_html( $app_id ) . '</span></p>';
+
+		if ( $name ) {
+			$body .= '<p><strong>' . esc_html__( 'Applicant:', 'visati-core' ) . '</strong> ' . esc_html( $name ) . '</p>';
+		}
+
+		if ( $visa_name ) {
+			$body .= '<p><strong>' . esc_html__( 'Visa type:', 'visati-core' ) . '</strong> ' . esc_html( $visa_name ) . '</p>';
+		}
+
+		$body .= '<p><a href="' . $track_url . '" style="display:inline-block;padding:12px 24px;background:#C9A84C;color:#0A1628;border-radius:999px;font-weight:700;text-decoration:none;">'
+			. esc_html__( 'Review application', 'visati-core' ) . '</a></p>';
+
+		return self::mail( $admin, $subject, self::wrap( $body, $app_id ) );
+	}
+
+	/**
+	 * Send admin alert when a new inquiry is submitted.
+	 *
+	 * @param int    $inquiry_id Inquiry ID.
+	 * @param array  $params     Form data (name, email, subject, message).
+	 * @return bool
+	 */
+	public static function send_inquiry_notification( int $inquiry_id, array $params = array() ): bool {
+		$admin = self::admin_email();
+		if ( ! $admin ) {
+			return false;
+		}
+
+		$name    = sanitize_text_field( $params['name'] ?? '' );
+		$email   = sanitize_email( $params['email'] ?? '' );
+		$subject = sanitize_text_field( $params['subject'] ?? '' );
+		$message = sanitize_textarea_field( $params['message'] ?? '' );
+
+		$subj = sprintf(
+			/* translators: %s: inquiry subject */
+			__( 'New Visati inquiry — %s', 'visati-core' ),
+			$subject ?: __( '(no subject)', 'visati-core' )
+		);
+
+		$admin_url = esc_url( admin_url( 'admin.php?page=visati-inquiries&action=view&id=' . $inquiry_id ) );
+
+		$body = '<p>' . esc_html__( 'A new inquiry has been submitted via the contact form.', 'visati-core' ) . '</p>'
+			. '<p><strong>' . esc_html__( 'From:', 'visati-core' ) . '</strong> '
+			. esc_html( $name ) . ' &lt;' . esc_html( $email ) . '&gt;</p>'
+			. '<p><strong>' . esc_html__( 'Subject:', 'visati-core' ) . '</strong> '
+			. esc_html( $subject ) . '</p>';
+
+		if ( $message ) {
+			$body .= '<div style="padding:12px;background:#F8F9FB;border-radius:8px;margin:16px 0;">'
+				. nl2br( esc_html( $message ) ) . '</div>';
+		}
+
+		$body .= '<p><a href="' . $admin_url . '" style="display:inline-block;padding:12px 24px;background:#C9A84C;color:#0A1628;border-radius:999px;font-weight:700;text-decoration:none;">'
+			. esc_html__( 'View inquiry', 'visati-core' ) . '</a></p>';
+
+		return self::mail( $admin, $subj, self::wrap( $body ) );
+	}
+
 	/* ── Internals ───────────────────────────────────────────────────── */
 
 	/**
@@ -146,5 +229,18 @@ final class Visati_Core_Email {
 	 */
 	public static function content_type(): string {
 		return 'text/html; charset=UTF-8';
+	}
+
+	/**
+	 * Admin notification email — from settings or WordPress admin_email.
+	 *
+	 * @return string
+	 */
+	private static function admin_email(): string {
+		$admin = Visati_Core_Settings::admin_notification_email();
+		if ( $admin && is_email( $admin ) ) {
+			return $admin;
+		}
+		return get_option( 'admin_email' );
 	}
 }

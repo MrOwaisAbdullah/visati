@@ -138,7 +138,7 @@ class Visati_Core_Database {
 		$done = true;
 
 		// Only run in admin or during REST API requests (schema changes need write context).
-		if ( ! is_admin() && ! wp_doing_rest() ) {
+		if ( ! is_admin() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 

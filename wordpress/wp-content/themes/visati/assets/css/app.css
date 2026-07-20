@@ -29,6 +29,9 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+*, *::before, *::after { box-sizing: border-box; }
+img { max-width: 100%; height: auto; }
+
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
 	color: var( --visati-navy );
@@ -182,6 +185,10 @@ a:hover { color: var( --visati-gold ); }
 }
 .visati-whatsapp-fab:hover { transform: scale( 1.06 ); color: var( --visati-white ); }
 
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+	.visati-whatsapp-fab { bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
+}
+
 /* ─────────────────────────────────────────────────────────
    HEADER
    ───────────────────────────────────────────────────────── */
@@ -298,8 +305,8 @@ a:hover { color: var( --visati-gold ); }
 	justify-content: center;
 	align-items: center;
 	gap: 5px;
-	width: 40px;
-	height: 40px;
+	width: 44px;
+	height: 44px;
 	padding: 8px;
 	background: transparent;
 	border: 0;
@@ -363,7 +370,12 @@ a:hover { color: var( --visati-gold ); }
 	border: 0;
 	color: var( --visati-white );
 	cursor: pointer;
-	padding: 4px;
+	padding: 10px;
+	min-width: 44px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 .visati-drawer__links {
 	list-style: none;
@@ -1452,6 +1464,22 @@ select:focus-visible {
 }
 
 /* ============================================================
+   RESPONSIVE — mobile utilities
+   ============================================================ */
+table { border-collapse: collapse; }
+.visati-visa-single__content img { max-width: 100%; height: auto; }
+.visati-visa-single__content { overflow-wrap: break-word; }
+
+.visati-footer__social-link {
+	width: 44px;
+	height: 44px;
+}
+
+.visati-footer__legal a {
+	font-size: 0.75rem;
+}
+
+/* ============================================================
    POST-RESET OVERRIDES — hello-elementor reset.css loads AFTER
    app.css and applies bare-element styles that break our header.
    These selectors use higher specificity to win.
@@ -2235,6 +2263,8 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 }
 .visati-visa-single__details dl {
 	margin: 0;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
 }
 .visati-visa-single__details dt {
 	font-size: 0.75rem;
@@ -2576,11 +2606,11 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 		gap: 0.4rem;
 	}
 	.visati-footer__social-link {
-		width: 32px;
-		height: 32px;
+		width: 44px;
+		height: 44px;
 	}
 	.visati-footer__heading {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 	}
 	.visati-footer__link {
 		font-size: 0.8rem;
@@ -2601,7 +2631,7 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 		justify-content: center;
 	}
 	.visati-footer__legal a {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 	}
 }
 
@@ -2677,5 +2707,14 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	.visati-about-cta__btns {
 		flex-direction: column;
 		align-items: center;
+	}
+}
+
+/* ── Reduced motion ─────────────────────────────────── */
+@media ( prefers-reduced-motion: reduce ) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
 	}
 }
