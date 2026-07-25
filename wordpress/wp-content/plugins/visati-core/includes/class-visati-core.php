@@ -44,6 +44,7 @@ final class Visati_Core {
 		Visati_Core_Inquiries_Controller::init();
 		Visati_Core_Track_Controller::init();
 		Visati_Core_Webhooks_Controller::init();
+		Visati_Core_Discount_Controller::init();
 		Visati_Core_Tracking::init();
 
 		// Shortcodes.
@@ -54,6 +55,10 @@ final class Visati_Core {
 		Visati_Core_FAQ_Shortcode::init();
 		Visati_Core_Contact_Form_Shortcode::init();
 		Visati_Core_About_Shortcodes::init();
+		Visati_Core_Jobs_Shortcode::init();
+		Visati_Core_Blog_Shortcode::init();
+		Visati_Core_Global_Reach_Shortcode::init();
+		Visati_Core_Services_Shortcode::init();
 
 		// Admin.
 		Visati_Core_Admin_Settings::init();

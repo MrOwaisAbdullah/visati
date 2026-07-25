@@ -127,7 +127,7 @@
 			textEl.textContent = val;
 			button.classList.add( 'is-filled' );
 			button.setAttribute( 'aria-expanded', 'false' );
-			flagEl.innerHTML = flag ? '<img src="https://flagcdn.com/' + flag + '.svg" alt="" width="20" height="14">' : '';
+			flagEl.innerHTML = flag ? '<img src="' + visatiApply.flagsUrl + flag + '.svg" alt="" width="20" height="14">' : '';
 			Array.prototype.forEach.call( list.querySelectorAll( 'li' ), function ( x ) {
 				x.classList.toggle( 'is-selected', x === li );
 			} );
@@ -234,6 +234,187 @@
 	function isMultiEntry( slug ) {
 		var visa = getVisaData( slug );
 		return visa && visa.entry_type === 'multi';
+	}
+
+	/* ── Order summary sidebar ────────────────────────── */
+	var summaryEl = document.querySelector( '[data-order-summary]' );
+	var appliedDiscount = null; /* { code, amount, key } once validated; cleared if visa/tier changes */
+
+	function formatAed( amount ) {
+		return 'AED ' + Math.round( amount ).toLocaleString( 'en-US' );
+	}
+
+	/* ── Show/hide Express option based on the selected visa's has_express flag ── */
+	function updateExpressAvailability() {
+		var visaSelectEl  = form.querySelector( 'select[name="visa_type_slug"]' );
+		var expressOption = form.querySelector( '[data-express-option]' );
+		var expressRadio  = expressOption ? expressOption.querySelector( 'input[value="express"]' ) : null;
+		var standardRadio = form.querySelector( 'input[name="processing_tier"][value="standard"]' );
+		if ( ! visaSelectEl || ! expressOption || ! expressRadio ) { return; }
+
+		var visa = visaSelectEl.value ? getVisaData( visaSelectEl.value ) : null;
+		var hasExpress = ! visa || visa.has_express !== false; /* default true until a visa is chosen */
+
+		expressOption.hidden = ! hasExpress;
+		if ( ! hasExpress && expressRadio.checked ) {
+			expressRadio.checked = false;
+			if ( standardRadio ) { standardRadio.checked = true; }
+			updateOrderSummary();
+		}
+	}
+
+	function updateOrderSummary() {
+		if ( ! summaryEl ) { return; }
+
+		var visaSelectEl = form.querySelector( 'select[name="visa_type_slug"]' );
+		var tierInput    = form.querySelector( 'input[name="processing_tier"]:checked' );
+		var slug         = visaSelectEl ? visaSelectEl.value : '';
+		var visa         = slug ? getVisaData( slug ) : null;
+
+		var emptyEl   = summaryEl.querySelector( '[data-summary-empty]' );
+		var detailsEl = summaryEl.querySelector( '[data-summary-details]' );
+
+		if ( ! visa ) {
+			if ( emptyEl ) { emptyEl.hidden = false; }
+			if ( detailsEl ) { detailsEl.hidden = true; }
+			return;
+		}
+
+		if ( emptyEl ) { emptyEl.hidden = true; }
+		if ( detailsEl ) { detailsEl.hidden = false; }
+
+		var isExpress   = tierInput && tierInput.value === 'express';
+		/* wp_localize_script() casts all top-level scalars to strings, so this
+		   must be parsed as a number — otherwise fee + extra string-concatenates. */
+		var surchargeAed = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_aed ) || 0 ) || 0;
+		var fee   = parseFloat( visa.price_aed ) || 0;
+		var extra = isExpress ? surchargeAed : 0;
+		var subtotal = fee + extra;
+
+		/* A discount was validated against a specific fee+tier combo — if the
+		   visa or processing tier changed since, the amount no longer applies
+		   (it may exceed the new price, or the code may have different rules
+		   the server would re-check anyway) so drop it and ask to re-apply. */
+		var priceKey = slug + '|' + ( isExpress ? 'express' : 'standard' );
+		if ( appliedDiscount && appliedDiscount.key !== priceKey ) {
+			appliedDiscount = null;
+			var msgElReset = summaryEl.querySelector( '[data-discount-msg]' );
+			if ( msgElReset ) {
+				msgElReset.hidden = true;
+				msgElReset.removeAttribute( 'data-state' );
+			}
+			var inputElReset = summaryEl.querySelector( '[data-discount-input]' );
+			if ( inputElReset ) { inputElReset.value = ''; }
+		}
+
+		var discountRow    = summaryEl.querySelector( '[data-summary-discount-row]' );
+		var discountCodeEl = summaryEl.querySelector( '[data-summary-discount-code]' );
+		var discountAmtEl  = summaryEl.querySelector( '[data-summary-discount-amount]' );
+		var discountAmount = appliedDiscount ? appliedDiscount.amount : 0;
+		if ( discountRow ) { discountRow.hidden = ! appliedDiscount; }
+		if ( appliedDiscount && discountCodeEl ) { discountCodeEl.textContent = appliedDiscount.code; }
+		if ( appliedDiscount && discountAmtEl ) { discountAmtEl.textContent = '-' + formatAed( discountAmount ); }
+
+		var total = Math.max( 0, subtotal - discountAmount );
+
+		var nameEl = summaryEl.querySelector( '[data-summary-name]' );
+		var metaEl = summaryEl.querySelector( '[data-summary-meta]' );
+		if ( nameEl ) { nameEl.textContent = visa.name || ''; }
+		if ( metaEl ) {
+			metaEl.textContent = visa.tagline
+				? visa.tagline
+				: ( visa.entry_type === 'multi' ? 'Multiple entry' : 'Single entry' ) +
+					' · ' + ( isExpress ? '12–24h' : '24–72h' ) + ' processing';
+		}
+
+		var feeEl = summaryEl.querySelector( '[data-summary-fee]' );
+		if ( feeEl ) { feeEl.textContent = formatAed( fee ); }
+
+		var expressRow = summaryEl.querySelector( '[data-summary-express-row]' );
+		var expressEl  = summaryEl.querySelector( '[data-summary-express]' );
+		if ( expressRow ) { expressRow.hidden = ! isExpress; }
+		if ( expressEl && isExpress ) { expressEl.textContent = formatAed( surchargeAed ); }
+
+		var totalEl = summaryEl.querySelector( '[data-summary-total]' );
+		if ( totalEl ) { totalEl.textContent = formatAed( total ); }
+	}
+
+	/* ── Discount code ─────────────────────────────────── */
+	if ( summaryEl ) {
+		var discountInputEl = summaryEl.querySelector( '[data-discount-input]' );
+		var discountApplyBtn = summaryEl.querySelector( '[data-discount-apply]' );
+		var discountMsgEl = summaryEl.querySelector( '[data-discount-msg]' );
+
+		function showDiscountMsg( text, state ) {
+			if ( ! discountMsgEl ) { return; }
+			discountMsgEl.textContent = text;
+			discountMsgEl.hidden = false;
+			discountMsgEl.setAttribute( 'data-state', state );
+		}
+
+		async function applyDiscount() {
+			if ( ! discountInputEl || ! discountApplyBtn ) { return; }
+			var code = discountInputEl.value.trim();
+			if ( ! code ) {
+				showDiscountMsg( 'Enter a discount code.', 'error' );
+				return;
+			}
+
+			var visaSelectEl = form.querySelector( 'select[name="visa_type_slug"]' );
+			var tierInput    = form.querySelector( 'input[name="processing_tier"]:checked' );
+			var slug         = visaSelectEl ? visaSelectEl.value : '';
+			var visa         = slug ? getVisaData( slug ) : null;
+			if ( ! visa ) {
+				showDiscountMsg( 'Select a visa type first.', 'error' );
+				return;
+			}
+			var isExpress = tierInput && tierInput.value === 'express';
+			var surchargeAed = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_aed ) || 0 ) || 0;
+			var subtotal = ( parseFloat( visa.price_aed ) || 0 ) + ( isExpress ? surchargeAed : 0 );
+
+			discountApplyBtn.disabled = true;
+			discountApplyBtn.textContent = 'Checking…';
+
+			try {
+				var resp = await fetch( restUrl + '/discount/validate', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+					body: JSON.stringify( { code: code, price_aed: subtotal } ),
+				} );
+				var data = await resp.json();
+
+				if ( ! resp.ok ) {
+					appliedDiscount = null;
+					showDiscountMsg( data.message || 'This discount code is not valid.', 'error' );
+				} else {
+					appliedDiscount = {
+						code: data.code,
+						amount: parseFloat( data.discount_amount_aed ) || 0,
+						key: slug + '|' + ( isExpress ? 'express' : 'standard' ),
+					};
+					showDiscountMsg( 'Code "' + data.code + '" applied.', 'ok' );
+				}
+			} catch ( err ) {
+				appliedDiscount = null;
+				showDiscountMsg( 'Network error — please try again.', 'error' );
+			}
+
+			discountApplyBtn.disabled = false;
+			discountApplyBtn.textContent = 'Apply';
+			updateOrderSummary();
+		}
+
+		if ( discountApplyBtn ) {
+			discountApplyBtn.addEventListener( 'click', applyDiscount );
+		}
+		if ( discountInputEl ) {
+			discountInputEl.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' ) {
+					e.preventDefault();
+					applyDiscount();
+				}
+			} );
+		}
 	}
 
 	function updateTravelersVisibility() {
@@ -572,7 +753,10 @@
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': visatiApply.nonce,
 				},
-				body: JSON.stringify( { application_id: appId } ),
+				body: JSON.stringify( {
+					application_id: appId,
+					discount_code: appliedDiscount ? appliedDiscount.code : '',
+				} ),
 			} );
 			var data = await resp.json();
 
@@ -588,11 +772,18 @@
 		}
 	} );
 
-	/* ── Visa type change → show/hide travelers ────────── */
+	/* ── Visa type change → show/hide travelers, express option, order summary ── */
 	var visaSelect = form.querySelector( 'select[name="visa_type_slug"]' );
 	if ( visaSelect ) {
 		visaSelect.addEventListener( 'change', updateTravelersVisibility );
+		visaSelect.addEventListener( 'change', updateExpressAvailability );
+		visaSelect.addEventListener( 'change', updateOrderSummary );
 	}
+
+	/* ── Processing tier change → update order summary ─── */
+	Array.prototype.forEach.call( form.querySelectorAll( 'input[name="processing_tier"]' ), function ( radio ) {
+		radio.addEventListener( 'change', updateOrderSummary );
+	} );
 
 	/* ── Pre-select from URL params (?visa=&nationality=) ── */
 	(function () {
@@ -614,7 +805,7 @@
 					var textEl = cb.querySelector( '[data-combobox-text]' );
 					var flagEl = cb.querySelector( '[data-combobox-flag]' );
 					if ( textEl ) { textEl.textContent = natParam; }
-					if ( flagEl ) { flagEl.innerHTML = '<img src="https://flagcdn.com/' + natParam.toLowerCase() + '.svg" alt="" width="20" height="14">'; }
+					if ( flagEl ) { flagEl.innerHTML = '<img src="' + visatiApply.flagsUrl + natParam.toLowerCase() + '.svg" alt="" width="20" height="14">'; }
 					var btn = cb.querySelector( '[data-combobox-button]' );
 					if ( btn ) { btn.classList.add( 'is-filled' ); }
 				}
@@ -622,6 +813,8 @@
 		}
 		/* Apply travelers visibility AFTER pre-select sets visa value */
 		updateTravelersVisibility();
+		updateExpressAvailability();
+		updateOrderSummary();
 	})();
 
 	/* ── Upload boxes: click + keyboard to open file dialog ────────────── */

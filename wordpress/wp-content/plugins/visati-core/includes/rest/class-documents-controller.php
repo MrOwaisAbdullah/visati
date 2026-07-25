@@ -66,6 +66,10 @@ final class Visati_Core_Documents_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function upload( WP_REST_Request $req ) {
+		if ( ! visati_rate_limit( 'documents', 20, 600 ) ) {
+			return Visati_Core_REST_API::error( 'rate_limited', __( 'Too many uploads. Please slow down.', 'visati-core' ), 429 );
+		}
+
 		$app_id = visati_sanitize_application_id( (string) ( $req->get_param( 'application_id' ) ?? '' ) );
 		if ( '' === $app_id || ! Visati_Core_Application::exists( $app_id ) ) {
 			return Visati_Core_REST_API::error( 'invalid_application', __( 'Invalid application ID.', 'visati-core' ), 404 );

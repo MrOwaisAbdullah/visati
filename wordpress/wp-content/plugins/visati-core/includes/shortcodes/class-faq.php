@@ -19,7 +19,7 @@ final class Visati_Core_FAQ_Shortcode {
 	}
 
 	public static function register_assets(): void {
-		wp_register_script( 'visati-faq', VISATI_CORE_URL . 'assets/js/faq.js', array(), VISATI_CORE_VERSION, true );
+		wp_register_script( 'visati-faq', VISATI_CORE_URL . 'assets/js/faq.js', array(), visati_asset_version( 'assets/js/faq.js' ), true );
 	}
 
 	public static function render( $atts ): string {

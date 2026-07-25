@@ -7,6 +7,9 @@
  * @var int    $page
  * @var int    $total_pages
  * @var string $status_filter
+ * @var string $search
+ * @var string $visa_filter
+ * @var array  $visa_types
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,31 +17,61 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div class="wrap visati-admin">
-	<h1 class="wp-heading-inline">Applications</h1>
-	<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-dashboard' ) ); ?>" class="page-title-action">Dashboard</a>
+	<div class="visati-list-header">
+		<h1 class="visati-list-header__title">Applications</h1>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-dashboard' ) ); ?>" class="button visati-list-header__dashboard-btn">
+			<span class="dashicons dashicons-dashboard" aria-hidden="true"></span> Dashboard
+		</a>
+	</div>
 
-	<ul class="subsubsub">
-		<?php
-		$filters = array(
-			''           => 'All',
-			'draft'      => 'Draft',
-			'submitted'  => 'Submitted',
-			'under_review' => 'Under Review',
-			'processing' => 'Processing',
-			'approved'   => 'Approved',
-			'rejected'   => 'Rejected',
-		);
-		foreach ( $filters as $val => $label ) :
-			$count_q = $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}visati_applications" . ( $val ? " WHERE status = %s" : '' ),
-				$val
-			) );
-			$current = ( $status_filter === $val ) ? ' class="current"' : '';
-			$url = $val ? add_query_arg( 'status', $val, admin_url( 'admin.php?page=visati-applications' ) ) : admin_url( 'admin.php?page=visati-applications' );
-			?>
-			<li><a href="<?php echo esc_url( $url ); ?>"<?php echo $current; ?>><?php echo esc_html( $label ); ?></a> (<?php echo esc_html( $count_q ); ?>)</li>
-		<?php endforeach; ?>
-	</ul>
+	<div class="visati-list-toolbar">
+		<div class="visati-list-tabs">
+			<?php
+			$filters = array(
+				''             => 'All',
+				'draft'        => 'Draft',
+				'submitted'    => 'Submitted',
+				'under_review' => 'Under Review',
+				'processing'   => 'Processing',
+				'approved'     => 'Approved',
+				'rejected'     => 'Rejected',
+			);
+			foreach ( $filters as $val => $label ) :
+				$count_q = $wpdb->get_var( $wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->prefix}visati_applications" . ( $val ? ' WHERE status = %s' : '' ),
+					$val
+				) );
+				$is_current = ( $status_filter === $val );
+				$url = $val ? add_query_arg( 'status', $val, admin_url( 'admin.php?page=visati-applications' ) ) : admin_url( 'admin.php?page=visati-applications' );
+				if ( $search ) {
+					$url = add_query_arg( 's', $search, $url );
+				}
+				if ( $visa_filter ) {
+					$url = add_query_arg( 'visa_type', $visa_filter, $url );
+				}
+				?>
+				<a href="<?php echo esc_url( $url ); ?>" class="visati-list-tab<?php echo $is_current ? ' is-current' : ''; ?>">
+					<?php echo esc_html( $label ); ?> <span class="visati-list-tab__count"><?php echo esc_html( $count_q ); ?></span>
+				</a>
+			<?php endforeach; ?>
+		</div>
+
+		<form method="get" class="visati-list-search">
+			<input type="hidden" name="page" value="visati-applications">
+			<?php if ( $status_filter ) : ?><input type="hidden" name="status" value="<?php echo esc_attr( $status_filter ); ?>"><?php endif; ?>
+			<input type="search" name="s" class="visati-list-search__input" placeholder="Search name, ID, email, nationality…" value="<?php echo esc_attr( $search ); ?>">
+			<select name="visa_type" class="visati-list-search__select">
+				<option value="">All visa types</option>
+				<?php foreach ( $visa_types as $vt ) : ?>
+					<option value="<?php echo esc_attr( $vt->post_name ); ?>" <?php selected( $visa_filter, $vt->post_name ); ?>><?php echo esc_html( $vt->post_title ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<button type="submit" class="button">Filter</button>
+			<?php if ( $search || $visa_filter ) : ?>
+				<a href="<?php echo esc_url( add_query_arg( array( 's' => false, 'visa_type' => false ) ) ); ?>" class="button">Clear</a>
+			<?php endif; ?>
+		</form>
+	</div>
 
 	<table class="wp-list-table widefat fixed striped">
 		<thead>

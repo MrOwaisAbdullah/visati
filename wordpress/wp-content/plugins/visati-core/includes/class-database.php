@@ -154,6 +154,16 @@ class Visati_Core_Database {
 		if ( ! in_array( 'travelers_data', $columns, true ) ) {
 			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN travelers_data LONGTEXT DEFAULT NULL AFTER travel_date" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
+
+		// Inquiries: the admin UI (list/detail/filters) has always assumed a 3-state
+		// `status` column (new/read/resolved), but the table only ever had a binary
+		// `resolved` flag — add the missing column and backfill from `resolved`.
+		$inq_table   = $prefix . 'visati_inquiries';
+		$inq_columns = $wpdb->get_col( "SHOW COLUMNS FROM {$inq_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( is_array( $inq_columns ) && ! in_array( 'status', $inq_columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$inq_table} ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'new' AFTER resolved" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "UPDATE {$inq_table} SET status = 'resolved' WHERE resolved = 1" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
 	}
 
 	/**

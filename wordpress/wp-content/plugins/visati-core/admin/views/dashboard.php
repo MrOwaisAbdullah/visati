@@ -23,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="wrap visati-admin">
 	<h1>Visati Dashboard</h1>
 
+	<?php include VISATI_CORE_DIR . 'admin/views/dashboard-quick-actions.php'; ?>
+
 	<div class="visati-stat-cards">
 		<div class="visati-stat-card">
 			<div class="visati-stat-card__number"><?php echo esc_html( $total_apps ); ?></div>
@@ -75,6 +77,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
+							<th style="width:36px"></th>
 							<th>ID</th>
 							<th>Name</th>
 							<th>Visa Type</th>
@@ -84,7 +87,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</thead>
 					<tbody>
 						<?php foreach ( $recent_apps as $app ) : ?>
-							<tr>
+							<?php $is_express = ( 'express' === $app->processing_tier ); ?>
+							<tr<?php echo $is_express ? ' class="visati-express-row"' : ''; ?>>
+								<td><?php if ( $is_express ) : ?><span class="visati-express-badge" title="Express — needs faster turnaround">⚡ Express</span><?php endif; ?></td>
 								<td>
 									<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications&action=view&id=' . esc_attr( $app->id ) ) ); ?>">
 										<?php echo esc_html( $app->id ); ?>
@@ -127,7 +132,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</td>
 								<td><?php echo esc_html( $inq->email ); ?></td>
 								<td><?php echo esc_html( $inq->subject ); ?></td>
-								<td><span class="visati-status-badge visati-status-badge--<?php echo $inq->resolved ? 'resolved' : 'new'; ?>"><?php echo $inq->resolved ? 'Resolved' : 'New'; ?></span></td>
+								<td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $inq->status ); ?>"><?php echo esc_html( ucfirst( $inq->status ) ); ?></span></td>
 								<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $inq->created_at ) ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>

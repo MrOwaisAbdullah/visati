@@ -13,7 +13,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_THEME_VERSION', '0.4.0' );
+define( 'VISATI_THEME_VERSION', '0.4.32' );
+
+/**
+ * TEMPORARY diagnostic — checks what the real web-serving PHP process
+ * actually returns for the fields that keep appearing stale. Remove after use.
+ */
+add_action( 'init', function () {
+	if ( ! isset( $_GET['visati_debug_settings'] ) ) {
+		return;
+	}
+	wp_die(
+		'opcache_enabled=' . ( function_exists( 'opcache_get_status' ) && opcache_get_status( false ) ? 'yes' : 'no' ) .
+		' | social_facebook=' . Visati_Core_Settings::get( 'social_facebook', 'DEFAULT-FB' ) .
+		' | social_instagram=' . Visati_Core_Settings::get( 'social_instagram', 'DEFAULT-IG' ) .
+		' | contact_trade_licence=' . Visati_Core_Settings::get( 'contact_trade_licence', 'DEFAULT-LICENCE' ) .
+		' | footer_copyright=' . Visati_Core_Settings::get( 'footer_copyright', 'DEFAULT-EMPTY' )
+	);
+} );
 
 /**
  * Theme setup: nav menus and core supports.
@@ -23,8 +40,10 @@ define( 'VISATI_THEME_VERSION', '0.4.0' );
 function visati_setup(): void {
 	register_nav_menus(
 		array(
-			'primary' => __( 'Primary Menu', 'visati' ),
-			'footer'  => __( 'Footer Menu', 'visati' ),
+			'primary'        => __( 'Primary Menu', 'visati' ),
+			'footer-visas'   => __( 'Footer — Visas column', 'visati' ),
+			'footer-company' => __( 'Footer — Company column', 'visati' ),
+			'footer-support' => __( 'Footer — Support column', 'visati' ),
 		)
 	);
 
@@ -37,6 +56,23 @@ function visati_setup(): void {
 	);
 }
 add_action( 'after_setup_theme', 'visati_setup' );
+
+/**
+ * Footer nav menus reuse the .visati-footer__link style — add the class so they
+ * don't fall into the global link-reset rule in app.css, which excludes it.
+ *
+ * @param array    $atts Link attributes.
+ * @param WP_Post  $item Menu item.
+ * @param stdClass $args wp_nav_menu() args, includes theme_location.
+ * @return array
+ */
+function visati_footer_menu_link_class( array $atts, $item, $args ): array {
+	if ( isset( $args->theme_location ) && 0 === strpos( (string) $args->theme_location, 'footer-' ) ) {
+		$atts['class'] = isset( $atts['class'] ) ? $atts['class'] . ' visati-footer__link' : 'visati-footer__link';
+	}
+	return $atts;
+}
+add_filter( 'nav_menu_link_attributes', 'visati_footer_menu_link_class', 10, 3 );
 
 /**
  * Enqueue parent theme, Google Fonts, and Visati design-system styles.
@@ -58,8 +94,10 @@ function visati_enqueue_assets(): void {
 	);
 
 	// Child theme stylesheet (style.css) + design-system CSS.
-	wp_enqueue_style( 'visati-style', get_stylesheet_uri(), array( 'hello-elementor-style' ), VISATI_THEME_VERSION );
-	wp_enqueue_style( 'visati-app', trailingslashit( get_stylesheet_directory_uri() ) . 'assets/css/app.css', array( 'visati-style' ), VISATI_THEME_VERSION );
+	// Use filemtime() so every edit auto-busts browser + CDN cache (30-day hcdn).
+	wp_enqueue_style( 'visati-style', get_stylesheet_uri(), array( 'hello-elementor-style' ), filemtime( get_stylesheet_directory() . '/style.css' ) );
+	$app_path = get_stylesheet_directory() . '/assets/css/app.css';
+	wp_enqueue_style( 'visati-app', trailingslashit( get_stylesheet_directory_uri() ) . 'assets/css/app.css', array( 'visati-style' ), file_exists( $app_path ) ? filemtime( $app_path ) : VISATI_THEME_VERSION );
 }
 
 /**

@@ -10,12 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$logo_url   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
+$logo_url   = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
 if ( ! $logo_url ) {
 	$logo_url = get_theme_file_uri( 'assets/images/logo-mark.svg' );
 }
-$cta_label  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_label', 'Apply Now' ) : 'Apply Now';
-$cta_url    = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_url', '/apply' ) : '/apply';
+$cta_label  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_label', 'Apply Now' ) : '' ) ?: 'Apply Now';
+$cta_url    = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_cta_url', '/apply' ) : '' ) ?: '/apply';
 $site_name  = get_bloginfo( 'name' );
 $site_desc  = get_bloginfo( 'description' );
 ?>
@@ -29,7 +29,6 @@ $site_desc  = get_bloginfo( 'description' );
 </head>
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
-<a href="#primary" class="visati-skip-link"><?php esc_html_e( 'Skip to content', 'visati' ); ?></a>
 
 <header id="site-header" class="visati-header" role="banner">
 	<div class="visati-header__bar">

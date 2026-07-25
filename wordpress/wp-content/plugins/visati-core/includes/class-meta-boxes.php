@@ -21,6 +21,8 @@ final class Visati_Core_Meta_Boxes {
 		add_action( 'save_post_visati_visa_type', array( __CLASS__, 'save_visa_type' ), 10, 2 );
 		add_action( 'save_post_visati_faq', array( __CLASS__, 'save_faq' ), 10, 2 );
 		add_action( 'save_post_visati_testimonial', array( __CLASS__, 'save_testimonial' ), 10, 2 );
+		add_action( 'save_post_visati_discount', array( __CLASS__, 'save_discount' ), 10, 2 );
+		add_action( 'save_post_visati_job', array( __CLASS__, 'save_job' ), 10, 2 );
 	}
 
 	/**
@@ -52,6 +54,24 @@ final class Visati_Core_Meta_Boxes {
 			__( 'Testimonial Details', 'visati-core' ),
 			array( __CLASS__, 'render_testimonial_details' ),
 			'visati_testimonial',
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
+			'visati_discount_details',
+			__( 'Discount Details', 'visati-core' ),
+			array( __CLASS__, 'render_discount_details' ),
+			'visati_discount',
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
+			'visati_job_details',
+			__( 'Job Details', 'visati-core' ),
+			array( __CLASS__, 'render_job_details' ),
+			'visati_job',
 			'normal',
 			'high'
 		);
@@ -111,6 +131,23 @@ final class Visati_Core_Meta_Boxes {
 		);
 
 		self::render_fields( $post, $fields );
+
+		// Rendered separately (not via the shared array) so a brand-new/never-saved
+		// visa type defaults to "has express" checked, matching the original data model.
+		$has_express = metadata_exists( 'post', $post->ID, '_visati_has_express' )
+			? (int) get_post_meta( $post->ID, '_visati_has_express', true )
+			: 1;
+		?>
+		<table class="form-table visati-meta-box" role="presentation">
+			<tr>
+				<th style="width:200px;"><?php esc_html_e( 'Express Available', 'visati-core' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="_visati_has_express" value="1" <?php checked( $has_express, 1 ); ?>> <?php esc_html_e( 'Offer express processing for this visa type', 'visati-core' ); ?></label>
+					<p class="description"><?php esc_html_e( 'Uncheck to hide the Express option on the apply form for this visa type (e.g. Visa Extension).', 'visati-core' ); ?></p>
+				</td>
+			</tr>
+		</table>
+		<?php
 	}
 
 	/**
@@ -146,6 +183,7 @@ final class Visati_Core_Meta_Boxes {
 		}
 
 		update_post_meta( $post_id, '_visati_is_featured', isset( $_POST['_visati_is_featured'] ) ? 1 : 0 );
+		update_post_meta( $post_id, '_visati_has_express', isset( $_POST['_visati_has_express'] ) ? 1 : 0 );
 	}
 
 	// ─── FAQ Meta Box ─────────────────────────────────────────────────
@@ -277,6 +315,184 @@ final class Visati_Core_Meta_Boxes {
 		}
 	}
 
+	// ─── Discount Code Meta Box ───────────────────────────────────────
+
+	/**
+	 * Render the Discount Details meta box.
+	 *
+	 * The post title IS the code the customer types in (e.g. "SUMMER20") —
+	 * matched case-insensitively at validation time, no separate code field.
+	 *
+	 * @param WP_Post $post Current post object.
+	 * @return void
+	 */
+	public static function render_discount_details( WP_Post $post ): void {
+		wp_nonce_field( 'visati_discount_details_nonce', 'visati_discount_nonce' );
+
+		$used_count = (int) get_post_meta( $post->ID, '_visati_discount_used_count', true );
+
+		$fields = array(
+			'_visati_discount_type'     => array(
+				'label'   => __( 'Discount Type', 'visati-core' ),
+				'desc'    => __( 'Percentage off, or a fixed AED amount off.', 'visati-core' ),
+				'type'    => 'select',
+				'options' => array(
+					'percentage' => __( 'Percentage (%)', 'visati-core' ),
+					'fixed'      => __( 'Fixed amount (AED)', 'visati-core' ),
+				),
+			),
+			'_visati_discount_value'    => array(
+				'label' => __( 'Discount Value', 'visati-core' ),
+				'desc'  => __( 'e.g. 20 for 20% off, or 100 for AED 100 off.', 'visati-core' ),
+				'type'  => 'number',
+			),
+			'_visati_discount_max_uses' => array(
+				'label' => __( 'Max Uses', 'visati-core' ),
+				'desc'  => __( 'Total number of times this code can be used. Leave 0 for unlimited.', 'visati-core' ),
+				'type'  => 'number',
+			),
+			'_visati_discount_expiry'   => array(
+				'label' => __( 'Expiry Date', 'visati-core' ),
+				'desc'  => __( 'Code stops working after this date. Leave empty for no expiry.', 'visati-core' ),
+				'type'  => 'date',
+			),
+			'_visati_discount_active'   => array(
+				'label' => __( 'Active', 'visati-core' ),
+				'desc'  => __( 'Uncheck to disable this code without deleting it.', 'visati-core' ),
+				'type'  => 'checkbox',
+			),
+		);
+
+		self::render_fields( $post, $fields );
+
+		echo '<table class="form-table visati-meta-box" role="presentation"><tr>';
+		echo '<th style="width:200px;">' . esc_html__( 'Times Used', 'visati-core' ) . '</th>';
+		echo '<td><strong>' . esc_html( $used_count ) . '</strong> <p class="description">' . esc_html__( 'Tracked automatically after each successful payment — not editable.', 'visati-core' ) . '</p></td>';
+		echo '</tr></table>';
+	}
+
+	/**
+	 * Save Discount meta fields.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 * @return void
+	 */
+	public static function save_discount( int $post_id, WP_Post $post ): void {
+		if ( ! isset( $_POST['visati_discount_nonce'] ) || ! wp_verify_nonce( $_POST['visati_discount_nonce'], 'visati_discount_details_nonce' ) ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['_visati_discount_type'] ) ) {
+			$type = sanitize_text_field( wp_unslash( $_POST['_visati_discount_type'] ) );
+			update_post_meta( $post_id, '_visati_discount_type', in_array( $type, array( 'percentage', 'fixed' ), true ) ? $type : 'percentage' );
+		}
+		if ( isset( $_POST['_visati_discount_value'] ) ) {
+			update_post_meta( $post_id, '_visati_discount_value', absint( $_POST['_visati_discount_value'] ) );
+		}
+		if ( isset( $_POST['_visati_discount_max_uses'] ) ) {
+			update_post_meta( $post_id, '_visati_discount_max_uses', absint( $_POST['_visati_discount_max_uses'] ) );
+		}
+		if ( isset( $_POST['_visati_discount_expiry'] ) ) {
+			update_post_meta( $post_id, '_visati_discount_expiry', sanitize_text_field( wp_unslash( $_POST['_visati_discount_expiry'] ) ) );
+		}
+		update_post_meta( $post_id, '_visati_discount_active', isset( $_POST['_visati_discount_active'] ) ? 1 : 0 );
+
+		// Times-used counter is system-managed — initialize once, never overwritten by the form.
+		if ( '' === get_post_meta( $post_id, '_visati_discount_used_count', true ) ) {
+			update_post_meta( $post_id, '_visati_discount_used_count', 0 );
+		}
+	}
+
+	// ─── Job Opening Meta Box ─────────────────────────────────────────
+
+	/**
+	 * Render the Job Details meta box. The main content editor holds the full
+	 * job description — this only covers structured listing fields.
+	 *
+	 * @param WP_Post $post Current post object.
+	 * @return void
+	 */
+	public static function render_job_details( WP_Post $post ): void {
+		wp_nonce_field( 'visati_job_details_nonce', 'visati_job_nonce' );
+
+		$fields = array(
+			'_visati_job_department'   => array(
+				'label' => __( 'Department', 'visati-core' ),
+				'desc'  => __( 'e.g. "Operations", "Sales", "Customer Support".', 'visati-core' ),
+				'type'  => 'text',
+			),
+			'_visati_job_location'     => array(
+				'label' => __( 'Location', 'visati-core' ),
+				'desc'  => __( 'e.g. "Dubai, UAE" or "Remote".', 'visati-core' ),
+				'type'  => 'text',
+			),
+			'_visati_job_type'         => array(
+				'label'   => __( 'Employment Type', 'visati-core' ),
+				'desc'    => __( 'How this role is classified.', 'visati-core' ),
+				'type'    => 'select',
+				'options' => array(
+					'full-time'  => __( 'Full-time', 'visati-core' ),
+					'part-time'  => __( 'Part-time', 'visati-core' ),
+					'contract'   => __( 'Contract', 'visati-core' ),
+					'internship' => __( 'Internship', 'visati-core' ),
+				),
+			),
+			'_visati_job_apply_email' => array(
+				'label' => __( 'Application Email', 'visati-core' ),
+				'desc'  => __( 'Where applications for this role should be sent.', 'visati-core' ),
+				'type'  => 'text',
+			),
+			'_visati_job_active'       => array(
+				'label' => __( 'Active', 'visati-core' ),
+				'desc'  => __( 'Uncheck to hide this opening from the careers page without deleting it.', 'visati-core' ),
+				'type'  => 'checkbox',
+			),
+		);
+
+		self::render_fields( $post, $fields );
+	}
+
+	/**
+	 * Save Job Opening meta fields.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 * @return void
+	 */
+	public static function save_job( int $post_id, WP_Post $post ): void {
+		if ( ! isset( $_POST['visati_job_nonce'] ) || ! wp_verify_nonce( $_POST['visati_job_nonce'], 'visati_job_details_nonce' ) ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['_visati_job_department'] ) ) {
+			update_post_meta( $post_id, '_visati_job_department', sanitize_text_field( wp_unslash( $_POST['_visati_job_department'] ) ) );
+		}
+		if ( isset( $_POST['_visati_job_location'] ) ) {
+			update_post_meta( $post_id, '_visati_job_location', sanitize_text_field( wp_unslash( $_POST['_visati_job_location'] ) ) );
+		}
+		if ( isset( $_POST['_visati_job_type'] ) ) {
+			$type = sanitize_text_field( wp_unslash( $_POST['_visati_job_type'] ) );
+			update_post_meta( $post_id, '_visati_job_type', in_array( $type, array( 'full-time', 'part-time', 'contract', 'internship' ), true ) ? $type : 'full-time' );
+		}
+		if ( isset( $_POST['_visati_job_apply_email'] ) ) {
+			update_post_meta( $post_id, '_visati_job_apply_email', sanitize_email( wp_unslash( $_POST['_visati_job_apply_email'] ) ) );
+		}
+		update_post_meta( $post_id, '_visati_job_active', isset( $_POST['_visati_job_active'] ) ? 1 : 0 );
+	}
+
 	// ─── Shared Renderer ──────────────────────────────────────────────
 
 	/**
@@ -287,7 +503,7 @@ final class Visati_Core_Meta_Boxes {
 	 * @return void
 	 */
 	private static function render_fields( WP_Post $post, array $fields ): void {
-		echo '<table class="form-table" role="presentation">';
+		echo '<table class="form-table visati-meta-box" role="presentation">';
 		foreach ( $fields as $key => $f ) {
 			$value = get_post_meta( $post->ID, $key, true );
 			echo '<tr>';
@@ -330,6 +546,24 @@ final class Visati_Core_Meta_Boxes {
 						esc_html( $f['desc'] )
 					);
 					$f['desc'] = '';
+					break;
+
+				case 'number':
+					printf(
+						'<input id="%s" name="%s" type="number" min="0" class="small-text" value="%s">',
+						esc_attr( $key ),
+						esc_attr( $key ),
+						esc_attr( $value )
+					);
+					break;
+
+				case 'date':
+					printf(
+						'<input id="%s" name="%s" type="date" value="%s">',
+						esc_attr( $key ),
+						esc_attr( $key ),
+						esc_attr( $value )
+					);
 					break;
 
 				default:

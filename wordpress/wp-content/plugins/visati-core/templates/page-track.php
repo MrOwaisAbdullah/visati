@@ -15,7 +15,7 @@ wp_enqueue_script(
 	'visati-tracking',
 	VISATI_CORE_URL . 'assets/js/tracking.js',
 	array(),
-	VISATI_CORE_VERSION,
+	visati_asset_version( 'assets/js/tracking.js' ),
 	true
 );
 wp_localize_script(

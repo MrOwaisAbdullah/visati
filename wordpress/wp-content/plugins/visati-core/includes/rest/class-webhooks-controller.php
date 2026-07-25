@@ -40,6 +40,10 @@ class Visati_Core_Webhooks_Controller {
 	 * Create a Stripe Checkout Session for the frontend to redirect to.
 	 */
 	public static function create_checkout( WP_REST_Request $request ) {
+		if ( ! visati_rate_limit( 'checkout_session', 10, 600 ) ) {
+			return new WP_Error( 'rate_limited', 'Too many requests. Please try again in a few minutes.', array( 'status' => 429 ) );
+		}
+
 		$app_id = sanitize_text_field( $request->get_param( 'application_id' ) );
 		if ( ! $app_id ) {
 			return new WP_Error( 'missing_app_id', 'Application ID required.', array( 'status' => 400 ) );
@@ -65,11 +69,31 @@ class Visati_Core_Webhooks_Controller {
 			$price_aed += $surcharge;
 		}
 
+		// Optional discount code — re-validated server-side, never trust a client-computed amount.
+		$discount_code   = sanitize_text_field( (string) $request->get_param( 'discount_code' ) );
+		$discount_amount = 0.0;
+		if ( '' !== $discount_code ) {
+			$discount = Visati_Core_Discount::validate( $discount_code, $price_aed );
+			if ( is_wp_error( $discount ) ) {
+				return $discount;
+			}
+			$discount_amount = (float) $discount['discount_amount_aed'];
+			$price_aed       = (float) $discount['final_price_aed'];
+			$discount_code   = $discount['code'];
+
+			$wpdb->update( $table,
+				array( 'discount_code' => $discount_code, 'discount_amount_aed' => $discount_amount ),
+				array( 'id' => $app_id ),
+				array( '%s', '%f' ),
+				array( '%s' )
+			);
+		}
+
 		$success_url = add_query_arg( array( 'success' => '1', 'id' => $app_id ), home_url( '/apply/' ) );
 		$cancel_url  = add_query_arg( 'cancelled', '1', home_url( '/apply/' ) );
 
 		$result = Visati_Core_Stripe_Payments::create_checkout_session(
-			$price_aed,
+			(int) round( $price_aed ),
 			$app_id,
 			$visa_name,
 			$success_url,
@@ -164,6 +188,11 @@ class Visati_Core_Webhooks_Controller {
 			'amount_aed'              => $amount_aed,
 			'status'                  => 'succeeded',
 		), array( '%s', '%s', '%f', '%s' ) );
+
+		// Record discount code usage, if one was applied at checkout.
+		if ( ! empty( $app->discount_code ) && class_exists( 'Visati_Core_Discount' ) ) {
+			Visati_Core_Discount::record_usage( $app->discount_code );
+		}
 
 		// Send confirmation email.
 		if ( class_exists( 'Visati_Core_Email' ) ) {

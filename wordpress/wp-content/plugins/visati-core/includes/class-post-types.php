@@ -44,6 +44,7 @@ class Visati_Core_Post_Types {
 				'public'       => true,
 				'has_archive'  => true,
 				'menu_icon'    => 'dashicons-palmtree',
+				'show_in_menu' => 'visati-dashboard',
 				'supports'     => array( 'title', 'editor', 'thumbnail', 'page-attributes' ),
 				'show_in_rest' => true,
 				'rewrite'      => array( 'slug' => 'visa-types' ),
@@ -69,6 +70,7 @@ class Visati_Core_Post_Types {
 				'public'       => true,
 				'has_archive'  => false,
 				'menu_icon'    => 'dashicons-editor-help',
+				'show_in_menu' => 'visati-dashboard',
 				'supports'     => array( 'title', 'editor', 'page-attributes' ),
 				'show_in_rest' => true,
 			)
@@ -92,6 +94,7 @@ class Visati_Core_Post_Types {
 				'public'       => true,
 				'has_archive'  => false,
 				'menu_icon'    => 'dashicons-star-filled',
+				'show_in_menu' => 'visati-dashboard',
 				'supports'     => array( 'title', 'editor' ),
 				'show_in_rest' => true,
 			)
@@ -115,6 +118,7 @@ class Visati_Core_Post_Types {
 				'public'       => true,
 				'has_archive'  => true,
 				'menu_icon'    => 'dashicons-briefcase',
+				'show_in_menu' => 'visati-dashboard',
 				'supports'     => array( 'title', 'editor' ),
 				'show_in_rest' => true,
 			)
@@ -138,6 +142,7 @@ class Visati_Core_Post_Types {
 				'public'       => false,
 				'show_ui'      => true,
 				'menu_icon'    => 'dashicons-tickets-alt',
+				'show_in_menu' => 'visati-dashboard',
 				'supports'     => array( 'title' ),
 				'show_in_rest' => true,
 			)

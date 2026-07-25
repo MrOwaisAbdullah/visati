@@ -47,6 +47,10 @@ final class Visati_Core_Applications_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function create( WP_REST_Request $req ) {
+		if ( ! visati_rate_limit( 'applications', 10, 600 ) ) {
+			return Visati_Core_REST_API::error( 'rate_limited', __( 'Too many submissions. Please try again in a few minutes.', 'visati-core' ), 429 );
+		}
+
 		$d = $req->get_json_params();
 		if ( ! is_array( $d ) || empty( $d ) ) {
 			$d = $req->get_body_params();

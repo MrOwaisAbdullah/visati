@@ -82,7 +82,7 @@ final class Visati_Core_Email {
 	 * @return bool
 	 */
 	public static function send_admin_alert( string $app_id, string $visa_name, string $name = '' ): bool {
-		$admin = self::admin_email();
+		$admin = self::admin_emails();
 		if ( ! $admin ) {
 			return false;
 		}
@@ -121,7 +121,7 @@ final class Visati_Core_Email {
 	 * @return bool
 	 */
 	public static function send_inquiry_notification( int $inquiry_id, array $params = array() ): bool {
-		$admin = self::admin_email();
+		$admin = self::admin_emails();
 		if ( ! $admin ) {
 			return false;
 		}
@@ -161,19 +161,63 @@ final class Visati_Core_Email {
 	/**
 	 * Wrap inner content in the Visati-branded HTML email shell.
 	 *
+	 * Header reproduces the site header's full brand lockup (mark + wordmark +
+	 * tagline) rather than a single logo image, and the shell is dark-mode
+	 * aware via `prefers-color-scheme` for clients that support it (Apple
+	 * Mail, Outlook.com, Gmail on some platforms) — clients that don't simply
+	 * see the light-mode version, since the media query is additive, not a
+	 * replacement for inline styles.
+	 *
 	 * @param string $body_html Inner HTML (already escaped).
 	 * @param string $app_id    Optional application ID for context.
 	 * @return string
 	 */
 	private static function wrap( string $body_html, string $app_id = '' ): string {
-		$home = esc_url( home_url( '/' ) );
-		return '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F8F9FB;font-family:Inter,Arial,sans-serif;color:#1A1A2E;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FB;">
+		$home    = esc_url( home_url( '/' ) );
+		$logo    = Visati_Core_Settings::get( 'email_logo_url', '' );
+		$brand   = Visati_Core_Settings::get( 'email_brand_name', 'Visati' );
+		$tagline = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'brand_tagline', 'Dubai Visas. Simplified.' ) : '' ) ?: 'Dubai Visas. Simplified.';
+		$footer  = Visati_Core_Settings::get( 'email_footer_text', __( 'This is an automated message from Visati.', 'visati-core' ) );
+		$navy    = Visati_Core_Settings::get( 'email_primary_color', '#0A1628' );
+		$gold    = Visati_Core_Settings::get( 'email_accent_color', '#C9A84C' );
+		$mist    = Visati_Core_Settings::get( 'email_bg_color', '#F8F9FB' );
+		$mark    = esc_url( VISATI_CORE_URL . 'assets/images/logo-mark-email.png' );
+
+		// Logo: an uploaded custom logo image fully replaces the lockup; otherwise
+		// build the mark + wordmark + tagline lockup matching the site header.
+		if ( $logo ) {
+			$logo_html = '<a href="' . $home . '" style="text-decoration:none;"><img src="' . esc_url( $logo ) . '" alt="' . esc_attr( $brand ) . '" height="32" style="display:block;height:32px;width:auto;"></a>';
+		} else {
+			$logo_html = '<a href="' . $home . '" style="text-decoration:none;">'
+				. '<table role="presentation" cellpadding="0" cellspacing="0"><tr>'
+				. '<td style="vertical-align:middle;padding-right:10px;"><img src="' . $mark . '" width="28" height="39" alt="" style="display:block;"></td>'
+				. '<td style="vertical-align:middle;">'
+				. '<div style="font-family:\'Montserrat\',Arial,sans-serif;font-weight:800;font-size:18px;letter-spacing:0.04em;color:#FFFFFF;text-transform:uppercase;line-height:1.1;">' . esc_html( $brand ) . '</div>'
+				. '<div style="font-family:Arial,sans-serif;font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:0.02em;margin-top:2px;">' . esc_html( $tagline ) . '</div>'
+				. '</td>'
+				. '</tr></table>'
+				. '</a>';
+		}
+
+		return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
+<style>
+@media ( prefers-color-scheme: dark ) {
+	.visati-email-bg { background: #0F1115 !important; }
+	.visati-email-card { background: #1A1D24 !important; box-shadow: none !important; }
+	.visati-email-body { color: #E4E6EB !important; }
+	.visati-email-body a { color: ' . $gold . ' !important; }
+	.visati-email-footer { background: #14161B !important; color: #8A8F98 !important; }
+}
+</style>
+</head>
+<body class="visati-email-bg" style="margin:0;padding:0;background:' . $mist . ';font-family:Inter,Arial,sans-serif;color:#1A1A2E;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="visati-email-bg" style="background:' . $mist . ';">
 <tr><td align="center" style="padding:24px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(10,22,40,0.08);">
-<tr><td style="background:#0A1628;padding:24px 32px;"><a href="' . $home . '" style="color:#C9A84C;font-weight:700;font-size:20px;text-decoration:none;">Visati</a></td></tr>
-<tr><td style="padding:32px;color:#1A1A2E;font-size:15px;line-height:1.6;">' . $body_html . '</td></tr>
-<tr><td style="padding:24px 32px;background:#F8F9FB;color:#7A7A7A;font-size:13px;">' . esc_html__( 'This is an automated message from Visati.', 'visati-core' ) . '</td></tr>
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" class="visati-email-card" style="background:#FFFFFF;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(10,22,40,0.08);">
+<tr><td style="background:' . $navy . ';padding:24px 32px;">' . $logo_html . '</td></tr>
+<tr><td class="visati-email-body" style="padding:32px;color:#1A1A2E;font-size:15px;line-height:1.6;">' . $body_html . '</td></tr>
+<tr><td class="visati-email-footer" style="padding:24px 32px;background:' . $mist . ';color:#7A7A7A;font-size:13px;">' . esc_html( $footer ) . '</td></tr>
 </table>
 </td></tr>
 </table>
@@ -184,12 +228,12 @@ final class Visati_Core_Email {
 	 * Send an HTML email with Visati From headers. Resend name/email/content-type are
 	 * set via filters and removed immediately after sending.
 	 *
-	 * @param string $to      Recipient.
-	 * @param string $subject Subject.
-	 * @param string $html    HTML body.
+	 * @param string|array<int,string> $to      Recipient(s).
+	 * @param string                   $subject Subject.
+	 * @param string                   $html    HTML body.
 	 * @return bool
 	 */
-	private static function mail( string $to, string $subject, string $html ): bool {
+	private static function mail( $to, string $subject, string $html ): bool {
 		add_filter( 'wp_mail_from', array( __CLASS__, 'from_email' ) );
 		add_filter( 'wp_mail_from_name', array( __CLASS__, 'from_name' ) );
 		add_filter( 'wp_mail_content_type', array( __CLASS__, 'content_type' ) );
@@ -232,15 +276,12 @@ final class Visati_Core_Email {
 	}
 
 	/**
-	 * Admin notification email — from settings or WordPress admin_email.
+	 * Admin notification recipient(s) — from settings (multi-recipient), env/wp-config,
+	 * or WordPress admin_email, in that order.
 	 *
-	 * @return string
+	 * @return array<int,string>
 	 */
-	private static function admin_email(): string {
-		$admin = Visati_Core_Settings::admin_notification_email();
-		if ( $admin && is_email( $admin ) ) {
-			return $admin;
-		}
-		return get_option( 'admin_email' );
+	private static function admin_emails(): array {
+		return Visati_Core_Settings::notification_emails();
 	}
 }

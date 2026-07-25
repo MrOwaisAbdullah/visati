@@ -1,4 +1,245 @@
 /* Visati Admin Styles */
+
+/* Visati Quick View widget (native WP Dashboard) */
+.visati-widget__stats {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+	margin-bottom: 12px;
+}
+.visati-widget__stat {
+	display: block;
+	background: #f8f9fb;
+	border-radius: 6px;
+	padding: 10px 12px;
+	text-decoration: none;
+}
+.visati-widget__stat-number {
+	display: block;
+	font-size: 1.3rem;
+	font-weight: 700;
+	color: #0A1628;
+}
+.visati-widget__stat-label {
+	display: block;
+	font-size: 0.75rem;
+	color: #666;
+	margin-top: 2px;
+}
+.visati-widget__heading {
+	font-weight: 600;
+	margin: 12px 0 6px;
+}
+.visati-widget__list {
+	margin: 0 0 10px;
+}
+.visati-widget__list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+.visati-widget__list li:last-child {
+	border-bottom: none;
+}
+.visati-widget__footer {
+	margin: 0;
+	padding-top: 8px;
+	border-top: 1px solid #f0f0f1;
+}
+
+/* Meta box fields on CPT edit screens (Visa Types, FAQ, Testimonials, Jobs, Discount Codes) */
+.visati-meta-box.form-table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+.visati-meta-box.form-table th {
+	padding: 16px 16px 16px 0;
+	font-weight: 600;
+	color: #0A1628;
+	vertical-align: top;
+}
+.visati-meta-box.form-table td {
+	padding: 12px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+.visati-meta-box.form-table tr:last-child td {
+	border-bottom: none;
+}
+.visati-meta-box.form-table input[type="text"],
+.visati-meta-box.form-table input[type="number"],
+.visati-meta-box.form-table input[type="date"],
+.visati-meta-box.form-table select,
+.visati-meta-box.form-table textarea {
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 8px 12px;
+}
+.visati-meta-box.form-table input:focus,
+.visati-meta-box.form-table select:focus,
+.visati-meta-box.form-table textarea:focus {
+	border-color: #C9A84C;
+	box-shadow: 0 0 0 1px #C9A84C;
+}
+.visati-meta-box.form-table .description {
+	color: #757575;
+	font-size: 0.8rem;
+	margin-top: 4px;
+}
+
+/* Express priority marker (Visati Dashboard + WP Dashboard Quick View widget) */
+.visati-express-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	background: #fff3cd;
+	color: #856404;
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding: 2px 8px;
+	border-radius: 10px;
+	white-space: nowrap;
+}
+tr.visati-express-row {
+	background: #fffbea !important;
+}
+.visati-widget__list li a {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+/* Quick actions (Visati Dashboard page) */
+.visati-quick-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 20px 0;
+}
+.visati-quick-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	color: #0A1628;
+	font-weight: 600;
+	font-size: 0.85rem;
+	text-decoration: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+.visati-quick-action:hover {
+	background: #0A1628;
+	border-color: #0A1628;
+	color: #fff;
+}
+.visati-quick-action .dashicons {
+	color: #C9A84C;
+}
+.visati-quick-action:hover .dashicons {
+	color: #C9A84C;
+}
+
+/* Modern list-page header (replaces default WP .wp-heading-inline/.subsubsub float layout) */
+.visati-list-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin: 20px 0 16px;
+}
+.visati-list-header__title {
+	margin: 0;
+	font-size: 1.6rem;
+	font-weight: 700;
+	color: #0A1628;
+}
+.visati-list-header__dashboard-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.visati-list-header__dashboard-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.visati-list-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-bottom: 16px;
+}
+.visati-list-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.visati-list-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #555;
+	text-decoration: none;
+	background: #f1f2f4;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+.visati-list-tab:hover {
+	background: #e6e8eb;
+	color: #0A1628;
+}
+.visati-list-tab.is-current {
+	background: #0A1628;
+	color: #fff;
+}
+.visati-list-tab__count {
+	font-weight: 700;
+	opacity: 0.75;
+}
+
+.visati-list-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.visati-list-search__input {
+	min-width: 240px;
+}
+.visati-list-search__select {
+	max-width: 200px;
+}
+
+@media (max-width: 782px) {
+	.visati-list-header {
+		flex-wrap: wrap;
+	}
+	.visati-list-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.visati-list-search {
+		width: 100%;
+	}
+}
 .visati-admin .visati-stat-cards {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -211,7 +452,9 @@
 }
 .visati-doc-viewer-link {
 	background: #1659FF;
-	color: #fff;
+	color: #fff !important;
+	min-width: 46px;
+	text-align: center;
 }
 .visati-doc-viewer-link:hover {
 	background: #0d47cc;
@@ -342,4 +585,29 @@
 .visati-no-payment {
 	color: #777;
 	font-style: italic;
+}
+.visati-help__jump {
+	position: sticky;
+	top: 32px;
+	z-index: 10;
+	background: #fff;
+	padding: 10px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-size: 13px;
+}
+.visati-help__jump a {
+	text-decoration: none;
+	font-weight: 600;
+}
+.visati-help h2 {
+	margin-top: 2em;
+	scroll-margin-top: 40px;
+}
+.visati-help table code {
+	background: #f1f1f1;
+	padding: 2px 5px;
+	border-radius: 3px;
+	font-size: 12px;
+	white-space: nowrap;
 }

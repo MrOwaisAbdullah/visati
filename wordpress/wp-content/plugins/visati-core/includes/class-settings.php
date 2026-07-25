@@ -65,23 +65,64 @@ final class Visati_Core_Settings {
 
 	/**
 	 * Admin alert recipient (new application / inquiry notifications).
+	 *
+	 * @deprecated Use notification_emails() for multi-recipient support.
 	 */
 	public static function admin_notification_email(): string {
 		return self::env( array( 'ADMIN_NOTIFICATION_EMAIL', 'NEXT_PUBLIC_ADMIN_EMAIL' ), '' );
 	}
 
 	/**
+	 * Admin alert recipients (new application / inquiry notifications).
+	 *
+	 * Prefers the client-editable `notification_emails` setting (one address per
+	 * line, set via the Settings page). Falls back to the env/wp-config value,
+	 * then to the WordPress admin email — always returns at least one address
+	 * if any source has one.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function notification_emails(): array {
+		$raw = (string) self::get( 'notification_emails', '' );
+		if ( '' !== $raw ) {
+			$emails = preg_split( '/[\r\n,]+/', $raw );
+			$emails = array_values( array_unique( array_filter( array_map( 'trim', $emails ), 'is_email' ) ) );
+			if ( $emails ) {
+				return $emails;
+			}
+		}
+
+		$fallback = self::admin_notification_email();
+		if ( $fallback && is_email( $fallback ) ) {
+			return array( $fallback );
+		}
+
+		$wp_admin_email = get_option( 'admin_email' );
+		return $wp_admin_email ? array( $wp_admin_email ) : array();
+	}
+
+	/**
 	 * Express processing surcharge in AED (default 99).
+	 * Admin settings take priority over env/wp-config.
 	 */
 	public static function express_surcharge_aed(): int {
+		$admin = self::get( 'express_surcharge_aed', '' );
+		if ( '' !== $admin ) {
+			return (int) $admin;
+		}
 		$val = self::env( array( 'EXPRESS_SURCHARGE_AED' ), '' );
 		return '' !== $val ? (int) $val : 99;
 	}
 
 	/**
 	 * Express processing surcharge in USD (default 27).
+	 * Admin settings take priority over env/wp-config.
 	 */
 	public static function express_surcharge_usd(): int {
+		$admin = self::get( 'express_surcharge_usd', '' );
+		if ( '' !== $admin ) {
+			return (int) $admin;
+		}
 		$val = self::env( array( 'EXPRESS_SURCHARGE_USD' ), '' );
 		return '' !== $val ? (int) $val : 27;
 	}

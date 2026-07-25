@@ -16,11 +16,11 @@ final class Visati_Core_Quick_Apply_Shortcode {
 	}
 
 	public static function enqueue_assets(): void {
-		wp_enqueue_style( 'visati-apply', VISATI_CORE_URL . 'assets/css/apply.css', array(), VISATI_CORE_VERSION );
+		wp_enqueue_style( 'visati-apply', VISATI_CORE_URL . 'assets/css/apply.css', array(), visati_asset_version( 'assets/css/apply.css' ) );
 	}
 
 	public static function render(): string {
-		wp_enqueue_style( 'visati-apply', VISATI_CORE_URL . 'assets/css/apply.css', array(), VISATI_CORE_VERSION );
+		wp_enqueue_style( 'visati-apply', VISATI_CORE_URL . 'assets/css/apply.css', array(), visati_asset_version( 'assets/css/apply.css' ) );
 
 		$visas = get_posts(
 			array(
@@ -33,7 +33,7 @@ final class Visati_Core_Quick_Apply_Shortcode {
 			)
 		);
 
-		$countries = self::get_popular_countries();
+		$countries = visati_get_nationalities();
 
 		ob_start();
 		?>
@@ -49,13 +49,25 @@ final class Visati_Core_Quick_Apply_Shortcode {
 			</div>
 
 			<div class="visati-qa-card__field">
-				<label class="visati-qa-card__label" for="qa-nationality">Nationality</label>
-				<select id="qa-nationality" class="visati-qa-card__select">
-					<option value="">Select nationality</option>
-					<?php foreach ( $countries as $code => $name ) : ?>
-						<option value="<?php echo esc_attr( $code ); ?>"><?php echo esc_html( $name ); ?></option>
-					<?php endforeach; ?>
-				</select>
+				<label class="visati-qa-card__label" for="qa-nationality-button">Nationality</label>
+				<div class="visati-combobox visati-qa-card__combobox" data-qa-combobox>
+					<input type="hidden" id="qa-nationality" value="">
+					<button type="button" id="qa-nationality-button" class="visati-combobox__button" data-qa-combobox-button aria-haspopup="listbox" aria-expanded="false" aria-label="Select nationality">
+						<span class="visati-combobox__flag" data-qa-combobox-flag></span>
+						<span class="visati-combobox__text" data-qa-combobox-text>Select nationality</span>
+						<svg class="visati-combobox__chevron" viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+					</button>
+					<div class="visati-combobox__panel" data-qa-combobox-panel hidden>
+						<ul class="visati-combobox__list" data-qa-combobox-list role="listbox" aria-label="Nationalities">
+							<?php foreach ( $countries as $code => $name ) : ?>
+								<li role="option" tabindex="-1" data-value="<?php echo esc_attr( $code ); ?>" data-label="<?php echo esc_attr( $name ); ?>" data-flag="<?php echo esc_attr( strtolower( $code ) ); ?>">
+									<img src="<?php echo esc_url( VISATI_CORE_URL . 'assets/images/flags/' . strtolower( $code ) . '.svg' ); ?>" alt="" width="20" height="14">
+									<span><?php echo esc_html( $name ); ?></span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+				</div>
 			</div>
 
 			<div class="visati-qa-card__field">
@@ -96,34 +108,57 @@ final class Visati_Core_Quick_Apply_Shortcode {
 				if(nat && nat.value) url += '&nationality=' + encodeURIComponent(nat.value);
 				window.location.href = url;
 			});
+
+			/* Nationality flag combobox — standalone (this widget can appear on pages
+			   that don't load the full apply-form script, e.g. the homepage). */
+			var cb = document.querySelector('[data-qa-combobox]');
+			if(!cb) return;
+			var button = cb.querySelector('[data-qa-combobox-button]');
+			var panel  = cb.querySelector('[data-qa-combobox-panel]');
+			var list   = cb.querySelector('[data-qa-combobox-list]');
+			var hidden = document.getElementById('qa-nationality');
+			var textEl = cb.querySelector('[data-qa-combobox-text]');
+			var flagEl = cb.querySelector('[data-qa-combobox-flag]');
+
+			function close(){
+				cb.classList.remove('is-open');
+				panel.hidden = true;
+				button.setAttribute('aria-expanded', 'false');
+			}
+			function open(){
+				cb.classList.add('is-open');
+				panel.hidden = false;
+				button.setAttribute('aria-expanded', 'true');
+			}
+			function selectItem(li){
+				var val  = li.getAttribute('data-value');
+				var label = li.getAttribute('data-label');
+				var flag = li.getAttribute('data-flag');
+				hidden.value = val;
+				textEl.textContent = label;
+				button.classList.add('is-filled');
+				flagEl.innerHTML = flag ? '<img src="<?php echo esc_url( VISATI_CORE_URL . "assets/images/flags/" ); ?>' + flag + '.svg" alt="" width="20" height="14">' : '';
+				Array.prototype.forEach.call(list.querySelectorAll('li'), function(x){
+					x.classList.toggle('is-selected', x === li);
+				});
+				close();
+				button.focus();
+			}
+			button.addEventListener('click', function(e){
+				e.preventDefault();
+				panel.hidden ? open() : close();
+			});
+			list.addEventListener('click', function(e){
+				var li = e.target.closest ? e.target.closest('li') : null;
+				if(li) selectItem(li);
+			});
+			document.addEventListener('click', function(e){
+				if(!cb.contains(e.target)) close();
+			});
 		})();
 		</script>
 		<?php
 		return (string) ob_get_clean();
 	}
 
-	private static function get_popular_countries(): array {
-		return array(
-			'IN' => 'India',
-			'PK' => 'Pakistan',
-			'BD' => 'Bangladesh',
-			'LK' => 'Sri Lanka',
-			'PH' => 'Philippines',
-			'NP' => 'Nepal',
-			'EG' => 'Egypt',
-			'GB' => 'United Kingdom',
-			'US' => 'United States',
-			'CA' => 'Canada',
-			'DE' => 'Germany',
-			'FR' => 'France',
-			'AU' => 'Australia',
-			'CN' => 'China',
-			'RU' => 'Russia',
-			'TR' => 'Turkey',
-			'SA' => 'Saudi Arabia',
-			'JO' => 'Jordan',
-			'LB' => 'Lebanon',
-			'AE' => 'UAE',
-		);
-	}
 }

@@ -27,6 +27,14 @@ body {
 	background: var( --visati-white );
 	line-height: 1.6;
 	-webkit-font-smoothing: antialiased;
+	/* Sticky footer: keep it pinned to the bottom of the viewport on short pages,
+	   without needing a min-height wrapper in every individual page template. */
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+.visati-footer {
+	margin-top: auto;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -43,27 +51,52 @@ a { color: var( --visati-navy ); text-decoration: none; }
 a:hover { color: var( --visati-gold ); }
 
 /* Buttons / CTAs — golden gradient pill */
+/* !important on background/color/border/border-radius/padding below: Hello
+   Elementor's reset.css has a generic `button,[type=submit],button{...}`
+   rule with EQUAL CSS specificity (0,1,0) to a single class selector like
+   .visati-btn, and reset.css loads AFTER this file — so on an exact
+   specificity tie, source order decides and reset.css silently wins,
+   turning our gold buttons into reset.css's own thin gold-outline/gold-text
+   look. This was the actual root cause of the recurring "gold text" bug
+   fixed ad-hoc on individual buttons earlier — !important here fixes it
+   for every .visati-btn permanently, regardless of stylesheet load order. */
 .visati-btn {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
-	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
 	background-size: 200% 200%;
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-weight: 700;
-	padding: 0.85rem 1.75rem;
-	border-radius: 20px;
-	border: 0;
+	padding: 0.85rem 1.75rem !important;
+	border-radius: 12px !important;
+	border: 0 !important;
 	cursor: pointer;
-	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3), 0 1px 2px rgba(10, 22, 40, 0.15);
 	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease;
 }
 .visati-btn:hover {
 	background-position: 100% 100%;
 	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2);
 	transform: translateY(-2px);
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
+	background-color: transparent !important;
+}
+/* Track page search button + Apply form step-nav button: white text on gold, per request. */
+#track-search-btn,
+#track-search-btn:hover,
+#visati-apply-form [data-action="next"],
+#visati-apply-form [data-action="next"]:hover {
+	color: #FFFFFF !important;
+}
+#track-search-btn svg,
+#visati-apply-form [data-action="next"] svg {
+	color: #FFFFFF !important;
+	stroke: #FFFFFF !important;
 }
 .visati-btn:active { transform: translateY(0); box-shadow: 0 1px 4px rgba(201, 168, 76, 0.3); }
 .visati-btn:disabled {
@@ -194,9 +227,13 @@ a:hover { color: var( --visati-gold ); }
    ───────────────────────────────────────────────────────── */
 .visati-header {
 	position: sticky;
-	top: 12px;
+	top: 0;
 	z-index: 9999;
 	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Floating pill offset only once scrolled — flush with no gap at the top of the page. */
+.visati-header.is-scrolled {
+	top: 12px;
 	margin-bottom: 12px;
 }
 .visati-header__bar {
@@ -222,7 +259,7 @@ a:hover { color: var( --visati-gold ); }
 	transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .visati-header.is-scrolled .visati-header__inner {
-	height: 52px;
+	height: 64px;
 }
 .visati-header__brand {
 	display: flex;
@@ -307,11 +344,11 @@ a:hover { color: var( --visati-gold ); }
 	gap: 5px;
 	width: 44px;
 	height: 44px;
-	padding: 8px;
-	background: transparent;
-	border: 0;
+	padding: 8px !important;
+	background: transparent !important;
+	border: 0 !important;
 	cursor: pointer;
-	border-radius: 8px;
+	border-radius: 8px !important;
 	transition: background 0.2s;
 }
 .visati-header__toggle:hover {
@@ -366,11 +403,11 @@ a:hover { color: var( --visati-gold ); }
 	margin-bottom: 2rem;
 }
 .visati-drawer__close {
-	background: transparent;
-	border: 0;
-	color: var( --visati-white );
+	background: transparent !important;
+	border: 0 !important;
+	color: var( --visati-white ) !important;
 	cursor: pointer;
-	padding: 10px;
+	padding: 10px !important;
 	min-width: 44px;
 	min-height: 44px;
 	display: flex;
@@ -403,7 +440,6 @@ a:hover { color: var( --visati-gold ); }
 	padding-bottom: 1.5rem;
 	position: relative;
 	overflow: hidden;
-	margin-top: 0;
 }
 /* Kill the white gap between last page content and footer */
 .visati-footer:first-of-type {
@@ -787,6 +823,11 @@ body > main > :last-child {
 	width: 100%;
 	max-width: 420px;
 }
+@media ( min-width: 1024px ) {
+	.visati-qa-card {
+		max-width: 460px;
+	}
+}
 .visati-qa-card__header {
 	display: flex;
 	align-items: flex-start;
@@ -838,10 +879,10 @@ body > main > :last-child {
 }
 .visati-qa-card__select,
 .visati-qa-card__input {
-	width: 100%;
-	padding: 0.75rem 1rem;
-	border: 1.5px solid rgba(10, 22, 40, 0.12);
-	border-radius: 10px;
+	width: 100% !important;
+	padding: 0.75rem 1rem !important;
+	border: 1.5px solid rgba(10, 22, 40, 0.12) !important;
+	border-radius: 10px !important;
 	font-size: 0.9rem;
 	font-family: "Inter", sans-serif;
 	color: var( --visati-ink );
@@ -856,6 +897,29 @@ body > main > :last-child {
 	border-color: var( --visati-gold );
 	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
 }
+/* Date input: match select field look — some browsers only partially honor
+   appearance:none on type=date, so force the box model explicitly rather
+   than relying on it inheriting cleanly from the shared rule above. */
+.visati-qa-card__input[type="date"] {
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+	appearance: none !important;
+	position: relative;
+	border: 1.5px solid rgba(10, 22, 40, 0.12) !important;
+	border-radius: 10px !important;
+	background: var( --visati-white ) !important;
+}
+.visati-qa-card__input[type="date"]::-webkit-calendar-picker-indicator {
+	opacity: 0.35;
+	cursor: pointer;
+}
+.visati-qa-card__input[type="date"]:not(:valid)::before {
+	content: attr(placeholder);
+	color: rgba(10, 22, 40, 0.35);
+	position: absolute;
+	left: 1rem;
+	pointer-events: none;
+}
 .visati-qa-card__select::placeholder,
 .visati-qa-card__input::placeholder {
 	color: rgba(10, 22, 40, 0.35);
@@ -864,6 +928,20 @@ body > main > :last-child {
 	width: 100%;
 	justify-content: center;
 	margin-top: 0.25rem;
+}
+/* Nationality flag combobox inside the Quick Apply card — match the card's
+   own field sizing/gold accent instead of the full apply-form's blue one. */
+.visati-qa-card__combobox .visati-combobox__button {
+	height: auto;
+	padding: 0.75rem 1rem;
+	border: 1.5px solid rgba(10, 22, 40, 0.12);
+	border-radius: 10px;
+	font-size: 0.9rem;
+	font-family: "Inter", sans-serif;
+}
+.visati-qa-card__combobox.is-open .visati-combobox__button {
+	border-color: var( --visati-gold ) !important;
+	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15) !important;
 }
 .visati-qa-card__secure {
 	display: flex;
@@ -897,30 +975,37 @@ body > main > :last-child {
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	width: 44px;
-	height: 44px;
-	padding: 0;
+	width: 44px !important;
+	height: 44px !important;
+	min-width: 44px;
+	max-width: 44px;
+	aspect-ratio: 1 / 1;
+	padding: 0 !important;
+	margin: 0;
 	box-sizing: border-box;
-	border-radius: 50%;
-	border: 1.5px solid rgba(10,22,40,0.12);
-	background: var( --visati-white );
+	border-radius: 50% !important;
+	border: 1.5px solid rgba(10,22,40,0.12) !important;
+	background: var( --visati-white ) !important;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 	display: flex;
+	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
 	transition: all 0.2s;
 	z-index: 2;
 	line-height: 0;
 }
 .visati-testimonials-arrow svg {
 	display: block;
+	flex-shrink: 0;
+	margin: 0 auto;
 }
 .visati-testimonials-arrow:hover {
-	background: var( --visati-navy );
-	color: var( --visati-white );
-	border-color: var( --visati-navy );
+	background: linear-gradient( 135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100% ) !important;
+	color: var( --visati-navy ) !important;
+	border-color: var( --visati-navy ) !important;
 }
 .visati-testimonials-arrow--prev { left: -22px; }
 .visati-testimonials-arrow--next { right: -22px; }
@@ -940,6 +1025,40 @@ body > main > :last-child {
 	margin-bottom: 0.75rem;
 	letter-spacing: 2px;
 }
+.visati-rating-badge {
+	text-align: right;
+}
+.visati-rating-badge__row {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+}
+.visati-rating-badge__stars {
+	color: var( --visati-gold );
+	font-size: 1rem;
+	letter-spacing: 1px;
+}
+.visati-rating-badge__value {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.125rem;
+	color: var( --visati-navy );
+	margin-left: 2px;
+}
+.visati-rating-badge__note {
+	font-size: 0.75rem;
+	color: rgba(26,26,46,0.5);
+	margin: 4px 0 0;
+}
+@media ( max-width: 768px ) {
+	.visati-rating-badge {
+		text-align: left;
+	}
+	.visati-rating-badge__row {
+		justify-content: flex-start;
+	}
+}
 .visati-testimonial-card__text {
 	font-size: 0.9rem;
 	line-height: 1.7;
@@ -953,8 +1072,11 @@ body > main > :last-child {
 	gap: 0.75rem;
 }
 .visati-testimonial-card__flag {
-	font-size: 1.5rem;
-	line-height: 1;
+	width: 22px;
+	height: 16px;
+	border-radius: 3px;
+	object-fit: cover;
+	flex-shrink: 0;
 }
 .visati-testimonial-card__name {
 	font-weight: 600;
@@ -1040,16 +1162,16 @@ body > main > :last-child {
 	margin-bottom: 1.5rem;
 }
 .visati-faq-cat-btn {
-	padding: 0.45rem 1rem;
-	border-radius: 20px;
-	border: 1.5px solid rgba(10,22,40,0.15);
-	background: var( --visati-white );
+	padding: 0.45rem 1rem !important;
+	border-radius: 12px !important;
+	border: 1.5px solid rgba(10,22,40,0.15) !important;
+	background: var( --visati-white ) !important;
 	font-size: 0.8rem;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.15s;
 	font-family: inherit;
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
 }
 .visati-faq-cat-btn:hover,
 .visati-faq-cat-btn.is-active {
@@ -1072,17 +1194,17 @@ body > main > :last-child {
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	padding: 1.1rem 1.25rem;
-	background: transparent;
-	border: 0;
+	padding: 1.1rem 1.25rem !important;
+	background: transparent !important;
+	border: 0 !important;
 	text-align: left;
 	font-size: 1rem;
 	font-weight: 600;
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
 	cursor: pointer;
 	font-family: inherit;
 	gap: 1rem;
-	border-radius: 12px;
+	border-radius: 12px !important;
 }
 .visati-faq-item.is-open .visati-faq-item__q {
 	color: var( --visati-white );
@@ -1136,13 +1258,17 @@ body > main > :last-child {
 }
 .visati-contact-form input,
 .visati-contact-form textarea {
-	width: 100%;
-	padding: 0.75rem 1rem;
-	border: 2px solid rgba(10,22,40,0.1);
-	border-radius: 10px;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+	appearance: none !important;
+	width: 100% !important;
+	padding: 0.75rem 1rem !important;
+	border: 2px solid rgba(10,22,40,0.1) !important;
+	border-radius: 10px !important;
 	font-size: 0.95rem;
 	font-family: inherit;
 	color: var( --visati-ink );
+	background: var( --visati-white );
 	transition: border-color 0.2s;
 	box-sizing: border-box;
 }
@@ -1189,9 +1315,9 @@ body > main > :last-child {
 }
 .visati-track-search input {
 	flex: 1;
-	padding: 0.85rem 1.25rem;
-	border: 2px solid rgba(10,22,40,0.1);
-	border-radius: 20px;
+	padding: 0.85rem 1.25rem !important;
+	border: 2px solid rgba(10,22,40,0.1) !important;
+	border-radius: 20px !important;
 	font-size: 0.95rem;
 	font-family: inherit;
 }
@@ -1277,16 +1403,16 @@ body > main > :last-child {
 /* Golden gradient button reset — overrides hello-elementor #c36 pink
    Only target bare elements without any visati-btn class.
    Exclude policy page content links. */
-body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value),
-body .visati-page button:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button),
-body .visati-page [type="button"]:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button),
-body .visati-page [type="submit"]:not([class*="visati-btn"]):not([class*="elementor-button"]),
-body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="elementor-button"]) {
+body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta)),
+body .visati-page button:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):not(.visati-order-summary__discount-btn):not(.visati-testimonials-arrow)),
+body .visati-page [type="button"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):not(.visati-order-summary__discount-btn)),
+body .visati-page [type="submit"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])),
+body .visati-page [type="reset"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])) {
 	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
 	background-size: 200% 200% !important;
-	color: var( --visati-navy ) !important;
+	color: var( --visati-navy );
 	border: none !important;
-	border-radius: 20px !important;
+	border-radius: 12px !important;
 	padding: 0.85rem 1.75rem !important;
 	font-family: "Plus Jakarta Sans", sans-serif !important;
 	font-weight: 700 !important;
@@ -1294,15 +1420,73 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="element
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease !important;
 }
-body .visati-page:not(.visati-page--policy) a:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):hover,
-body .visati-page button:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):hover,
-body .visati-page [type="button"]:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):hover,
-body .visati-page [type="submit"]:not([class*="visati-btn"]):not([class*="elementor-button"]):hover,
-body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="elementor-button"]):hover {
+body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta)):hover,
+body .visati-page button:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):not(.visati-order-summary__discount-btn):not(.visati-testimonials-arrow)):hover,
+body .visati-page [type="button"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):not(.visati-order-summary__discount-btn)):hover,
+body .visati-page [type="submit"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])):hover,
+body .visati-page [type="reset"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])):hover {
 	background-position: 100% 100% !important;
 	box-shadow: 0 4px 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(240, 200, 100, 0.2) !important;
 	transform: translateY(-2px) !important;
-	color: var( --visati-navy ) !important;
+	color: var( --visati-navy );
+}
+
+/* ─────────────────────────────────────────────────────────
+   THEME UTILITY CLASSES — for use as Elementor "CSS Classes"
+   (Advanced tab) on any widget. .theme-primary-btn ships with
+   the full header-button look (shape, padding, font, shadow)
+   so it looks right by default — Elementor's own per-widget
+   Style tab can still override any of these on a specific
+   instance if a different size/radius is ever wanted.
+   ───────────────────────────────────────────────────────── */
+
+/* Gold gradient button — identical look to the header CTA / apply-form buttons.
+   Elementor's "CSS Classes" (Advanced tab) applies the class to the widget's
+   OUTER wrapper div, not the actual <a class="elementor-button"> inside it —
+   so this must style the inner .elementor-button descendant, and explicitly
+   NOT the wrapper itself (:not(.elementor-widget)), or the whole widget
+   container (including Elementor's own spacing) turns into one oversized box. */
+.theme-primary-btn:not(.elementor-widget),
+.theme-primary-btn .elementor-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
+	background-size: 200% 200%;
+	color: var( --visati-navy, #0A1628 );
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	padding: 0.85rem 1.75rem;
+	border-radius: 12px;
+	border: 0;
+	cursor: pointer;
+	text-decoration: none;
+	box-shadow: none;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease;
+}
+.theme-primary-btn:not(.elementor-widget):hover,
+.theme-primary-btn:not(.elementor-widget):focus,
+.theme-primary-btn .elementor-button:hover,
+.theme-primary-btn .elementor-button:focus {
+	background-position: 100% 100%;
+	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.25);
+	transform: translateY(-2px);
+	color: var( --visati-navy, #0A1628 );
+	text-decoration: none;
+}
+
+/* Gold gradient text — same gradient, clipped to text for headlines/highlights.
+   Same wrapper-vs-inner-element issue as above: covers direct use, plus
+   Elementor Heading/Text-Editor widgets' actual content elements. */
+.theme-text:not(.elementor-widget),
+.theme-text .elementor-heading-title,
+.theme-text .elementor-widget-container > * {
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
+	background-size: 200% 200%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-fill-color: transparent;
 }
 
 /* Nationality combobox */
@@ -1319,7 +1503,7 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="element
 	background: var(--visati-white) !important;
 	background-size: unset !important;
 	border: 1.5px solid rgba(10, 22, 40, 0.12) !important;
-	border-radius: 20px !important;
+	border-radius: 12px !important;
 	box-shadow: none !important;
 	font-family: "Inter", sans-serif !important;
 	font-size: 0.9rem !important;
@@ -1373,9 +1557,10 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="element
 	flex-direction: column;
 }
 .visati-combobox__search {
-	border: none;
-	border-bottom: 1px solid #e2e4e7;
-	padding: 0.65rem 1rem;
+	border: none !important;
+	border-bottom: 1px solid #e2e4e7 !important;
+	border-radius: 0 !important;
+	padding: 0.65rem 1rem !important;
 	font-size: 0.85rem;
 	font-family: "Inter", sans-serif;
 	outline: none;
@@ -1420,26 +1605,8 @@ body .visati-page [type="reset"]:not([class*="visati-btn"]):not([class*="element
 }
 
 /* ============================================================
-   ACCESSIBILITY — skip link + focus-visible
+   ACCESSIBILITY — focus-visible
    ============================================================ */
-.visati-skip-link {
-	position: absolute;
-	top: -60px;
-	left: 0;
-	background: var(--visati-navy);
-	color: #fff;
-	padding: 0.75rem 1.5rem;
-	z-index: 99999;
-	font-weight: 600;
-	text-decoration: none;
-	border-radius: 0 0 8px 0;
-	transition: top 0.2s ease;
-}
-.visati-skip-link:focus {
-	top: 0;
-	outline: 3px solid var(--visati-gold);
-	outline-offset: 2px;
-}
 
 .visati-sr-only {
 	position: absolute;
@@ -1492,7 +1659,7 @@ table { border-collapse: collapse; }
 	background-size: 200% 200% !important;
 	color: #0A1628 !important;
 	border: none !important;
-	border-radius: 20px !important;
+	border-radius: 12px !important;
 	font-weight: 700 !important;
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	padding: 0.5rem 1.15rem !important;
@@ -1546,13 +1713,26 @@ table { border-collapse: collapse; }
 	color: #C9A84C !important;
 }
 
-/* Override pink links (#c36) from hello-elementor reset.css
-   Use navy for all content links. */
-.visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a) {
+/* Override gold links from hello-elementor reset.css
+   Use navy for all content links, white for Elementor buttons. */
+.visati-page a:where(:not(.visati-btn):not(.elementor-button):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a)) {
 	color: var( --visati-navy );
 }
-.visati-page a:not(.visati-btn):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):hover {
+.visati-page a:where(:not(.visati-btn):not(.elementor-button):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a)):hover {
 	color: var( --visati-gold );
+}
+
+/* Elementor buttons: the reset.css a{color:#C9A84C} leaks gold text into
+   .elementor-button. Fix: reset to white for gold/navy bg buttons only. */
+.elementor-button,
+.elementor-button a,
+a.elementor-button {
+	color: #fff;
+}
+.elementor-button:hover,
+.elementor-button a:hover,
+a.elementor-button:hover {
+	color: #fff;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -2019,8 +2199,8 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	background: #25D366;
-	color: #fff;
+	background: #25D366 !important;
+	color: #fff !important;
 	font-weight: 600;
 	font-size: 0.875rem;
 	padding: 0 1.5rem;
@@ -2029,7 +2209,7 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	text-decoration: none;
 	transition: background 0.2s;
 }
-.visati-btn--whatsapp:hover { background: #1fb855; }
+.visati-btn--whatsapp:hover { background: #1fb855 !important; }
 @media ( max-width: 768px ) {
 	.visati-contact-page {
 		grid-template-columns: 1fr;
@@ -2070,6 +2250,10 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	margin: 2rem 0;
 }
 .visati-page--track .visati-track-search input {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	box-sizing: border-box;
 	flex: 1;
 	max-width: 320px;
 	padding: 0 1.25rem;
@@ -2078,6 +2262,7 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	border-radius: 12px;
 	font-size: 0.95rem;
 	font-family: inherit;
+	background: var( --visati-white );
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	transition: border-color 0.2s;
@@ -2290,8 +2475,8 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
-	background: var( --visati-whatsapp );
-	color: #fff;
+	background: var( --visati-whatsapp ) !important;
+	color: #fff !important;
 	font-weight: 600;
 	font-size: 0.9rem;
 	padding: 0.75rem 1.5rem;
@@ -2397,11 +2582,12 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
    GLOBAL MOBILE RESPONSIVE
    ============================================================ */
 
-/* ── Sticky header: full-width on mobile ─────────────── */
+/* ── Sticky header: ~95% width on mobile ─────────────── */
 @media ( max-width: 639px ) {
 	.visati-header.is-scrolled .visati-header__bar {
-		width: 100%;
-		border-radius: 0;
+		width: 95%;
+		margin: 0 auto;
+		border-radius: 16px;
 	}
 	.visati-header.is-scrolled .visati-header__inner {
 		height: 56px;
@@ -2417,9 +2603,6 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	.visati-header__wordmark {
 		font-size: 1rem;
 	}
-	.visati-header__tagline {
-		display: none;
-	}
 }
 
 /* ── Track page mobile ───────────────────────────────── */
@@ -2434,9 +2617,16 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 		margin: 1.5rem 0;
 	}
 	.visati-page--track .visati-track-search input {
+		-webkit-appearance: none !important;
+		-moz-appearance: none !important;
+		appearance: none !important;
+		box-sizing: border-box !important;
 		max-width: 100%;
 		width: 100%;
-		height: 48px;
+		height: 48px !important;
+		min-height: 48px;
+		line-height: normal;
+		background: var( --visati-white );
 	}
 	.visati-page--track .visati-track-search .visati-btn {
 		width: 100%;
@@ -2578,8 +2768,14 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 		right: -8px;
 	}
 	.visati-testimonials-arrow {
-		width: 36px;
-		height: 36px;
+		width: 36px !important;
+		height: 36px !important;
+		min-width: 36px;
+		max-width: 36px;
+	}
+	.visati-testimonials-arrow svg {
+		width: 16px;
+		height: 16px;
 	}
 }
 
@@ -2717,4 +2913,507 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 	}
+}
+
+/* ── Job listings (Careers page) ───────────────────── */
+.visati-jobs-empty {
+	color: #6b7280;
+	font-size: 0.95rem;
+	text-align: center;
+	padding: 2rem 0;
+}
+.visati-jobs-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	max-width: 900px;
+	margin: 0 auto;
+}
+.visati-job-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+	background: var( --visati-white, #fff );
+	border: 1px solid #e5e8ee;
+	border-radius: var( --visati-radius, 14px );
+	padding: 1.5rem 1.75rem;
+}
+.visati-job-card__main {
+	min-width: 0;
+	flex: 1;
+}
+.visati-job-card__title {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.15rem;
+	color: var( --visati-navy, #0A1628 );
+	margin: 0 0 0.5rem;
+}
+.visati-job-card__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	font-size: 0.85rem;
+	color: #6b7280;
+	margin-bottom: 0.6rem;
+}
+.visati-job-card__meta span:not(.visati-job-card__badge)::after {
+	content: "·";
+	margin-left: 0.6rem;
+	color: #d1d5db;
+}
+.visati-job-card__badge {
+	background: rgba( 201, 168, 76, 0.12 );
+	color: #856404;
+	font-weight: 600;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding: 2px 10px;
+	border-radius: 10px;
+}
+.visati-job-card__desc {
+	font-size: 0.9rem;
+	color: #4b5563;
+	line-height: 1.5;
+	margin: 0;
+}
+.visati-job-card__apply {
+	flex-shrink: 0;
+}
+@media ( max-width: 640px ) {
+	.visati-job-card {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.visati-job-card__apply {
+		justify-content: center;
+	}
+}
+
+/* ── Blog (grid + filters + sidebar) ───────────────── */
+.visati-blog-layout {
+	display: grid;
+	grid-template-columns: 1fr 300px;
+	gap: 2.5rem;
+	align-items: start;
+}
+.visati-blog-empty {
+	color: #6b7280;
+	font-size: 0.95rem;
+	padding: 2rem 0;
+	text-align: center;
+}
+.visati-blog-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1.5rem;
+}
+.visati-blog-filter {
+	background: #f1f2f4 !important;
+	border: 0 !important;
+	border-radius: 12px !important;
+	padding: 0.45rem 1rem !important;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #4b5563 !important;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+.visati-blog-filter:hover {
+	background: #e6e8eb;
+}
+.visati-blog-filter.is-active {
+	background: var( --visati-navy, #0A1628 );
+	color: #fff;
+}
+.visati-blog-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 1.5rem;
+}
+.visati-blog-card {
+	position: relative;
+	background: var( --visati-white, #fff );
+	border: 1px solid #e5e8ee;
+	border-radius: var( --visati-radius, 14px );
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.visati-blog-card:hover {
+	box-shadow: var( --visati-shadow, 0 10px 30px rgba(10,22,40,0.08) );
+	transform: translateY(-2px);
+}
+/* Stretched link — makes the whole card clickable via one <a>, laid over
+   everything (z-index above the body content, which stays visually on top
+   thanks to normal stacking order but isn't itself interactive). */
+.visati-blog-card__stretched-link {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+}
+.visati-blog-card__image {
+	width: 100%;
+	height: 170px;
+	object-fit: cover;
+	display: block;
+}
+.visati-blog-card__image--placeholder {
+	background: linear-gradient(135deg, #F8F9FB 0%, #E5E8EE 100%);
+}
+.visati-blog-card__body {
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	flex: 1;
+}
+.visati-blog-card__cat {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var( --visati-gold, #C9A84C );
+}
+.visati-blog-card__title {
+	margin: 0;
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.05rem;
+	line-height: 1.35;
+	color: var( --visati-navy, #0A1628 );
+}
+.visati-blog-card__excerpt {
+	font-size: 0.88rem;
+	color: #6b7280;
+	line-height: 1.5;
+	margin: 0;
+	flex: 1;
+}
+.visati-blog-card__meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.78rem;
+	color: #9aa3b2;
+	margin-top: 0.25rem;
+}
+
+.visati-blog-sidebar {
+	position: sticky;
+	top: 96px;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+.visati-blog-sidebar__block {
+	background: var( --visati-mist, #F8F9FB );
+	border-radius: var( --visati-radius, 14px );
+	padding: 1.25rem;
+}
+.visati-blog-sidebar__heading {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: var( --visati-navy, #0A1628 );
+	margin: 0 0 0.85rem;
+}
+.visati-blog-sidebar__list,
+.visati-blog-sidebar__recent {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+.visati-blog-sidebar__list a {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.5rem;
+	font-size: 0.88rem;
+	color: #4b5563;
+	text-decoration: none;
+}
+.visati-blog-sidebar__list a:hover {
+	color: var( --visati-navy, #0A1628 );
+}
+.visati-blog-sidebar__list a span {
+	color: #9aa3b2;
+}
+.visati-blog-sidebar__recent li a {
+	display: block;
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: var( --visati-navy, #0A1628 );
+	text-decoration: none;
+	margin-bottom: 0.15rem;
+}
+.visati-blog-sidebar__recent li a:hover {
+	text-decoration: underline;
+}
+.visati-blog-sidebar__recent li span {
+	font-size: 0.75rem;
+	color: #9aa3b2;
+}
+.visati-blog-sidebar__quick-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+.visati-blog-sidebar__quick-actions .visati-btn {
+	justify-content: center;
+	width: 100%;
+}
+
+@media ( max-width: 900px ) {
+	.visati-blog-layout {
+		grid-template-columns: 1fr;
+	}
+	.visati-blog-sidebar {
+		position: static;
+	}
+}
+
+/* ── Global Reach (animated world map) ─────────────── */
+.visati-global-reach {
+	background: transparent;
+	overflow: hidden;
+	padding: 3rem 0;
+}
+.visati-global-reach__panel {
+	position: relative;
+	overflow: hidden;
+	background: var( --visati-navy, #0A1628 );
+	border-radius: 28px;
+	padding: 2.5rem;
+	min-height: 340px;
+}
+.visati-global-reach__map-layer {
+	position: absolute;
+	inset: 0;
+}
+.visati-global-reach__svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+.visati-global-reach__map-dots {
+	opacity: 0.4;
+}
+.visati-global-reach__arc-dash {
+	animation: visati-arc-travel 3s linear infinite;
+}
+@keyframes visati-arc-travel {
+	to { stroke-dashoffset: -20; }
+}
+.visati-global-reach__content {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2.5rem;
+}
+.visati-global-reach__label {
+	color: var( --visati-gold, #C9A84C );
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	margin: 0 0 0.75rem;
+}
+.visati-global-reach__title {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.75rem;
+	line-height: 1.25;
+	color: #fff;
+	margin: 0;
+	max-width: 420px;
+}
+.visati-global-reach__desc {
+	margin: 1rem 0 0;
+	max-width: 380px;
+	font-size: 0.85rem;
+	line-height: 1.6;
+	color: rgba(255,255,255,0.6);
+}
+.visati-global-reach__cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 1.5rem;
+	padding: 0.6rem 1.25rem;
+	border-radius: 8px;
+	border: 1px solid rgba(201,168,76,0.25);
+	background: rgba(201,168,76,0.1);
+	color: var( --visati-gold, #C9A84C );
+	font-size: 0.8rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+.visati-global-reach__cta:hover {
+	background: rgba(201,168,76,0.2);
+	color: var( --visati-gold, #C9A84C );
+}
+.visati-global-reach__stats {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1.25rem;
+}
+.visati-global-reach__stat {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.visati-global-reach__stat-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: rgba(255,255,255,0.06);
+	color: rgba(201,168,76,0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+.visati-global-reach__stat-num {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.3rem;
+	color: #fff;
+	margin: 0;
+	line-height: 1;
+}
+.visati-global-reach__stat-label {
+	font-size: 0.7rem;
+	color: rgba(255,255,255,0.5);
+	margin: 0.25rem 0 0;
+	line-height: 1;
+}
+
+@media ( min-width: 1024px ) {
+	.visati-global-reach__panel {
+		padding: 3rem;
+		min-height: 380px;
+	}
+	.visati-global-reach__content {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.visati-global-reach__stats {
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+		width: 200px;
+		flex-shrink: 0;
+	}
+}
+@media ( prefers-reduced-motion: reduce ) {
+	.visati-global-reach__arc-dash,
+	.visati-global-reach__pin-pulse {
+		animation: none;
+	}
+}
+
+/* Services page — feature grid */
+.visati-services-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.25rem;
+	max-width: var( --visati-max, 1200px );
+	margin: 0 auto;
+}
+@media ( min-width: 768px ) {
+	.visati-services-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+@media ( min-width: 1024px ) {
+	.visati-services-grid {
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 1.5rem;
+	}
+}
+.visati-service-card {
+	background: var( --visati-white, #fff );
+	border: 1px solid #e5e8ee;
+	border-radius: 16px;
+	padding: 1.75rem;
+	transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.visati-service-card:hover {
+	border-color: rgba( 201, 168, 76, 0.35 );
+	box-shadow: var( --visati-shadow, 0 10px 30px rgba( 10, 22, 40, 0.08 ) );
+}
+.visati-service-card__icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: rgba( 201, 168, 76, 0.15 );
+	color: var( --visati-gold, #C9A84C );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 1.25rem;
+}
+.visati-service-card__title {
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-weight: 700;
+	font-size: 1.1rem;
+	color: var( --visati-navy, #0A1628 );
+	margin: 0 0 0.5rem;
+}
+.visati-service-card__desc {
+	font-size: 0.9rem;
+	line-height: 1.6;
+	color: #6b7280;
+	margin: 0 0 1.1rem;
+}
+.visati-service-card__features {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+.visati-service-card__features li {
+	position: relative;
+	padding-left: 1.1rem;
+	font-size: 0.85rem;
+	color: #9199a8;
+}
+.visati-service-card__features li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0.5em;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: rgba( 201, 168, 76, 0.5 );
+}
+
+/* ─────────────────────────────────────────────────────────
+   CTA BUTTON ROW — force equal height when buttons sit side-by-side
+   ───────────────────────────────────────────────────────── */
+.elementor-element .visati-btn + .visati-btn--whatsapp,
+.elementor-element .visati-btn--whatsapp + .visati-btn,
+.elementor-widget-container > div:has(.visati-btn) > .visati-btn--whatsapp,
+.elementor-widget-container > div:has(.visati-btn--whatsapp) > .visati-btn {
+	align-self: stretch;
+}
+.elementor-element .visati-btn + .visati-btn--whatsapp,
+.elementor-element .visati-btn--whatsapp + .visati-btn {
+	align-self: stretch;
+}
+.elementor-widget-button .elementor-button {
+	height: 100% !important;
 }

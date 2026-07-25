@@ -15,11 +15,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		public static function init(): void {
 			add_shortcode( 'visati_testimonials', array( __CLASS__, 'render' ) );
+			add_shortcode( 'visati_rating_badge', array( __CLASS__, 'render_rating_badge' ) );
 			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		}
 
+		/**
+		 * [visati_rating_badge] — "★★★★★ 4.9 / Based on 100+ reviews..." summary
+		 * badge. Uses the same plain-Unicode star character the testimonial cards
+		 * already use, NOT an icon font — Elementor's native Star Rating widget
+		 * renders stars via a private-use-area icon-font codepoint that silently
+		 * renders blank on devices where that font fails to load.
+		 */
+		public static function render_rating_badge( $atts ): string {
+			$atts = shortcode_atts(
+				array(
+					'rating' => '4.9',
+					'note'   => 'Based on 100+ reviews on Trustpilot &amp; Google',
+				),
+				$atts,
+				'visati_rating_badge'
+			);
+
+			ob_start();
+			?>
+			<div class="visati-rating-badge">
+				<div class="visati-rating-badge__row">
+					<span class="visati-rating-badge__stars" aria-hidden="true">★★★★★</span>
+					<span class="visati-rating-badge__value"><?php echo esc_html( $atts['rating'] ); ?></span>
+				</div>
+				<p class="visati-rating-badge__note"><?php echo wp_kses_post( $atts['note'] ); ?></p>
+			</div>
+			<?php
+			return (string) ob_get_clean();
+		}
+
 		public static function register_assets(): void {
-			wp_register_script( 'visati-testimonials', VISATI_CORE_URL . 'assets/js/testimonials.js', array(), VISATI_CORE_VERSION, true );
+			wp_register_script( 'visati-testimonials', VISATI_CORE_URL . 'assets/js/testimonials.js', array(), visati_asset_version( 'assets/js/testimonials.js' ), true );
 		}
 
 	public static function render( $atts ): string {
@@ -58,7 +89,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					$rating       = (int) get_post_meta( $t->ID, '_visati_rating', true );
 					$review_text  = get_post_meta( $t->ID, '_visati_review_text', true );
 					$name         = $t->post_title;
-					$flag         = self::code_to_flag( $country_code );
+					$flag_code    = strtolower( trim( $country_code ) );
 					$country_name = self::code_to_name( $country_code );
 				?>
 					<div class="visati-testimonial-card">
@@ -75,8 +106,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php endif; ?>
 
 						<div class="visati-testimonial-card__author">
-							<?php if ( $flag ) : ?>
-								<span class="visati-testimonial-card__flag" aria-hidden="true"><?php echo esc_html( $flag ); ?></span>
+							<?php if ( $flag_code && 2 === strlen( $flag_code ) && file_exists( VISATI_CORE_DIR . 'assets/images/flags/' . $flag_code . '.svg' ) ) : ?>
+								<img src="<?php echo esc_url( VISATI_CORE_URL . 'assets/images/flags/' . $flag_code . '.svg' ); ?>" alt="" width="22" height="16" class="visati-testimonial-card__flag">
 							<?php endif; ?>
 							<div>
 								<div class="visati-testimonial-card__name"><?php echo esc_html( $name ); ?></div>
@@ -97,19 +128,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 			wp_enqueue_script( 'visati-testimonials' );
 		}
 		return (string) ob_get_clean();
-	}
-
-	private static function code_to_flag( string $code ): string {
-		$code = strtoupper( trim( $code ) );
-		if ( 2 !== strlen( $code ) ) {
-			return '';
-		}
-		$offset = 0x1F1E6 - 65; // Regional Indicator Symbol Letter A.
-		$flag   = '';
-		for ( $i = 0; $i < 2; $i++ ) {
-			$flag .= mb_chr( ord( $code[ $i ] ) + $offset );
-		}
-		return $flag;
 	}
 
 	private static function code_to_name( string $code ): string {

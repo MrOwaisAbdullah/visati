@@ -25,7 +25,7 @@ final class Visati_Core_About_Shortcodes {
 	 */
 	public static function hero(): string {
 		$apply_url = esc_url( home_url( '/apply' ) );
-		$whatsapp  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'whatsapp_number', '971585542344' ) : '971585542344';
+		$whatsapp  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'whatsapp_number', '971585542344' ) : '' ) ?: '971585542344';
 		$wa_url    = 'https://wa.me/' . esc_attr( $whatsapp ) . '?text=' . rawurlencode( 'Hello Visati, I have a question about UAE visas.' );
 
 		ob_start();

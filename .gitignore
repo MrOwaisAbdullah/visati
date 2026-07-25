@@ -47,6 +47,15 @@ next-env.d.ts
 .specify
 /docs/
 CLAUDE.md
+.mcp.json
+
+# Deploy scratch artifacts (DB dumps, deploy zips, scripts with hardcoded
+# server/DB credentials) — never commit a raw DB dump or a live credential.
+wordpress/docs/*.sql
+wordpress/docs/*.zip
+wordpress/docs/dump-db.php
+wordpress/docs/upload.php
+wordpress/deploy-local.ps1
 specs/
 history/
 screenshots/

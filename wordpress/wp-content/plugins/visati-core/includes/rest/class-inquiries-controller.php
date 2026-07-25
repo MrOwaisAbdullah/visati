@@ -35,6 +35,10 @@ final class Visati_Core_Inquiries_Controller {
 	}
 
 	public static function handle_submit( WP_REST_Request $request ): WP_REST_Response {
+		if ( ! visati_rate_limit( 'inquiries', 5, 600 ) ) {
+			return new WP_REST_Response( array( 'message' => 'Too many submissions. Please try again later.' ), 429 );
+		}
+
 		global $wpdb;
 
 		$table = $wpdb->prefix . 'visati_inquiries';

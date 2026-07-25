@@ -11,21 +11,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $site_name = get_bloginfo( 'name' );
-$tagline   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'brand_tagline', 'Dubai Visas. Simplified.' ) : 'Dubai Visas. Simplified.';
-$desc      = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'brand_description', 'UAE visa consultancy. Concierge-grade processing for travellers and businesses.' ) : '';
+$tagline   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'brand_tagline', 'Dubai Visas. Simplified.' ) : '' ) ?: 'Dubai Visas. Simplified.';
+$desc      = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'brand_description', 'UAE visa consultancy. Concierge-grade processing for travellers and businesses.' ) : '';
 
-$email     = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_email', 'visa@visati.ae' ) : 'visa@visati.ae';
-$phone     = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_phone', '+971 58 554 2344' ) : '+971 58 554 2344';
-$address   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_address', "Boulevard Plaza Tower 1\nDowntown Dubai, UAE" ) : "Boulevard Plaza Tower 1\nDowntown Dubai, UAE";
-$licence   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_trade_licence', 'DED-XXXX-XXXX' ) : 'DED-XXXX-XXXX';
-$whatsapp  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'whatsapp_number', '971585542344' ) : '971585542344';
+$email     = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_email', 'visa@visati.ae' ) : '' ) ?: 'visa@visati.ae';
+$phone     = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_phone', '+971 58 554 2344' ) : '' ) ?: '+971 58 554 2344';
+$address   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_address', "Boulevard Plaza Tower 1\nDowntown Dubai, UAE" ) : '' ) ?: "Boulevard Plaza Tower 1\nDowntown Dubai, UAE";
+$licence   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_trade_licence', 'DED-XXXX-XXXX' ) : '' ) ?: 'DED-XXXX-XXXX';
+$whatsapp  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'whatsapp_number', '971585542344' ) : '' ) ?: '971585542344';
 
-$ig  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_instagram', 'https://instagram.com/visati.ae' ) : '#';
-$fb  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_facebook', 'https://facebook.com/visati.ae' ) : '#';
-$x   = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_twitter', 'https://twitter.com/visatiuae' ) : '#';
-$li  = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_linkedin', 'https://linkedin.com/company/visati' ) : '#';
+$ig  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_instagram', 'https://instagram.com/visati.ae' ) : '' ) ?: 'https://instagram.com/visati.ae';
+$fb  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_facebook', 'https://facebook.com/visati.ae' ) : '' ) ?: 'https://facebook.com/visati.ae';
+$x   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_twitter', 'https://twitter.com/visatiuae' ) : '' ) ?: 'https://twitter.com/visatiuae';
+$li  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_linkedin', 'https://linkedin.com/company/visati' ) : '' ) ?: 'https://linkedin.com/company/visati';
 
-$copyright = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'footer_copyright', '' ) : '';
+$copyright = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'footer_copyright', '' ) : '';
 if ( '' === $copyright ) {
 	$copyright = sprintf( '&copy; %d %s &middot; Dubai, UAE &middot; Trade Licence %s', gmdate( 'Y' ), esc_html( $site_name ), esc_html( $licence ) );
 }
@@ -34,7 +34,7 @@ if ( '' === $copyright ) {
 	<div class="visati-container visati-footer__inner">
 
 		<!-- Brand -->
-		<?php $footer_logo_url = function_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
+		<?php $footer_logo_url = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'header_logo', '' ) : '';
 		if ( ! $footer_logo_url ) {
 			$footer_logo_url = get_theme_file_uri( 'assets/images/logo-mark.svg' );
 		} ?>
@@ -63,46 +63,67 @@ if ( '' === $copyright ) {
 			</div>
 		</div>
 
-		<!-- Link columns -->
+		<!-- Link columns — editable via Appearance → Menus once a menu is assigned to each location; falls back to defaults otherwise -->
 		<?php
-		$footer_links = array(
-			'Visas'    => array(
-				array( 'label' => '14-Day Tourist',  'url' => '/visa-types' ),
-				array( 'label' => '30-Day Tourist',  'url' => '/visa-types' ),
-				array( 'label' => '60-Day Tourist',  'url' => '/visa-types' ),
-				array( 'label' => '30-Day Multi-Entry', 'url' => '/visa-types' ),
-				array( 'label' => '60-Day Multi-Entry', 'url' => '/visa-types' ),
-				array( 'label' => 'Visa Extension',  'url' => '/visa-types' ),
+		$footer_columns = array(
+			'footer-visas'   => array(
+				'heading' => 'Visas',
+				'links'   => array(
+					array( 'label' => '14-Day Tourist',  'url' => '/visa-types' ),
+					array( 'label' => '30-Day Tourist',  'url' => '/visa-types' ),
+					array( 'label' => '60-Day Tourist',  'url' => '/visa-types' ),
+					array( 'label' => '30-Day Multi-Entry', 'url' => '/visa-types' ),
+					array( 'label' => '60-Day Multi-Entry', 'url' => '/visa-types' ),
+					array( 'label' => 'Visa Extension',  'url' => '/visa-types' ),
+				),
 			),
-			'Company'  => array(
-				array( 'label' => 'About',       'url' => '/about' ),
-				array( 'label' => 'Services',    'url' => '/services' ),
-				array( 'label' => 'Careers',     'url' => '/careers' ),
-				array( 'label' => 'Blog',        'url' => '/blog' ),
-				array( 'label' => 'Testimonials', 'url' => '/#testimonials' ),
+			'footer-company' => array(
+				'heading' => 'Company',
+				'links'   => array(
+					array( 'label' => 'About',       'url' => '/about' ),
+					array( 'label' => 'Services',    'url' => '/services' ),
+					array( 'label' => 'Careers',     'url' => '/careers' ),
+					array( 'label' => 'Blog',        'url' => '/blog' ),
+					array( 'label' => 'Testimonials', 'url' => '/#testimonials' ),
+				),
 			),
-			'Support'  => array(
-				array( 'label' => 'FAQ',          'url' => '/faq' ),
-				array( 'label' => 'Contact',      'url' => '/contact' ),
-				array( 'label' => 'WhatsApp',     'url' => 'https://wa.me/' . $whatsapp ),
-				array( 'label' => 'Refund Policy', 'url' => '/faq' ),
-				array( 'label' => 'Terms',        'url' => '/terms' ),
+			'footer-support' => array(
+				'heading' => 'Support',
+				'links'   => array(
+					array( 'label' => 'FAQ',          'url' => '/faq' ),
+					array( 'label' => 'Contact',      'url' => '/contact' ),
+					array( 'label' => 'WhatsApp',     'url' => 'https://wa.me/' . $whatsapp ),
+					array( 'label' => 'Refund Policy', 'url' => '/faq' ),
+					array( 'label' => 'Terms',        'url' => '/terms' ),
+				),
 			),
 		);
 
-		foreach ( $footer_links as $section => $links ) :
+		foreach ( $footer_columns as $location => $column ) :
 		?>
 			<div class="visati-footer__col">
-				<h4 class="visati-footer__heading"><?php echo esc_html( $section ); ?></h4>
-				<ul class="visati-footer__list">
-					<?php foreach ( $links as $link ) : ?>
-						<li>
-							<a href="<?php echo esc_url( home_url( $link['url'] ) ); ?>" class="visati-footer__link">
-								<?php echo esc_html( $link['label'] ); ?>
-							</a>
-						</li>
-					<?php endforeach; ?>
-				</ul>
+				<h4 class="visati-footer__heading"><?php echo esc_html( $column['heading'] ); ?></h4>
+				<?php if ( has_nav_menu( $location ) ) : ?>
+					<?php
+					wp_nav_menu( array(
+						'theme_location' => $location,
+						'container'      => false,
+						'menu_class'     => 'visati-footer__list',
+						'fallback_cb'    => false,
+						'depth'          => 1,
+					) );
+					?>
+				<?php else : ?>
+					<ul class="visati-footer__list">
+						<?php foreach ( $column['links'] as $link ) : ?>
+							<li>
+								<a href="<?php echo esc_url( home_url( $link['url'] ) ); ?>" class="visati-footer__link">
+									<?php echo esc_html( $link['label'] ); ?>
+								</a>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
 			</div>
 		<?php endforeach; ?>
 

@@ -20,14 +20,31 @@ class Visati_Core_Admin_Applications {
 		global $wpdb;
 		$table = $wpdb->prefix . 'visati_applications';
 
-		// Status filter.
+		// Filters.
 		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '';
-		$where = '';
-		$params = array();
+		$search        = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		$visa_filter   = isset( $_GET['visa_type'] ) ? sanitize_text_field( wp_unslash( $_GET['visa_type'] ) ) : '';
+
+		$where_parts = array();
+		$params      = array();
+
 		if ( $status_filter && in_array( $status_filter, array( 'draft', 'submitted', 'under_review', 'processing', 'approved', 'rejected' ), true ) ) {
-			$where = $wpdb->prepare( ' WHERE a.status = %s', $status_filter );
-			$params[] = $status_filter;
+			$where_parts[] = 'a.status = %s';
+			$params[]      = $status_filter;
 		}
+
+		if ( $visa_filter ) {
+			$where_parts[] = 'a.visa_type_slug = %s';
+			$params[]      = $visa_filter;
+		}
+
+		if ( $search ) {
+			$like          = '%' . $wpdb->esc_like( $search ) . '%';
+			$where_parts[] = '(a.id LIKE %s OR a.given_name LIKE %s OR a.surname LIKE %s OR a.applicant_email LIKE %s OR a.nationality LIKE %s)';
+			array_push( $params, $like, $like, $like, $like, $like );
+		}
+
+		$where = $where_parts ? ' WHERE ' . implode( ' AND ', $where_parts ) : '';
 
 		// Pagination.
 		$per_page = 20;
@@ -35,7 +52,7 @@ class Visati_Core_Admin_Applications {
 		$offset   = ( $page - 1 ) * $per_page;
 
 		$count_sql = "SELECT COUNT(*) FROM {$table} a {$where}";
-		$total     = (int) $wpdb->get_var( $count_sql );
+		$total     = $params ? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : (int) $wpdb->get_var( $count_sql );
 
 		$sql = "SELECT a.*, vt.post_title AS visa_type_name
 				FROM {$table} a
@@ -43,9 +60,14 @@ class Visati_Core_Admin_Applications {
 				{$where}
 				ORDER BY a.created_at DESC
 				LIMIT {$per_page} OFFSET {$offset}";
-		$applications = $wpdb->get_results( $sql );
+		$applications = $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
 
 		$total_pages = ceil( $total / $per_page );
+
+		// Visa types for the filter dropdown.
+		$visa_types = $wpdb->get_results(
+			"SELECT post_title, post_name FROM {$wpdb->posts} WHERE post_type = 'visati_visa_type' AND post_status = 'publish' ORDER BY post_title ASC"
+		);
 
 		include VISATI_CORE_DIR . 'admin/views/applications-list.php';
 	}
