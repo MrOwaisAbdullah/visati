@@ -34,6 +34,46 @@ Re-audited directly against the live DB (`_elementor_data` + `post_content` per 
 - [ ] Confirm `WP_DEBUG` / `WP_DEBUG_LOG` are `false` on the live `wp-config.php` (they were correctly `false` locally — just don't flip them on for prod debugging and forget to flip back)
 - [ ] Add the `VISATI_*` secret constants directly to the live `wp-config.php` (Stripe live keys, R2 credentials, Resend API key) — there's no Next.js repo on Hostinger for `VISATI_ENV_FILE` to read, so the dotenv fallback path doesn't apply there
 
+### 2a. Harden `wp-config.php` itself (do this once, applies regardless of what's in it)
+
+- [ ] Restrict file permissions — only the owning user needs to read it:
+  ```bash
+  chmod 440 ~/domains/visati.visati.ae/public_html/wp-config.php
+  ```
+- [ ] Block direct HTTP access via `.htaccess` — add near the top of `public_html/.htaccess`, above the WordPress block:
+  ```apache
+  <Files wp-config.php>
+  Require all denied
+  </Files>
+  ```
+- [ ] **Strongest option** — move `wp-config.php` one directory above `public_html`. WordPress's `wp-load.php` automatically checks the parent directory, so this takes the file fully outside anything a URL could ever reach:
+  ```bash
+  mv ~/domains/visati.visati.ae/public_html/wp-config.php ~/domains/visati.visati.ae/wp-config.php
+  ```
+- [ ] Turn on Wordfence's **file integrity monitoring** (in addition to its brute-force/WAF features already planned below) — alerts if `wp-config.php` or any core file changes unexpectedly, a reliable "you've been compromised" early signal
+- [ ] Confirm UpdraftPlus (or whatever runs backups) never drops a `.sql`/`.zip` archive inside a publicly-servable path with a guessable name — a stray backup file in `public_html` leaks every secret in it regardless of how well `wp-config.php` itself is locked down
+
+### 2b. Switching Stripe from sandbox to live (config-only — no code changes needed)
+
+The code has zero test/live branching — `class-stripe-payments.php` just uses whatever `STRIPE_SECRET_KEY`/`VISATI_STRIPE_SECRET_KEY` resolves to, and builds Checkout Sessions with inline `price_data` rather than referencing persistent Stripe Products, so a new visa type's price works at checkout automatically with no Stripe Dashboard product setup.
+
+- [ ] Switch the Stripe Dashboard to **Live mode**, copy the live secret key (`sk_live_...`)
+- [ ] **Developers → Webhooks → Add endpoint** (while in Live mode — test and live webhooks are separate, this can't reuse a test-mode one):
+  - URL: `https://visati.visati.ae/wp-json/visati/v1/webhooks/stripe` (update to the apex domain once the DNS cutover happens)
+  - Event destination scope: **"Your account"** (not Connected accounts — this isn't a Stripe Connect platform)
+  - API version: leave the Dashboard's current default — the webhook handler does a raw `json_decode()` and only reads `event.type`/`event.data.object`, so it isn't version-sensitive
+  - Events: search for and select only `checkout.session.completed` and `payment_intent.payment_failed` — those are the only two `class-webhooks-controller.php` handles; don't use "Select all"
+  - Copy the live signing secret (`whsec_...`) shown after creating it
+- [ ] Update `wp-config.php` with both live values:
+  ```php
+  define( 'VISATI_STRIPE_SECRET_KEY',     'sk_live_...' );
+  define( 'VISATI_STRIPE_WEBHOOK_SECRET', 'whsec_...' );
+  ```
+- [ ] Test with **one real transaction** (live mode doesn't accept Stripe's test card numbers) and refund it afterward. Confirm: the webhook's "Recent deliveries" shows `200`, the application flips to `submitted`, a row lands in `wp_visati_payments`, and the confirmation email sends
+- [ ] Confirm AED is enabled as a settlement currency on the account (Settings → Payments/Payouts) — the code always sends `currency: 'aed'`
+- [ ] If your client's Stripe account was shared via a team invite rather than account ownership, confirm the invited role (Settings → Team) is **Developer** or **Admin** — restricted roles (Analyst/Support) can't reveal secret keys or manage webhooks
+- [ ] Never pass the live secret key or webhook signing secret through plain chat/email — use a password manager, or have the account owner add it to `wp-config.php` directly over SSH
+
 ## 3. Deploy (T070) — Local → Hostinger migration, step by step
 
 **Safety principles for this whole section — read before running anything:**

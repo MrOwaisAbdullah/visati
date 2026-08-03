@@ -104,6 +104,14 @@
 	border-radius: 10px;
 	white-space: nowrap;
 }
+/* Inside a list-table ID cell, stack the badge above the link rather than
+   forcing them onto one line — avoids overlapping into neighboring columns
+   under table-layout:fixed's narrow ID column. */
+.wp-list-table .visati-express-badge {
+	display: block;
+	width: fit-content;
+	margin-bottom: 3px;
+}
 tr.visati-express-row {
 	background: #fffbea !important;
 }
@@ -270,9 +278,54 @@ tr.visati-express-row {
 .visati-stat-card--rejected .visati-stat-card__number { color: #e74c3c; }
 .visati-stat-card--revenue .visati-stat-card__number { color: #0A1628; }
 
+.visati-admin-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+.visati-storage-panel {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 20px;
+	text-align: center;
+}
+.visati-storage-panel h2 {
+	margin-top: 0;
+	font-size: 1.1rem;
+}
+.visati-storage-panel__meta {
+	font-weight: 600;
+	margin: 0 0 4px;
+}
+.visati-storage-donut {
+	position: relative;
+	width: 120px;
+	height: 120px;
+	margin: 0 auto 12px;
+}
+.visati-storage-donut svg {
+	display: block;
+}
+.visati-storage-donut circle {
+	transition: stroke-dasharray 0.4s ease;
+}
+.visati-storage-donut__label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.visati-storage-donut__pct {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #0A1628;
+}
+
 .visati-admin-grid {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: 2fr 1fr;
 	gap: 20px;
 	margin-top: 20px;
 }
@@ -328,6 +381,13 @@ tr.visati-express-row {
 }
 .visati-app-detail__sidebar h3 {
 	margin-top: 0;
+	margin-bottom: 8px;
+}
+.visati-app-detail__sidebar > h3 {
+	margin-top: 20px;
+}
+.visati-app-detail__sidebar > h3:first-child {
+	margin-top: 0;
 }
 .visati-app-detail table {
 	width: 100%;
@@ -345,10 +405,48 @@ tr.visati-express-row {
 	font-weight: 600;
 }
 
+.visati-bulk-actions {
+	margin-bottom: 10px;
+}
+
+.visati-visa-mode-toggle {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 12px;
+}
+.visati-visa-mode-toggle label {
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Visa document upload box */
+.visati-visa-doc-box {
+	margin-bottom: 12px;
+	padding: 16px;
+	background: #f8f9fb;
+	border-radius: 8px;
+}
+.visati-visa-doc-box p {
+	margin: 0 0 10px;
+}
+.visati-visa-doc-box__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+.visati-visa-doc-box input[type="file"] {
+	display: block;
+	max-width: 100%;
+}
+
 /* Status update form */
 .visati-status-form {
-	margin-top: 20px;
-	padding: 16px;
+	margin-top: 0;
+	margin-bottom: 4px;
+	padding: 12px;
 	background: #f8f9fb;
 	border-radius: 8px;
 }
@@ -358,10 +456,10 @@ tr.visati-express-row {
 .visati-status-form select,
 .visati-status-form textarea {
 	width: 100%;
-	margin-bottom: 10px;
+	margin-bottom: 8px;
 }
 .visati-status-form textarea {
-	min-height: 80px;
+	min-height: 60px;
 }
 
 /* Document list */

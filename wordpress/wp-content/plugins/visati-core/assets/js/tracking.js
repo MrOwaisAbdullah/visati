@@ -120,6 +120,18 @@
 			html += '<p style="color:rgba(26,26,46,0.6);font-size:0.9rem;margin:0.5rem 0 0;">Visa: ' +
 				escapeHtml( data.visa_type ) + '</p>';
 		}
+
+		if ( data.visa_documents && data.visa_documents.length > 0 ) {
+			html += '<div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem;align-items:center;">';
+			data.visa_documents.forEach( function ( doc ) {
+				var label = doc.label ? ' — ' + escapeHtml( doc.label ) : '';
+				html += '<a class="visati-btn" href="' + escapeHtml( doc.download_url ) + '" target="_blank" rel="noopener">' +
+					'Download Your Visa' + label +
+					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+					'</a>';
+			} );
+			html += '</div>';
+		}
 		html += '</div>';
 
 		if ( data.timeline && data.timeline.length > 0 ) {

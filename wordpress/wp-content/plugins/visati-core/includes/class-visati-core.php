@@ -37,6 +37,7 @@ final class Visati_Core {
 		add_action( 'init', array( 'Visati_Core_Post_Types', 'register' ) );
 		add_action( 'init', array( 'Visati_Core_Database', 'ensure_columns' ) );
 		add_action( 'admin_notices', array( 'Visati_Core_Settings', 'admin_config_notice' ) );
+		add_action( 'admin_notices', array( 'Visati_Core_Admin_Dashboard', 'storage_alert_notice' ) );
 
 		Visati_Core_REST_API::init();
 		Visati_Core_Applications_Controller::init();

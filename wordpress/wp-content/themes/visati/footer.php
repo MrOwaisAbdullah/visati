@@ -17,7 +17,8 @@ $desc      = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get(
 $email     = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_email', 'visa@visati.ae' ) : '' ) ?: 'visa@visati.ae';
 $phone     = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_phone', '+971 58 554 2344' ) : '' ) ?: '+971 58 554 2344';
 $address   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_address', "Boulevard Plaza Tower 1\nDowntown Dubai, UAE" ) : '' ) ?: "Boulevard Plaza Tower 1\nDowntown Dubai, UAE";
-$licence   = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_trade_licence', 'DED-XXXX-XXXX' ) : '' ) ?: 'DED-XXXX-XXXX';
+$licence     = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_trade_licence', 'DED-XXXX-XXXX' ) : '' ) ?: 'DED-XXXX-XXXX';
+$licence_url = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'contact_trade_licence_url', '' ) : '';
 $whatsapp  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'whatsapp_number', '971585542344' ) : '' ) ?: '971585542344';
 
 $ig  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'social_instagram', 'https://instagram.com/visati.ae' ) : '' ) ?: 'https://instagram.com/visati.ae';
@@ -27,7 +28,10 @@ $li  = ( class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'so
 
 $copyright = class_exists( 'Visati_Core_Settings' ) ? Visati_Core_Settings::get( 'footer_copyright', '' ) : '';
 if ( '' === $copyright ) {
-	$copyright = sprintf( '&copy; %d %s &middot; Dubai, UAE &middot; Trade Licence %s', gmdate( 'Y' ), esc_html( $site_name ), esc_html( $licence ) );
+	$licence_display = $licence_url
+		? '<a href="' . esc_url( $licence_url ) . '" target="_blank" rel="noopener" title="' . esc_attr__( 'Verify licence', 'visati' ) . '">' . esc_html( $licence ) . '</a>'
+		: esc_html( $licence );
+	$copyright = sprintf( '&copy; %d %s &middot; Dubai, UAE &middot; Trade Licence %s', gmdate( 'Y' ), esc_html( $site_name ), $licence_display );
 }
 ?>
 <footer class="visati-footer" role="contentinfo">

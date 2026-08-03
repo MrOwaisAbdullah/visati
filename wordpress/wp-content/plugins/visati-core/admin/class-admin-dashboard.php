@@ -227,6 +227,64 @@ class Visati_Core_Admin_Dashboard {
 			"SELECT * FROM {$inq_table} ORDER BY created_at DESC LIMIT 5"
 		);
 
+		// R2 storage usage.
+		$storage = self::storage_usage();
+		$storage_used_bytes = $storage['used_bytes'];
+		$storage_quota_gb   = $storage['quota_gb'];
+		$storage_pct        = $storage['pct'];
+
 		include VISATI_CORE_DIR . 'admin/views/dashboard.php';
+	}
+
+	/**
+	 * R2 storage usage — summed from the documents table rather than an R2
+	 * ListObjects call, since every byte in the bucket was put there by this
+	 * plugin's own upload paths (applicant documents + admin-issued visa files).
+	 *
+	 * @return array{used_bytes:int,quota_gb:int,pct:float}
+	 */
+	public static function storage_usage(): array {
+		global $wpdb;
+		$docs_table          = $wpdb->prefix . 'visati_documents';
+		$used_bytes          = (int) $wpdb->get_var( "SELECT COALESCE(SUM(size_bytes),0) FROM {$docs_table}" );
+		$quota_gb            = max( 1, (int) Visati_Core_Settings::get( 'r2_storage_quota_gb', 10 ) );
+		$quota_bytes         = $quota_gb * 1073741824;
+		$pct                 = round( min( 100, ( $used_bytes / $quota_bytes ) * 100 ), 1 );
+
+		return array(
+			'used_bytes' => $used_bytes,
+			'quota_gb'   => $quota_gb,
+			'pct'        => $pct,
+		);
+	}
+
+	/**
+	 * Site-wide admin notice when R2 storage crosses 80% of its configured quota
+	 * (e.g. 8-9 GB of a 10 GB quota) — shown on every wp-admin screen, not just
+	 * the Visati Dashboard, so it isn't missed.
+	 *
+	 * @return void
+	 */
+	public static function storage_alert_notice(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$storage = self::storage_usage();
+		if ( $storage['pct'] < 80 ) {
+			return;
+		}
+
+		$level = $storage['pct'] >= 90 ? 'notice-error' : 'notice-warning';
+		printf(
+			'<div class="notice %1$s is-dismissible"><p><strong>%2$s:</strong> %3$s (%4$s%% of %5$d GB quota). <a href="%6$s">%7$s</a></p></div>',
+			esc_attr( $level ),
+			esc_html__( 'Visati — R2 storage almost full', 'visati-core' ),
+			esc_html( size_format( $storage['used_bytes'] ) . ' used' ),
+			esc_html( (string) $storage['pct'] ),
+			(int) $storage['quota_gb'],
+			esc_url( admin_url( 'admin.php?page=visati-dashboard' ) ),
+			esc_html__( 'View Dashboard', 'visati-core' )
+		);
 	}
 }

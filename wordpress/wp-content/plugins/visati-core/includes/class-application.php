@@ -111,4 +111,40 @@ final class Visati_Core_Application {
 			)
 		);
 	}
+
+	/**
+	 * Permanently delete an application: its R2-stored documents, the documents
+	 * table rows, and the status history — freeing the R2 storage those files
+	 * used. Deliberately does NOT touch `wp_visati_payments` — payment records
+	 * are kept for accounting/audit purposes even after the application itself
+	 * is gone (the Dashboard's revenue totals query payments directly, not
+	 * joined to applications, so this doesn't affect revenue reporting).
+	 *
+	 * @param string $app_id Application ID.
+	 * @return true|WP_Error
+	 */
+	public static function delete( string $app_id ) {
+		global $wpdb;
+
+		if ( ! self::exists( $app_id ) ) {
+			return new WP_Error( 'not_found', __( 'Application not found.', 'visati-core' ) );
+		}
+
+		$docs_table = $wpdb->prefix . 'visati_documents';
+		$documents  = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$docs_table} WHERE application_id = %s", $app_id )
+		);
+
+		if ( class_exists( 'Visati_Core_R2_Storage' ) && Visati_Core_Settings::r2_is_configured() ) {
+			foreach ( $documents as $doc ) {
+				Visati_Core_R2_Storage::delete( $doc->r2_key );
+			}
+		}
+
+		$wpdb->delete( $docs_table, array( 'application_id' => $app_id ), array( '%s' ) );
+		$wpdb->delete( self::history_table(), array( 'application_id' => $app_id ), array( '%s' ) );
+		$wpdb->delete( self::table(), array( 'id' => $app_id ), array( '%s' ) );
+
+		return true;
+	}
 }

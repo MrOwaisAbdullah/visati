@@ -73,38 +73,65 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</form>
 	</div>
 
-	<table class="wp-list-table widefat fixed striped">
-		<thead>
-			<tr>
-				<th style="width:140px">Application ID</th>
-				<th style="width:150px">Full Name</th>
-				<th>Nationality</th>
-				<th>Visa Type</th>
-				<th style="width:110px">Status</th>
-				<th style="width:100px">Date</th>
-			</tr>
-		</thead>
-		<tbody>
-			<?php if ( empty( $applications ) ) : ?>
-				<tr><td colspan="6">No applications found.</td></tr>
-			<?php else : ?>
-				<?php foreach ( $applications as $app ) : ?>
-					<tr>
-						<td>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications&action=view&id=' . esc_attr( $app->id ) ) ); ?>">
-								<strong><?php echo esc_html( $app->id ); ?></strong>
-							</a>
-						</td>
-						<td><?php echo esc_html( $app->given_name . ' ' . $app->surname ); ?></td>
-						<td><?php echo esc_html( $app->nationality ); ?></td>
-						<td><?php echo esc_html( $app->visa_type_name ?: $app->visa_type_slug ); ?></td>
-						<td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $app->status ); ?>"><?php echo esc_html( ucfirst( str_replace( '_', ' ', $app->status ) ) ); ?></span></td>
-						<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $app->created_at ) ) ); ?></td>
-					</tr>
-				<?php endforeach; ?>
-			<?php endif; ?>
-		</tbody>
-	</table>
+	<form method="post" id="visati-applications-bulk-form" onsubmit="return visatiConfirmBulkDelete(event);">
+		<?php wp_nonce_field( 'visati_bulk_delete_applications' ); ?>
+		<div class="visati-bulk-actions">
+			<button type="submit" name="visati_bulk_delete" class="button" style="color:#dc3545;border-color:#dc3545;">Delete Selected</button>
+		</div>
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th style="width:24px"><input type="checkbox" id="visati-select-all"></th>
+					<th style="width:140px">Application ID</th>
+					<th style="width:150px">Full Name</th>
+					<th>Nationality</th>
+					<th>Visa Type</th>
+					<th style="width:110px">Status</th>
+					<th style="width:100px">Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if ( empty( $applications ) ) : ?>
+					<tr><td colspan="7">No applications found.</td></tr>
+				<?php else : ?>
+					<?php foreach ( $applications as $app ) : ?>
+						<tr>
+							<td><input type="checkbox" name="app_ids[]" value="<?php echo esc_attr( $app->id ); ?>" class="visati-row-checkbox"></td>
+							<td>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications&action=view&id=' . esc_attr( $app->id ) ) ); ?>">
+									<strong><?php echo esc_html( $app->id ); ?></strong>
+								</a>
+							</td>
+							<td><?php echo esc_html( $app->given_name . ' ' . $app->surname ); ?></td>
+							<td><?php echo esc_html( $app->nationality ); ?></td>
+							<td><?php echo esc_html( $app->visa_type_name ?: $app->visa_type_slug ); ?></td>
+							<td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $app->status ); ?>"><?php echo esc_html( ucfirst( str_replace( '_', ' ', $app->status ) ) ); ?></span></td>
+							<td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $app->created_at ) ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
+	</form>
+	<script>
+	(function() {
+		var selectAll = document.getElementById( 'visati-select-all' );
+		if ( selectAll ) {
+			selectAll.addEventListener( 'change', function() {
+				document.querySelectorAll( '.visati-row-checkbox' ).forEach( function( cb ) { cb.checked = selectAll.checked; } );
+			} );
+		}
+	})();
+	function visatiConfirmBulkDelete( e ) {
+		var checked = document.querySelectorAll( '.visati-row-checkbox:checked' ).length;
+		if ( 0 === checked ) {
+			e.preventDefault();
+			alert( 'Select at least one application to delete.' );
+			return false;
+		}
+		return confirm( 'Permanently delete ' + checked + ' selected application(s)? This removes their uploaded documents from storage too. This cannot be undone.' );
+	}
+	</script>
 
 	<?php if ( $total_pages > 1 ) : ?>
 		<div class="tablenav bottom">

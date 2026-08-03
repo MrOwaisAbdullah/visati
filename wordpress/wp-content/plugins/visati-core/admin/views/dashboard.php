@@ -14,6 +14,9 @@
  * @var int    $paid_count
  * @var array  $recent_apps
  * @var array  $recent_inquiries
+ * @var int    $storage_used_bytes
+ * @var int    $storage_quota_gb
+ * @var float  $storage_pct
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,7 +80,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<th style="width:36px"></th>
 							<th>ID</th>
 							<th>Name</th>
 							<th>Visa Type</th>
@@ -89,8 +91,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php foreach ( $recent_apps as $app ) : ?>
 							<?php $is_express = ( 'express' === $app->processing_tier ); ?>
 							<tr<?php echo $is_express ? ' class="visati-express-row"' : ''; ?>>
-								<td><?php if ( $is_express ) : ?><span class="visati-express-badge" title="Express — needs faster turnaround">⚡ Express</span><?php endif; ?></td>
 								<td>
+									<?php if ( $is_express ) : ?><span class="visati-express-badge" title="Express — needs faster turnaround">⚡ Express</span><?php endif; ?>
 									<a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications&action=view&id=' . esc_attr( $app->id ) ) ); ?>">
 										<?php echo esc_html( $app->id ); ?>
 									</a>
@@ -106,6 +108,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endif; ?>
 			<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications' ) ); ?>">View all applications →</a></p>
 		</div>
+
+		<div class="visati-admin-sidebar">
+			<div class="visati-storage-panel">
+				<h2>Storage (Cloudflare R2)</h2>
+				<?php
+				$visati_circumference = 2 * M_PI * 52;
+				$visati_filled         = ( $storage_pct / 100 ) * $visati_circumference;
+				$visati_donut_color    = $storage_pct >= 90 ? '#dc3545' : ( $storage_pct >= 80 ? '#C9A84C' : '#0A1628' );
+				?>
+				<div class="visati-storage-donut">
+					<svg viewBox="0 0 120 120" width="120" height="120">
+						<circle cx="60" cy="60" r="52" fill="none" stroke="rgba(10,22,40,0.08)" stroke-width="14"></circle>
+						<circle cx="60" cy="60" r="52" fill="none" stroke="<?php echo esc_attr( $visati_donut_color ); ?>" stroke-width="14"
+							stroke-dasharray="<?php echo esc_attr( round( $visati_filled, 2 ) . ' ' . round( $visati_circumference, 2 ) ); ?>"
+							stroke-linecap="round"
+							transform="rotate(-90 60 60)"></circle>
+					</svg>
+					<div class="visati-storage-donut__label">
+						<span class="visati-storage-donut__pct"><?php echo esc_html( $storage_pct ); ?>%</span>
+					</div>
+				</div>
+				<p class="visati-storage-panel__meta">
+					<?php echo esc_html( size_format( $storage_used_bytes ) ); ?> of <?php echo esc_html( $storage_quota_gb ); ?> GB used
+				</p>
+				<?php if ( $storage_pct >= 60 ) : ?>
+					<p class="description">Running low on space? You can delete old applications to remove their documents from storage and free up room — see <a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications' ) ); ?>">Applications</a>.</p>
+				<?php endif; ?>
+				<p class="description"><a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-settings' ) ); ?>">Adjust quota →</a></p>
+			</div>
 
 		<div class="visati-admin-panel">
 			<h2>Recent Inquiries</h2>
@@ -140,6 +171,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</table>
 			<?php endif; ?>
 			<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-inquiries' ) ); ?>">View all inquiries →</a></p>
+		</div>
 		</div>
 	</div>
 </div>

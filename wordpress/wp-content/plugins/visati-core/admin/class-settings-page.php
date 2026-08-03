@@ -153,6 +153,9 @@ final class Visati_Core_Admin_Settings {
 		$opts['express_surcharge_aed'] = absint( $_POST['express_surcharge_aed'] ?? 99 );
 		$opts['express_surcharge_usd'] = absint( $_POST['express_surcharge_usd'] ?? 27 );
 
+		// Storage.
+		$opts['r2_storage_quota_gb'] = max( 1, absint( $_POST['r2_storage_quota_gb'] ?? 10 ) );
+
 		// Homepage — Global Reach section.
 		$opts['global_reach_label']     = sanitize_text_field( wp_unslash( $_POST['global_reach_label'] ?? '' ) );
 		$opts['global_reach_title']     = sanitize_text_field( wp_unslash( $_POST['global_reach_title'] ?? '' ) );
@@ -168,7 +171,8 @@ final class Visati_Core_Admin_Settings {
 		$opts['brand_tagline']       = sanitize_text_field( wp_unslash( $_POST['brand_tagline'] ?? '' ) );
 		$opts['brand_description']   = sanitize_textarea_field( wp_unslash( $_POST['brand_description'] ?? '' ) );
 		$opts['contact_address']     = sanitize_textarea_field( wp_unslash( $_POST['contact_address'] ?? '' ) );
-		$opts['contact_trade_licence'] = sanitize_text_field( wp_unslash( $_POST['contact_trade_licence'] ?? '' ) );
+		$opts['contact_trade_licence']     = sanitize_text_field( wp_unslash( $_POST['contact_trade_licence'] ?? '' ) );
+		$opts['contact_trade_licence_url'] = esc_url_raw( wp_unslash( $_POST['contact_trade_licence_url'] ?? '' ) );
 		$opts['footer_copyright']    = sanitize_text_field( wp_unslash( $_POST['footer_copyright'] ?? '' ) );
 
 		// Email template.
@@ -330,6 +334,15 @@ final class Visati_Core_Admin_Settings {
 							<p class="description"><?php esc_html_e( 'USD equivalent — used in the Stripe checkout amount.', 'visati-core' ); ?></p></td></tr>
 				</table>
 
+				<h2><?php esc_html_e( 'Storage', 'visati-core' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr><th><label for="r2_storage_quota_gb"><?php esc_html_e( 'Cloudflare R2 quota (GB)', 'visati-core' ); ?></label></th>
+						<td><input name="r2_storage_quota_gb" id="r2_storage_quota_gb" type="number" min="1" class="small-text" value="<?php echo esc_attr( $s( 'r2_storage_quota_gb' ) ); ?>" placeholder="10">
+							<p class="description"><?php esc_html_e( 'Used only to calculate the storage percentage shown on the Dashboard — does not enforce a real limit.', 'visati-core' ); ?></p>
+							<p class="description"><strong><?php esc_html_e( 'Do not raise this above 10 unless you are willing to pay for it.', 'visati-core' ); ?></strong> <?php esc_html_e( 'Cloudflare R2\'s free tier covers 10 GB/month of storage; every GB beyond that is billed at roughly $0.015/GB-month. Raising this number does not itself create real capacity — Cloudflare will simply start charging once actual usage crosses 10 GB, whatever this field says.', 'visati-core' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Instead of raising the quota, you can delete old applications from', 'visati-core' ); ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications' ) ); ?>"><?php esc_html_e( 'Applications', 'visati-core' ); ?></a> <?php esc_html_e( '— this removes their uploaded documents from R2 too, actually freeing space (payment records are kept).', 'visati-core' ); ?></p></td></tr>
+				</table>
+
 				<h2><?php esc_html_e( 'Homepage — Global Reach Section', 'visati-core' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr><th><label for="global_reach_label"><?php esc_html_e( 'Eyebrow label', 'visati-core' ); ?></label></th>
@@ -360,6 +373,9 @@ final class Visati_Core_Admin_Settings {
 						<td><textarea name="contact_address" id="contact_address" rows="2" class="large-text"><?php echo esc_textarea( $s( 'contact_address' ) ); ?></textarea></td></tr>
 					<tr><th><label for="contact_trade_licence"><?php esc_html_e( 'Trade licence number', 'visati-core' ); ?></label></th>
 						<td><input name="contact_trade_licence" id="contact_trade_licence" type="text" class="regular-text" value="<?php echo esc_attr( $s( 'contact_trade_licence' ) ); ?>" placeholder="DED-XXXX-XXXX"></td></tr>
+					<tr><th><label for="contact_trade_licence_url"><?php esc_html_e( 'Trade licence verification link', 'visati-core' ); ?></label></th>
+						<td><input name="contact_trade_licence_url" id="contact_trade_licence_url" type="url" class="regular-text" value="<?php echo esc_attr( $s( 'contact_trade_licence_url' ) ); ?>" placeholder="https://app.invest.dubai.ae/dul/...">
+							<p class="description"><?php esc_html_e( 'Optional — if set, the trade licence number in the footer links here (e.g. Dubai DED licence verification page). Only applies to the auto-generated copyright line, not custom copyright text below.', 'visati-core' ); ?></p></td></tr>
 					<tr><th><label for="footer_copyright"><?php esc_html_e( 'Custom copyright text', 'visati-core' ); ?></label></th>
 						<td><input name="footer_copyright" id="footer_copyright" type="text" class="regular-text" value="<?php echo esc_attr( $s( 'footer_copyright' ) ); ?>">
 							<p class="description"><?php esc_html_e( 'Leave empty for auto-generated copyright line.', 'visati-core' ); ?></p></td></tr>
@@ -429,7 +445,8 @@ final class Visati_Core_Admin_Settings {
 			'contact_email'          => 'visa@visati.ae',
 			'contact_phone'          => '+971 58 554 2344',
 			'contact_address'        => "Boulevard Plaza Tower 1\nDowntown Dubai, UAE",
-			'contact_trade_licence'  => 'DED-XXXX-XXXX',
+			'contact_trade_licence'  => '2537260.01',
+			'contact_trade_licence_url' => 'https://app.invest.dubai.ae/dul/dul-EQ6916?bk=1',
 			'social_instagram'       => 'https://instagram.com/visati.ae',
 			'social_facebook'        => 'https://facebook.com/visati.ae',
 			'social_twitter'         => 'https://twitter.com/visatiuae',
@@ -442,6 +459,7 @@ final class Visati_Core_Admin_Settings {
 			'guarantee_text'         => 'If your visa is rejected in violation with our policy, we refund the full fee. No questions.',
 			'express_surcharge_aed'  => '99',
 			'express_surcharge_usd'  => '27',
+			'r2_storage_quota_gb'    => '10',
 			'contact_hours'          => "Sunday — Thursday\n9:00 AM — 9:00 PM GST",
 			'contact_whatsapp_note'  => 'Average reply 2 min',
 			'contact_email_note'     => 'Reply within 1 hour',

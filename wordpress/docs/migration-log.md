@@ -2641,3 +2641,582 @@ Any time a base selector's properties are hardened with `!important` (as require
 ### Status
 
 Fixed in local source, audited all other `.visati-btn--*` modifiers (navy/gold/outline/ghost already had `!important`, no other regressions found). Not yet deployed — bundle with the redeploy above.
+
+---
+
+## Session: Live site health check + issued-visa document download + Q&A on email/Stripe/services — 2026-08-03
+
+### Live site health check (visati.visati.ae)
+
+Checked all main pages (`/`, `/apply/`, `/contact/`, `/track/`, `/faq/`, `/about/`, `/careers/`, `/blog/`, `/services/`, `/visa-types/`) via cache-bypassed `curl` — all return `200`. `wp-json/visati/v1/status` reports plugin version `0.3.24`, confirming the reset.css `!important` fix + WhatsApp regression fix from the prior two sessions are already deployed live (fetched `app.css` directly and confirmed both). No leaked PHP errors/warnings/stack traces or stray output found in any page fetch. No technical issues found.
+
+### Built: admin-uploaded visa document, downloadable from the Track page
+
+**Request:** allow the admin to upload the issued visa file for an application, and let the applicant download it from the public Track page once available.
+
+No new database table was needed — `wp_visati_documents` already exists (originally for applicant-submitted passport/photo uploads) and already has a free-text `document_type` column, so the issued visa file reuses it under a reserved value, `issued_visa`, with "only the latest kept" semantics (a new upload deletes the previous R2 object + row for that application).
+
+- **Admin (`class-admin-applications.php` + `application-detail.php`):** new "Visa Document" box in the application detail sidebar — shows the current file (if any) with a View/Download link, plus an upload/replace form. Reuses `Visati_Core_Documents_Controller::ALLOWED`/`MAX_BYTES` (PDF/JPG/PNG, 5 MB) for consistency with the applicant-facing upload limits, and the existing `Visati_Core_R2_Storage::upload()`/`delete()` methods — no new storage code needed, R2 SigV4 upload/presign/delete were already built and verified live earlier in this migration.
+- **Track endpoint (`class-track-controller.php`):** looks up the `issued_visa` document for the requested application ID and, if found, returns a **freshly generated presigned R2 URL** (30-minute expiry) as `visa_document.download_url` — never a permanent public link, regenerated on every `/track` call.
+- **Frontend (`tracking.js`):** renders a "Download Your Visa" button (styled with the existing `.visati-btn`) under the status card whenever `visa_document` is present in the response, regardless of application status (the admin uploading the file is what gates availability, not the status value — matches what was actually asked for).
+
+**Security consideration surfaced while building this (not asked, but load-bearing given the endpoint now serves a real document):** `/track` had **no rate limiting at all**, unlike every other public write endpoint in this plugin (`applications`, `documents`, `inquiries`, `checkout-session` all call `visati_rate_limit()`; `track` never did). Application IDs have real entropy (`VIS-YYYY-` + 6 chars from a 32-character unambiguous alphabet, `random_int()`-generated — about 30 bits, ~1.07 billion combinations/year) and a presigned URL that expires in 30 minutes, but with zero throttling an attacker could still script unlimited ID-guessing requests. Added `visati_rate_limit( 'track', 20, 600 )` (20 lookups / 10 min / IP) to close this gap — same threat-model tier as the ID itself already being the applicant's only "auth" for this endpoint (this was already true before today; the visa-document feature just raises what a successful guess yields, from PII+status text to an actual file).
+
+### Also found, not fixed (flagged for the user, out of scope for today)
+
+- **Status-enum mismatch:** `class-admin-applications.php`'s status dropdown and validation list both use `'under_review'`, but the actual `wp_visati_applications.status` column is a MySQL `ENUM('draft','submitted','reviewing','processing','approved','rejected')` (`class-database.php`) — there is no `'under_review'` value in the enum. Selecting "Under review" in the admin UI would attempt to write an invalid enum value. Not touched this session since it wasn't part of the request, but likely worth a follow-up.
+- **Application form validation gaps:** both client (`application-form.js`) and server (`class-applications-controller.php`) only check that required fields are non-empty (plus native browser `type="email"`/`type="date"` checks). No format validation on passport number (any non-empty string accepted), no `min`/`max` bounds on date fields (a passport expiry before the travel date, a travel date in the past, or an implausible date of birth would all currently be accepted). Flagged to the user; not implemented, since it wasn't explicitly requested and touches both client and server validation contracts.
+
+### Q&A answered (no code change)
+
+- **Which email address do notifications send from, and does it change on the `visati.ae` domain switch?** `Visati_Core_Email::from_email()` derives `noreply@<host>` from `home_url()` at send time (`includes/class-email.php`) — it is **not** hardcoded to `visati.visati.ae`. It will automatically become `noreply@visati.ae` the moment the site's home/site URL is updated to the apex domain — no code change needed. The one thing to check outside the codebase: the actual SMTP transport is WP Mail SMTP configured to send via Resend (not shown in this repo — configured in wp-admin), so the new domain needs to be verified in Resend's dashboard for deliverability, and WP Mail SMTP's own settings should be checked for any hardcoded "force from email" override that could take precedence.
+- **Switching Stripe from sandbox to live:** `class-stripe-payments.php` has no test/live branching in code at all — it just uses whatever `Visati_Core_Settings::stripe_secret_key()` resolves to (`STRIPE_SECRET_KEY` env var, or `VISATI_STRIPE_SECRET_KEY` wp-config constant). Going live is purely a config change: replace the secret key + `VISATI_STRIPE_WEBHOOK_SECRET` in the live server's `wp-config.php` with the live-mode values, and create a new **live-mode** webhook endpoint in the Stripe Dashboard pointing at `https://visati.ae/wp-json/visati/v1/webhooks/stripe` (test and live webhook secrets are different even for the same endpoint URL). No plugin code changes required.
+- **External services currently in use:** Cloudflare R2 (document storage — passport/photo uploads, and now the issued visa file), Resend (email, via the WP Mail SMTP plugin), Stripe (payments, currently in test/sandbox mode). All three are read through `Visati_Core_Settings`, sourced from either the Next.js `.env.local` (local dev) or `VISATI_*` wp-config constants (Hostinger) — never hardcoded, never committed.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `admin/class-admin-applications.php` | Issued-visa-document upload handler (replaces any previous one per application) |
+| `admin/views/application-detail.php` | New "Visa Document" sidebar box; applicant-doc list now excludes the issued-visa entry |
+| `assets/css/admin.css` | `.visati-visa-doc-box` styling |
+| `includes/rest/class-track-controller.php` | Returns a presigned `visa_document.download_url` when present; added missing rate limiting |
+| `assets/js/tracking.js` | Renders a "Download Your Visa" button when `visa_document` is present |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.24 → 0.3.25 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l` (through the Local WP-CLI PHP bridge, since the Local site's theme/plugin directories are junctioned to this repo). Not yet tested end-to-end with a real R2 upload+download round trip locally, and not yet deployed to Hostinger.
+
+---
+
+## Session: R2 storage donut on the dashboard + Stripe dynamic-pricing Q&A — 2026-08-03, continued
+
+### Built: R2 storage usage donut chart + 80%/90% alarm
+
+**Request:** show R2 storage usage on the Visati Dashboard as a donut/percentage.
+
+No R2 `ListObjectsV2` call was added — every byte in the bucket was put there by this plugin's own upload paths (applicant documents in `class-documents-controller.php`, the new admin-issued visa document from the session above), so usage is computed as `SUM(size_bytes)` over the existing `wp_visati_documents` table. A quota to measure the percentage against didn't exist as a concept anywhere in the settings, so added one: `r2_storage_quota_gb` (default 10, matching Cloudflare R2's actual free-tier storage allowance), editable under Visati → Settings → Storage.
+
+- **Dashboard (`dashboard.php` + `class-admin-dashboard.php`):** a new panel with a dependency-free inline SVG donut (`stroke-dasharray` on a circle, no chart library — consistent with this plugin's existing "no external deps" pattern for R2's own hand-rolled SigV4 signer) showing used/quota as a percentage, plus the raw `X of Y GB used` text.
+- **Alarm (per explicit follow-up — "it should alarm on 8-9 gb usage"):** the donut turns gold at ≥80% and red at ≥90% of quota (so 8/10 GB and 9/10 GB at the default quota, but expressed as a percentage so it still means the same thing if the quota is ever changed). Added a **site-wide `admin_notices` banner** (`Visati_Core_Admin_Dashboard::storage_alert_notice()`, hooked in `class-visati-core.php` next to the existing `admin_config_notice()` for missing secrets) that fires on every wp-admin screen once usage crosses 80% — not just the Dashboard page — so it can't be missed by staying on a different admin screen. Warning-level styling 80-89%, error-level ≥90%.
+- **Guardrail on the quota field itself (per explicit follow-up):** the Settings page description now explicitly warns not to raise the quota above 10 GB "unless you are willing to pay for it," and states Cloudflare R2's actual overage rate (~$0.015/GB-month beyond the 10 GB free tier, confirmed via a live web search rather than assumed from training data, since pricing pages change). Also notes the field is cosmetic — raising it doesn't create real capacity, Cloudflare bills based on actual usage regardless of what this number says.
+
+### Q&A: does adding a new visa type with a new price auto-create the Stripe product/checkout?
+
+Read `class-stripe-payments.php::create_checkout_session()` and the caller in `class-webhooks-controller.php::create_checkout()` directly rather than assuming. **Yes, automatically — no manual Stripe Dashboard step needed.** The checkout session is built with Stripe's `price_data`/`product_data` fields inline (ad-hoc, per-session pricing), not a reference to a pre-created Stripe Product/Price ID. The flow: `create_checkout()` reads `_visati_price_aed` post meta straight off the `visati_visa_type` CPT at checkout time, adds the Express surcharge and any validated discount, and passes that number directly into `price_data[unit_amount]`. So the moment an admin publishes a new visa type with a price, checkout works immediately with zero Stripe-side configuration.
+
+**One nuance flagged to the user:** because this uses `price_data` rather than persistent Price objects, these products will **not** appear in Stripe Dashboard → Product catalog as saved products — Stripe creates them ephemerally per Checkout Session. This is normal and doesn't affect functionality (payments, webhooks, and reporting all work fine), but is worth knowing if the user goes looking for a visa type's "product" in the Stripe Dashboard and doesn't find one.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `admin/class-admin-dashboard.php` | `storage_usage()` helper; `storage_alert_notice()` site-wide admin notice |
+| `admin/views/dashboard.php` | New storage donut panel |
+| `assets/css/admin.css` | `.visati-storage-panel`/`.visati-storage-donut` styles |
+| `admin/class-settings-page.php` | New "Storage" section — `r2_storage_quota_gb` field + cost-warning description |
+| `includes/class-visati-core.php` | Hooked `storage_alert_notice` alongside the existing secrets notice |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.25 → 0.3.26 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l` and a real `wp eval` call to `storage_usage()` against the live local DB (returned real byte totals, no fatal errors). Not yet deployed to Hostinger.
+
+---
+
+## Session: Delete-application feature (frees R2 storage) + dashboard layout fix — 2026-08-03, continued
+
+### Dashboard layout fix
+
+The storage donut panel, added earlier this session as its own full-width block between the stat cards and the two-column "Recent Applications / Recent Inquiries" grid, looked visually awkward (user screenshot: an oddly narrow standalone card sitting on its own row). Moved it into a new right-hand sidebar column instead: `.visati-admin-grid` changed from `1fr 1fr` to `2fr 1fr`, with the right column (`.visati-admin-sidebar`, a flex stack) now holding the storage panel above "Recent Inquiries." User confirmed the result looks right.
+
+### Built: delete application (frees R2 storage)
+
+**Request:** deleting old applications and their files should delete them from R2 and free up storage — directly motivated by the storage donut/quota work above.
+
+Asked the user three clarifying questions first, since this is a hard-to-reverse, financially-adjacent feature (`AskUserQuestion`):
+1. **Keep or delete Stripe payment records?** → **Keep** — the application, its documents, and status history are deleted, but `wp_visati_payments` rows are left alone. The Dashboard's revenue stat cards query payments directly (not joined to applications), so deleting an application never affects revenue reporting.
+2. **Hard delete or soft-delete/archive?** → **Hard delete** — soft-delete wouldn't free any R2 storage, which was the entire point.
+3. **Where should the action live?** → **Both** single-application detail page and list-table bulk delete, **with an explicit confirmation popup** on both paths so nothing is deleted by accident.
+
+Implementation:
+- **`Visati_Core_Application::delete( $app_id )`** (new method, `class-application.php`) — the single shared cascade: deletes each of the application's R2 objects via `Visati_Core_R2_Storage::delete()`, then the `wp_visati_documents` rows, then `wp_visati_status_history` rows, then the `wp_visati_applications` row itself. Deliberately does not touch `wp_visati_payments`. Returns `WP_Error` if the application doesn't exist.
+- **Single delete** (`application-detail.php` + `class-admin-applications.php::render_detail()`): a "Danger Zone" section with a red "Delete Application" button, guarded by a JS `confirm()` naming the application ID and a per-application nonce (`visati_delete_application_{$app_id}`). On success, redirects to the list (the detail page can no longer render — the row is gone) with a `?deleted=1` success notice.
+- **Bulk delete** (`applications-list.php` + `class-admin-applications.php::render_list()`): row checkboxes + a "select all" checkbox + a red "Delete Selected" button, wrapped in one form with a shared nonce (`visati_bulk_delete_applications`). JS blocks submission with an alert if nothing is checked, and requires a `confirm()` naming the exact count selected before the form actually submits.
+- **Pointers to the feature** added in two places per the user's explicit ask: the storage donut panel shows a tip once usage crosses 60%, and the Settings page's R2 quota field description now suggests deleting old applications as the real fix instead of raising the quota number.
+
+**Verified functionally** (not just `php -l`): created a throwaway application + a fake document row + a status history row via `wp eval`, confirmed all three existed, called `Visati_Core_Application::delete()`, and confirmed all three were gone afterward and that deleting a non-existent ID returns a clean `WP_Error` rather than a fatal error.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-application.php` | New `delete()` method (cascade: R2 objects → documents → status history → application row; payments untouched) |
+| `admin/class-admin-applications.php` | Single-delete handler (redirect-after-delete) in `render_detail()`; bulk-delete handler in `render_list()` |
+| `admin/views/application-detail.php` | "Danger Zone" delete button + confirm() |
+| `admin/views/applications-list.php` | Checkboxes, select-all, bulk delete form + confirm() |
+| `admin/views/dashboard.php` | Storage panel moved into a new right-hand sidebar column alongside Recent Inquiries; added a "delete old applications" tip at ≥60% usage |
+| `assets/css/admin.css` | `.visati-admin-sidebar` flex column; `.visati-admin-grid` now `2fr 1fr`; `.visati-bulk-actions` spacing |
+| `admin/class-settings-page.php` | R2 quota field description now points to deleting applications as the real fix |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.26 → 0.3.27 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l` on every touched file and a full functional create→verify→delete→verify round trip via `wp eval` against the real local DB. Not yet deployed to Hostinger.
+
+---
+
+## Decision: no R2 custom domain — presigned URLs stay on the raw R2 endpoint — 2026-08-03
+
+### Context
+
+User asked to add an R2 custom domain, wanting it "for security... just want the custom domain so it will look nice." Flagged before doing anything that this bucket (`visati-documents`) currently shows **Public Access: Enabled** in the Cloudflare dashboard (seen in a screenshot the user shared) — worth independently confirming this is intentional, since R2 custom domains are fundamentally a public/unsigned serving mechanism: connecting one to this bucket would make any object retrievable forever by anyone holding its key, with no expiry and no signature check, directly undermining the presigned-URL security model built earlier this session (30-min applicant download links, 15-min admin preview links).
+
+### Options presented
+
+1. Keep the current raw `<account>.r2.cloudflarestorage.com` presigned URLs as-is — no new infrastructure, since the URL is only ever a button `href` (Download Your Visa / View-Download), never seen or typed by a human.
+2. Build a Cloudflare Worker as a signed-URL proxy behind a custom domain — private R2 binding (bucket itself never public), Worker verifies its own short-lived signature before streaming the file. Gets a branded URL *and* keeps documents private, but is new infrastructure outside this WordPress plugin (Worker code, deploy pipeline, DNS, a matching PHP-side signing scheme).
+3. Connect the custom domain the normal R2 way (fully public, unsigned, permanent per-file URLs) — explicitly not recommended for a bucket holding passport scans and visa PDFs.
+
+### Decision
+
+**Option 1 — no custom domain, no change.** User confirmed via explicit choice. Recorded here so this isn't re-litigated later without the context of why it was declined: the presigned URL's hostname is never user-facing (it's a button target, not a displayed/typed address), so there was no actual UX problem to solve, and the "nice domain" motivation didn't outweigh either the security regression (option 3) or the new-infrastructure cost (option 2).
+
+### Status
+
+No code or infrastructure change. If a future need genuinely requires a branded document URL (e.g. an emailed direct link rather than a button click), option 2 (Worker-based signed proxy) is the correct approach to revisit — not R2's native custom domain feature.
+
+---
+
+## Fix: Express badge overlapping the ID column on the Dashboard's Recent Applications table — 2026-08-03
+
+### Symptom
+
+On the Dashboard's "Recent Applications" table, the ⚡ Express badge visually overlapped the application ID text (screenshot showed "EXPRESS" rendered on top of "VIS-2026-..." in the same spot).
+
+### Cause
+
+The badge lived in its own `<th style="width:36px">`/`<td>` column, separate from the ID column, inside a `wp-list-table widefat fixed striped` table — the `fixed` class sets `table-layout:fixed`, which locks that column to 36px. The badge's `white-space:nowrap` text ("⚡ Express") is far wider than 36px, and under `table-layout:fixed` overflowing inline content isn't clipped — it renders on top of the next cell instead of the column growing to fit.
+
+### Fix
+
+Removed the separate 36px badge column entirely and moved the badge inside the ID cell itself, as a block-level element stacked above the ID link (`.wp-list-table .visati-express-badge { display:block; width:fit-content; margin-bottom:3px; }`) — the ID cell now sizes to its actual content instead of being artificially squeezed.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `admin/views/dashboard.php` | Removed the separate badge `<th>`/`<td>`; badge now renders inside the ID cell |
+| `assets/css/admin.css` | Badge stacks as a block above the ID link when inside a list table |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.27 → 0.3.28 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l`. Not yet deployed to Hostinger.
+
+---
+
+## Session: Per-slot visa document uploads (remove without replace, multi-traveler, larger/broader file types) — 2026-08-03, continued
+
+### Requests (in order)
+
+1. Remove the wrong visa document without having to replace it with another upload.
+2. What file format/size is allowed for the admin's visa upload? (Previously answered: PDF/JPG/PNG, 5 MB — reusing the applicant-upload limits.)
+3. Is 5 MB enough, and what about an application with multiple travelers needing separate visa files?
+4. Should support uploading a separate file per traveler, or one combined file for everyone, and should also accept ZIP/RAR.
+
+### Design
+
+Asked two clarifying questions before rebuilding (`AskUserQuestion`): raise the limit to 10 MB (confirmed — admin-issued visas can run larger than a single applicant-uploaded passport photo, multi-page scans especially), and support one file per traveler (confirmed) rather than a single combined file or the original single-document-per-application behavior.
+
+Reworked the single `'issued_visa'` document type into a **slot system**: `'issued_visa_combined'` (one file covering every traveler) plus `'issued_visa_primary'` and `'issued_visa_traveler_0'`, `'issued_visa_traveler_1'`, etc. — one slot per additional traveler on the application (`travelers_data` JSON, already existed for the Apply form's multi-traveler support). The admin can use whichever combination fits a given application — a combined file, per-person files, or both at once — nothing is mutually exclusive. Each slot independently supports upload/replace and now also **remove-without-replace**.
+
+### Built
+
+- **`Visati_Core_Admin_Applications::traveler_slots( $app )`** (new private helper) — builds the slot list (`combined` + `primary` + `traveler_N`) with human-readable labels from the application row and its `travelers_data`.
+- **`VISA_DOC_MAX_BYTES`** (10 MB) and **`VISA_DOC_ALLOWED`** (PDF, JPG, PNG, ZIP, RAR — including the `application/x-zip-compressed`/`application/vnd.rar` MIME variants different browsers report) — new class constants, deliberately separate from `Visati_Core_Documents_Controller::MAX_BYTES`/`ALLOWED` so the applicant-upload limits (unrelated, still 5 MB PDF/JPG/PNG) are untouched.
+- **Upload handler** now reads a `traveler_key` POST field, validates it against the current application's real slot list, and scopes the "only the latest file is kept" replace behavior to that one slot — other slots are untouched.
+- **New remove handler** (`visati_delete_visa_doc` + `traveler_key`) — deletes one slot's R2 object + DB row without requiring a replacement upload. Own nonce per slot (`visati_delete_visa_doc_{$app_id}_{$slot_key}`).
+- **Admin view** (`application-detail.php`) now loops over every slot, each with its own current-file display, View/Download link, Remove button (with its own confirm()), and upload/replace form.
+- **Track REST endpoint** now returns `visa_documents` (an array, replacing the old singular `visa_document`) — one entry per slot that has a file, each with a `label` (resolved from the application's name / `travelers_data` entry / slot key), `filename`, and its own freshly-generated 30-minute presigned URL.
+- **`tracking.js`** renders one "Download Your Visa — {label}" button per entry in `visa_documents`, instead of a single button.
+
+### Verified functionally (not just `php -l`)
+
+Migrated the one pre-existing local test row (`document_type = 'issued_visa'`, from before this rework — this feature was never deployed live, so no production data was affected) to `'issued_visa_combined'`. Rendered the full application detail page via `wp eval` and confirmed the "Visa Documents" section and all slots render with no fatal errors/warnings. Called `Visati_Core_Track_Controller::handle_track()` directly: confirmed a single combined-slot document returns correctly; inserted a second (primary-slot) document for the same application and confirmed the response now returns **both** entries with correct labels ("All Travelers" / the applicant's real name) and independently-valid presigned URLs; deleted one slot and confirmed the other was completely unaffected. Cleaned up all test-only rows afterward, leaving only the real, pre-existing document.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `admin/class-admin-applications.php` | `traveler_slots()` helper; `VISA_DOC_MAX_BYTES`/`VISA_DOC_ALLOWED` constants; upload + new remove handlers reworked to be per-slot |
+| `admin/views/application-detail.php` | Visa Documents section now loops over all slots (combined + per-traveler), each with its own upload/replace/remove UI |
+| `includes/rest/class-track-controller.php` | `visa_document` (singular) → `visa_documents` (array), one per slot with a resolved label |
+| `assets/js/tracking.js` | Renders one labeled download button per entry in `visa_documents` |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.28 → 0.3.29 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l` on every touched file and a full functional round trip via `wp eval` (multi-slot coexistence, independent deletion, real presigned URLs). Not yet deployed to Hostinger.
+
+---
+
+## Session: Visa Documents UI polish — single-vs-multi-traveler, batch upload, layout — 2026-08-03, continued
+
+### Requests (from screenshots)
+
+1. Track page "Download Your Visa" button text/icon not centered.
+2. A single-traveler application still showed the "All Travelers (single combined file)" slot and "All Travelers" text on the download button — redundant when there's only one person.
+3. Fix the admin sidebar's Visa Documents box layout — buttons (Choose File / Upload / View-Download / Remove) were stacking one-per-line instead of sitting in a compact row.
+4. One shared "Upload" button instead of one per slot — admin should be able to choose files for several slots first, then upload them all in a single click.
+5. Sidebar order/cleanup: Update Status first, Danger Zone last, and either move or remove the "Quick Actions" section (just a redundant "← Back to list" link, already available via the page's top breadcrumb).
+
+### Fixes
+
+- **Button centering:** the wrapping `<div>` around the Track page's download button(s) in `tracking.js` had `align-items:flex-start`, left-aligning it against the otherwise center-aligned card — changed to `align-items:center`.
+- **Single-traveler simplification:** `traveler_slots()` now returns just one `primary` slot (no `combined` option at all) when an application has no additional travelers — there's nothing to "combine" for one person. The admin view's combined/separate toggle only renders when `traveler_slots()` actually includes a `combined` key (i.e., genuinely multi-traveler).
+- **Button label only when ambiguous:** the Track REST response only attaches a `label` to each `visa_documents` entry when there's more than one document to return — a lone document (single traveler, or a single combined file) now just says "Download Your Visa" with no "All Travelers"/name suffix, since there's nothing to disambiguate.
+- **Batch upload, one button:** reworked the admin upload form from "one `<form>` + one Upload button per slot" into a single shared form with file inputs named `visa_documents[<slot>]`, one submit button (`visati_upload_visa_docs`), and a rewritten handler that loops every slot, uploads whichever files were actually chosen (skipping empty ones silently), and reports a combined success/error summary. The per-slot "Remove" action needed its own POST (can't share the upload form's nonce/fields) but also can't be a nested `<form>` — solved with the standard HTML5 pattern of a hidden, empty-bodied `<form id="visati-remove-visa-doc-{slot}">` placed after the upload form, with each box's visible "Remove" `<button>` referencing it via `form="visati-remove-visa-doc-{slot}"` so it submits that other form without any nesting.
+- **Layout:** removed the CSS that forced the file input to `display:block;width:100%` (the actual cause of the file input/button appearing stacked full-width instead of compact) and added `.visati-visa-doc-box__actions` as a `flex-wrap` row for the View/Download + Remove buttons.
+- **Sidebar reorder:** removed the "Quick Actions" section (redundant with the page's own "← Applications" breadcrumb link), moved "Danger Zone" to the very end, and confirmed order is Update Status → Visa Documents → Danger Zone.
+
+### Verified functionally
+
+Rendered the application detail page via `wp eval` for both a single-traveler application (confirms no "combined"/"All Travelers" text or toggle appears) and a real multi-traveler application the user had already been testing live through the browser — which, independently of anything in this session's `wp eval` test scripts, already had two genuinely separate uploaded files (primary applicant + the additional "Father" traveler), confirming the per-slot upload/persist/render path works correctly under real usage, not just synthetic test data.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `assets/js/tracking.js` | Fixed button centering (`align-items:center`) |
+| `admin/class-admin-applications.php` | `traveler_slots()` returns single slot for single-traveler apps; upload handler reworked into one batch handler over `visa_documents[<slot>]` |
+| `admin/views/application-detail.php` | Single shared upload form + `form="…"`-linked standalone Remove forms; sidebar reordered, Quick Actions removed |
+| `includes/rest/class-track-controller.php` | `label` only populated when more than one document is returned |
+| `assets/css/admin.css` | Fixed file-input/button stacking; `.visati-visa-doc-box__actions` flex row |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.29 → 0.3.30 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Verified via `php -l` and functional rendering via `wp eval` against both a single-traveler and a real multi-traveler application (the latter with genuine user-uploaded data, not test fixtures). Not yet deployed to Hostinger.
+
+---
+
+## Fix: REST API responses were sending a 7-day public Cache-Control header — 2026-08-03
+
+### Symptom found during a pre-deploy verification pass
+
+Live `curl` checks of `https://visati.visati.ae/wp-json/visati/v1/status` and `.../track?id=...` returned `cache-control: public, max-age=604800` (7 days) with a matching `expires` header. `x-hcdn-cache-status: BYPASS` showed this specific response wasn't served from cache, but the header itself instructs any downstream cache (browser, corporate/ISP proxy, or the same edge on a future identical request) that it's fine to publicly cache the response for a week.
+
+### Why this matters
+
+`/track` returns per-application status, admin notes, and — as of this session's work — a **presigned R2 download URL** for the issued visa document. That URL is only valid for 30 minutes, but a shared cache told to keep the *response* for 7 days would keep serving the same now-expired link to anyone hitting that exact URL, and more importantly, `Cache-Control: public` explicitly permits shared/multi-user caches (not just the requesting browser) to store and replay it. WordPress core does not set any `Cache-Control` header for REST API responses by default, so this was Hostinger's edge (hcdn) applying its own default policy to a response with no explicit caching instruction from the origin.
+
+### Fix
+
+Added a `rest_pre_serve_request` filter in `Visati_Core_REST_API::init()` that sends `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` + `Pragma: no-cache` on every response under the `visati/v1` namespace — this overrides the host's default at the origin, so no downstream layer has grounds to cache these responses regardless of hosting configuration.
+
+### Verification limits
+
+`header()` calls are silent no-ops under the CLI SAPI (confirmed via `wp eval` — the filter fires correctly and the route-matching logic is correct, but the actual HTTP header transmission can only be observed over a real web request). WSL couldn't reach the Local-by-Flywheel site's `visati.local` hostname directly (Windows-side hosts-file entry, not resolvable from the WSL network namespace) to test via a real HTTP round trip locally. **This needs a live `curl -I` check against Hostinger after deploy** to confirm the header is actually gone in production — flagged here so that check isn't skipped.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-rest-api.php` | Added `no_cache_headers()` on `rest_pre_serve_request` for the whole `visati/v1` namespace |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.30 → 0.3.31 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Code verified via `php -l` and `wp eval` (filter fires, route matching correct); **actual header transmission not yet verified against a real HTTP response** — do a live `curl -I` check against Hostinger immediately after this deploys.
+
+---
+
+## Fix: admin sidebar spacing tightened (repeated "fix gap" feedback) — 2026-08-03
+
+### Symptom
+
+Even after reordering the application-detail sidebar (Update Status → Visa Documents → Danger Zone), the user flagged excess visual gap twice — most visibly a large gray blank area below the "Update Status" button before the "Visa Documents" heading.
+
+### Cause
+
+`.visati-status-form` had `padding: 16px` plus `margin-top: 20px`, its `<textarea>` had `min-height: 80px`, and no consistent heading-spacing rule existed across the sidebar — each section's spacing was ad hoc rather than a single consistent rhythm, and the colored background of `.visati-status-form` made its own padding read as an unusually large "empty" gap compared to plain white space elsewhere in the sidebar.
+
+### Fix
+
+Reduced `.visati-status-form` padding to 12px and its textarea's `min-height` to 60px, and replaced the one-off `margin-top: 20px` on that single element with a consistent rule for the whole sidebar: every top-level `h3` gets `margin-top: 20px` (except the first, which gets 0) and `margin-bottom: 8px` — so spacing between every section (Update Status, Visa Documents, Danger Zone) is now uniform rather than accumulating from whichever ad hoc margin each section happened to declare.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `assets/css/admin.css` | Tightened `.visati-status-form` padding/textarea height; added a consistent sidebar heading-spacing rule |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Not yet visually re-confirmed against a live screenshot (CSS-only change, applied on reasoning about the likely cause — the colored box's own padding — rather than a directly observed DOM measurement). Ask the user to confirm on next screenshot before considering this fully closed.
+
+---
+
+## Reference: wp-config.php hardening + Stripe live-mode switch — 2026-08-03
+
+Documented here (and added as concrete checklist items in `wordpress/docs/GO-LIVE-TODO.md` §2a/§2b) rather than acted on directly, since both are live-server/Stripe-Dashboard operations outside this session's SSH/Stripe access — captured now so they aren't lost before the next deploy session.
+
+### wp-config.php hardening
+
+User asked what else could be done to stop `wp-config.php`'s secrets from leaking. Recommended, in order of impact:
+1. `chmod 440` the file — only the owning user (which is also who PHP runs as on Hostinger shared hosting) can read it.
+2. An `.htaccess` `<Files wp-config.php> Require all denied </Files>` block, defense-in-depth against any server misconfiguration that might ever serve PHP as plain text.
+3. **Strongest option** — move `wp-config.php` one directory above `public_html` (to `~/domains/visati.visati.ae/`). WordPress's `wp-load.php` automatically checks the parent directory, so this puts the file completely outside anything a URL can reach — stronger than permissions/`.htaccess` alone, which only mitigate misconfiguration rather than removing the exposure surface entirely.
+4. Wordfence's file-integrity monitoring (already on the companion-plugin install list) as an early-warning signal if `wp-config.php` or core files ever change unexpectedly.
+5. Confirm backup files (UpdraftPlus) never land in a publicly-servable path with a guessable filename — a stray `.sql`/`.zip` in `public_html` bypasses every other protection on `wp-config.php` itself.
+
+### Stripe sandbox → live
+
+Confirmed via the code (already documented earlier this session, `class-stripe-payments.php` has zero test/live branching) that this is purely a Stripe Dashboard + `wp-config.php` operation, no plugin code changes:
+- Live-mode webhook must be created separately from any test-mode one, scoped to **"Your account"** (not Connected accounts — not a Connect platform), listening for exactly `checkout.session.completed` and `payment_intent.payment_failed` (the only two events `class-webhooks-controller.php` handles) — don't select all events.
+- API version selection doesn't matter for this integration since the webhook handler does a raw `json_decode()` on the payload and only reads `event.type`/`event.data.object`.
+- User's client shared Stripe account access via a team invite rather than ownership — flagged that Stripe's role-based permissions (Settings → Team) restrict who can reveal secret keys / manage webhooks; Developer or Admin role is required for both.
+- One real transaction (refunded after) is required to verify, since live mode rejects Stripe's test card numbers.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `wordpress/docs/GO-LIVE-TODO.md` | New §2a (wp-config.php hardening) and §2b (Stripe live-switch checklist) under the existing Security section |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Guidance only — not yet applied to the live server or Stripe account (both require access/actions outside this session). Checklist items added so they're tracked for the next deploy/go-live session.
+
+---
+
+## Deploy: entire session's accumulated work shipped to Hostinger — 2026-08-03
+
+### What shipped
+
+Every fix/feature from this whole session (theme `0.4.32`, plugin `0.3.31`) — reset.css `!important` specificity-tie hardening, the WhatsApp button regression fix, the R2 storage donut + 80/90% alarm, delete-application (frees R2 storage), the admin-issued visa document feature (per-traveler slots, batch upload, remove-without-replace), the `/track` REST rate-limit + Cache-Control fix, and all the admin UI layout fixes.
+
+### How it was built and deployed
+
+Built the deploy zips locally via PowerShell `Compress-Archive` (agent-run, matching `deploy-content-sync.ps1`'s exact source paths — `C:\Users\K TECH\Local Sites\visati\app\public\wp-content\{themes\visati,plugins\visati-core}\*` → `wordpress\docs\deploy-{theme,plugin}.zip`), then verified the zips' contents directly (via Python's `zipfile`, since `unzip` isn't installed in this WSL environment) to confirm `VISATI_THEME_VERSION` 0.4.32 / `VISATI_CORE_VERSION` 0.3.31 were actually inside before handing them off.
+
+**The upload + SSH extraction itself was run by the user, not the agent** — confirmed earlier in this session that no SSH key-based auth exists from this WSL environment to the Hostinger host (`ssh -o BatchMode=yes` correctly failed with `Permission denied (publickey,password)` rather than the agent attempting password auth), which is the correct boundary: the agent can build and verify build artifacts, but pushing to a live production server needs the human in the loop with their own credentials. Gave the user both the `scp` upload command and the SSH extraction sequence to run from their own terminal.
+
+### Verified live post-deploy
+
+```
+curl -s https://visati.visati.ae/wp-json/visati/v1/status
+→ {"plugin":"visati-core","version":"0.3.31"}
+
+curl -sI https://visati.visati.ae/wp-json/visati/v1/status | grep -i cache-control
+→ cache-control: no-store, no-cache, must-revalidate, max-age=0
+```
+
+The second check confirms the session's Cache-Control fix actually took effect in production — this was flagged as unverifiable from the CLI SAPI when the fix was written, so seeing the real header on the wire (replacing the previous `public, max-age=604800`) closes that loop. Also fetched the live `app.css` directly and confirmed `visati-btn--whatsapp` appears 10 times, matching the local file exactly.
+
+### Not yet done
+
+- hPanel → Cache Manager → Purge (server/CDN edge cache — separate from `wp cache flush`, which only clears WordPress's own object cache)
+- wp-admin → Elementor → Tools → Regenerate CSS
+- Live smoke test of the brand-new-to-production features specifically: admin visa-document upload/download round trip (single- and multi-traveler), the R2 storage donut rendering correctly on the real Dashboard, and the delete-application flow — all were only verified locally via `wp eval` this session, never against the live server until now
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Deployed and spot-verified (version + Cache-Control header). Cache purge, Elementor CSS regen, and a live smoke test of today's new features are still outstanding before calling this fully done.
+
+---
+
+## Reference: reusable redeploy procedure (agent-buildable, human-pushed) — 2026-08-03
+
+Consolidating this session's deploy into one canonical, reusable sequence — this is the procedure to follow for every future code-only redeploy (no DB/content changes) of this project, and is source material for the eventual `nextjs-to-wordpress-elementor-migration` skill.
+
+### Step 1 — Build the deploy zips (agent can do this directly, no need for the user to open PowerShell)
+
+The agent's Bash tool runs in WSL, but Windows' `powershell.exe` is reachable directly via its full path — no need to hand this step to the user:
+
+```bash
+/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "
+\$THEME_DIR  = 'C:\Users\K TECH\Local Sites\visati\app\public\wp-content\themes\visati'
+\$PLUGIN_DIR = 'C:\Users\K TECH\Local Sites\visati\app\public\wp-content\plugins\visati-core'
+\$BUILD_DIR  = 'D:\GIAIC\Visati\wordpress\docs'
+Compress-Archive -Path \"\$THEME_DIR\*\"  -DestinationPath \"\$BUILD_DIR\deploy-theme.zip\"  -Force
+Compress-Archive -Path \"\$PLUGIN_DIR\*\" -DestinationPath \"\$BUILD_DIR\deploy-plugin.zip\" -Force
+"
+```
+
+(Matches `deploy-content-sync.ps1`'s exact source/destination paths — that script also does a scoped DB export, which isn't needed for a code-only redeploy.)
+
+**Verify the zip actually contains the expected version before handing it off** — `unzip` is not installed in this WSL environment, use Python's `zipfile` module instead:
+```bash
+python3 -c "
+import zipfile
+with zipfile.ZipFile('/mnt/d/GIAIC/Visati/wordpress/docs/deploy-theme.zip') as z:
+    print(z.read('functions.php').decode()[:2000])  # grep for VISATI_THEME_VERSION manually, or use a regex
+"
+```
+
+### Step 2 — Upload + extract (must be run by the user — no SSH key-based auth exists from this WSL environment to Hostinger)
+
+Confirmed via `ssh -o BatchMode=yes -p 65002 u438130270@72.62.214.133` → clean `Permission denied (publickey,password)`, not a hang or ambiguous failure — this environment has no valid credential to that host, so this whole step is a hard boundary, not a convenience choice. Hand these to the user to run from their own terminal (Windows ships an OpenSSH client, so `scp`/`ssh` work from PowerShell directly):
+
+```powershell
+scp -P 65002 "D:\GIAIC\Visati\wordpress\docs\deploy-theme.zip" "D:\GIAIC\Visati\wordpress\docs\deploy-plugin.zip" u438130270@72.62.214.133:~/domains/visati.visati.ae/public_html/
+ssh -p 65002 u438130270@72.62.214.133
+```
+
+Then, inside the SSH session:
+```bash
+cd ~/domains/visati.visati.ae/public_html
+unzip -o deploy-theme.zip -d wp-content/themes/visati/
+unzip -o deploy-plugin.zip -d wp-content/plugins/visati-core/
+find wp-content/themes/visati -type d -exec chmod 755 {} \;
+find wp-content/themes/visati -type f -exec chmod 644 {} \;
+find wp-content/plugins/visati-core -type d -exec chmod 755 {} \;
+find wp-content/plugins/visati-core -type f -exec chmod 644 {} \;
+rm deploy-theme.zip deploy-plugin.zip
+/usr/local/bin/wp cache flush
+```
+
+### Step 3 — Verify (agent can run these directly — public HTTPS, no credentials needed)
+
+```bash
+curl -s "https://visati.visati.ae/wp-json/visati/v1/status"                              # confirm plugin version bumped
+curl -sI "https://visati.visati.ae/wp-json/visati/v1/status" | grep -i cache-control      # confirm no unwanted edge caching
+curl -s "https://visati.visati.ae/wp-content/themes/visati/assets/css/app.css" | grep -c "<marker unique to the change>"   # confirm theme CSS content matches
+```
+
+### Step 4 — Manual-only steps (no CLI equivalent found so far)
+
+- hPanel → Cache Manager → Purge (server/CDN edge cache — `wp cache flush` only clears WordPress's own object cache, a completely separate layer)
+- wp-admin → Elementor → Tools → Regenerate CSS (WP-CLI's `elementor flush_css` reports success but doesn't actually regenerate on this host — `proc_open` is disabled, documented earlier in this log)
+
+### Division of labor (why steps 1 and 3 are agent-run but step 2 is human-run)
+
+Building and verifying build artifacts is safe, local, and fully reversible — appropriate for the agent to just do. Pushing to the live production server requires the human's own credentials and is a one-way action against a real payment-processing site — appropriate to keep human-in-the-loop regardless of whether the agent technically *could* obtain access.
+
+---
+
+## Session: visati.ae domain switch prep + trade licence verification link — 2026-08-03, continued
+
+### visati.ae domain switch — in progress, backups done
+
+User confirmed `visati.ae` (the apex domain) currently runs a **separate, different WordPress site** on the same Hostinger account — not a blank/parked domain — and wants it replaced with the site built this whole session, with a backup taken first.
+
+**Backups completed and verified** (both well outside any `public_html`, in the account's home directory):
+- Files: `~/visati-ae-backup-files-20260803.tar.gz` (692 MB)
+- Database: `~/visati-ae-backup-db-20260803.sql` (223 MB) — extracted `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`DB_HOST` directly from the old site's own `wp-config.php` via `grep`, then `mysqldump`
+
+**Confirmed via code search:** zero hardcoded references to `visati.visati.ae` anywhere in the theme or plugin — everything derives the domain via `home_url()`. The domain switch itself needs **no code changes**, purely hosting/DNS/WordPress-options work.
+
+**Repointing approach — in progress:** rather than hunting hPanel's UI for a document-root setting, tried the file-level equivalent directly over SSH:
+```bash
+mv ~/domains/visati.ae/public_html ~/domains/visati.ae/public_html.old-backup
+ln -s ~/domains/visati.visati.ae/public_html ~/domains/visati.ae/public_html
+curl -sI https://visati.ae/   # verify immediately
+```
+Flagged the real risk before trying it: Hostinger's PHP `open_basedir` sandboxing can block a symlinked docroot from actually being served, in which case the fallback is to reverse the symlink and use hPanel's own document-root management instead (which correctly provisions any host-side sandboxing).
+
+**Remaining steps once the docroot points correctly** (not yet done):
+1. `wp option update siteurl/home 'https://visati.ae'` + `wp search-replace 'https://visati.visati.ae' 'https://visati.ae' --all-tables --precise` (not a raw SQL replace — Elementor's `_elementor_data` is serialized)
+2. Elementor → Regenerate CSS & Data; confirm SSL cert auto-issues for visati.ae
+3. 301 redirect from `visati.visati.ae` → `visati.ae` (real applicant emails already sent contain track links on the old subdomain — these must keep working)
+4. Stripe live webhook URL update; Resend domain verification (SPF/DKIM) for `visati.ae` specifically — `noreply@visati.ae` won't deliver reliably until this domain itself is verified there, even though the code already derives the address automatically via `home_url()`
+
+### Built: trade licence verification link in the footer
+
+User found the real Dubai DED "Unified Licence" verification page from the old site's footer (`https://app.invest.dubai.ae/dul/dul-EQ6916?bk=1`) and wanted the trade licence number linked to it. Two numbers appear on that verification page and are easy to confuse: `EQ6916` (the Unified Licence reference used in the URL/QR lookup) vs. the actual **License Number: `2537260.01`** for "VISATI L.L.C-FZ" — user caught this from a screenshot after an initial wrong guess set the wrong one as the default.
+
+- New setting `contact_trade_licence_url` (Settings → Footer/Brand section) — optional; when set, the footer's trade licence number becomes a link to it (`target="_blank" rel="noopener"`, with a `title="Verify licence"` tooltip per follow-up request). Explicitly only applies to the **auto-generated** copyright line — a custom `footer_copyright` override still fully replaces the line with no way to re-inject the link, matching the existing documented behavior for that field.
+- Corrected defaults: `contact_trade_licence` → `2537260.01` (the real License Number), `contact_trade_licence_url` → the real DED verification URL. Updated the already-saved local `visati_core_settings` option directly (`wp eval`) since the site already had a placeholder test value saved, which would otherwise have silently masked the new code defaults.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `admin/class-settings-page.php` | New `contact_trade_licence_url` field + save handler; corrected the real trade-licence defaults |
+| `themes/visati/footer.php` | Trade licence number links to the verification URL (with tooltip) when set |
+| `themes/visati/functions.php` | `VISATI_THEME_VERSION` 0.4.32 → 0.4.33 |
+| `plugins/visati-core/visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.31 → 0.3.32 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Trade licence link: verified via `php -l` and a real `wp eval` render of `footer.php`, confirmed the anchor/href/tooltip output exactly as expected. Domain switch: backups done and verified; docroot repointing attempted but result not yet confirmed as of this entry — awaiting the `curl -sI https://visati.ae/` check.
+
+---
+
+## Symptom → Cause → Fix (in progress): old-site header/footer + thin content on imported blog posts — 2026-08-03
+
+### Symptom
+
+User imported blog posts from the old, separate `visati.ae` WordPress site via WordPress's standard Tools → Export (Posts) → Tools → Import (WordPress importer, "Download and import file attachments" checked) into the current site. Afterward: some imported posts show what looks like the old site's own header/footer; some posts render with only a couple of thin plain-text paragraphs, no headings/images/rich formatting at all.
+
+### Investigation
+
+Fetched several live imported posts directly via `curl` to inspect actual rendered HTML/body classes rather than guessing from a description, and found **two distinct, unrelated causes** hiding behind one user-facing symptom:
+
+**Category A — old-site header/footer ("UAE Latest Update & Travel Safety" and similar):** body class showed `post-template-elementor_canvas` and zero occurrences of `visati-header`/`visati-footer` (our real theme's classes) anywhere in the page. The Canvas page template setting — imported along with the post's `_wp_page_template` postmeta — **completely bypasses the theme's `header.php`/`footer.php`**, so the whole page is 100% Elementor content. What looks like "old site header/footer" isn't our theme at all — it's the **old site's own custom-built header-look/footer-look sections, baked directly into that post's Elementor content** (a common pattern when a post was designed as a self-contained landing page rather than using the site's real global header/footer). Confirmed via the user's own screenshots: a purple/navy VISATI logo bar + "Call Now" button (not our real gold-accented header with "Apply Now"), and a footer with "Trust Pilot Reviews"/"Google Reviews" links, payment card icons, and "Visati LLC 2025. All Rights Reserved." — none of which exist anywhere in this project's actual `footer.php`.
+
+**Category B — thin/missing content ("10 Things to Know Before Your First Trip to Dubai", "Complete Guide to UAE Tourist Visas in 2026" and similar):** body class showed `post-template-default` (normal — real theme header/footer render correctly here, confirmed via the same `visati-header`/`visati-footer` class check). The problem is the body content itself: only 2-3 short auto-generated-looking plain paragraphs, no headings, no images. Almost certainly these were also Elementor-built on the old site, but the rich `_elementor_data` either didn't survive the export/import round trip, or isn't being picked up on render — what's left is WordPress/Elementor's short plain-text fallback that Elementor maintains in the real `post_content` field for feeds/search, not the actual designed content.
+
+### Decision (for now)
+
+Rather than debug both categories immediately, the user opted to **set the imported posts to Draft** (WordPress list table → select all → Bulk Actions → Edit → Status: Draft) — pulls them off the live site without losing any data (Elementor content, if present, is untouched), pausing further blog-import work until there's time to fix both categories properly.
+
+### What the real fix will need, when resumed
+
+- **Category A posts:** open in Elementor, delete the old site's baked-in header-look/footer-look sections from the post content (keeping just the real article body), and change the Page Template (Page Attributes) from Elementor Canvas back to Default so the real theme header/footer wraps it.
+- **Category B posts:** first check, on one example post, whether an "Edit with Elementor" button appears on its Edit Post screen (confirms whether `_elementor_data` postmeta actually survived the import). If yes: check Elementor → Settings → Post Types → confirm "Posts" is enabled (a common reason Elementor data exists but silently isn't rendered). If no: that post's rich content did not survive import and needs recovering some other way (e.g. against the full old-site backup DB already taken — `~/visati-ae-backup-db-20260803.sql` — rather than re-scraping the live old site, since the docroot repoint for the domain switch may have already happened or will happen soon and that old site's live URL won't stay reachable).
+
+### Files modified
+
+None — diagnosis only, no code changes. The Draft bulk-edit is a content-state change in wp-admin, not a code/template change.
+
+### Status
+
+Diagnosed both root causes via direct live inspection (not guessed). Fix deferred at the user's request — posts moved to Draft in the meantime. Revisit Categories A and B above when blog cleanup resumes.
+
+---
+
+## Fix: theme had no `screenshot.png` — blank checkerboard on Appearance → Themes — 2026-08-03
+
+### Symptom
+
+The Visati theme's card on wp-admin's Appearance → Themes screen showed a blank grey/transparent checkerboard instead of a preview thumbnail.
+
+### Cause
+
+WordPress looks for a `screenshot.png` (or `.jpg`/`.gif`) file in the theme's root directory by convention to render that thumbnail — the `visati` theme never had one.
+
+### Fix
+
+Generated a brand-accurate `screenshot.png` (1200×900, matching WordPress's current recommended theme-screenshot size) via a small Python script (`cairosvg` to rasterize the existing `logo-mark.svg` at high resolution, `Pillow` to composite it onto a `#0A1628` navy background with a soft `#C9A84C` gold glow, plus "VISATI" in white and "Dubai Visas. Simplified." in gold below it) — using the exact hex values from `app.css`'s `--visati-navy`/`--visati-gold` custom properties rather than approximating them. No code/registration needed — WordPress picks up `screenshot.png` automatically by filename/location.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `themes/visati/screenshot.png` | New — theme admin thumbnail |
+| `themes/visati/functions.php` | `VISATI_THEME_VERSION` 0.4.33 → 0.4.34 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Generated and visually confirmed on-brand. Not yet deployed to Hostinger.

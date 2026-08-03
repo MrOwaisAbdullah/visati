@@ -24,6 +24,30 @@ final class Visati_Core_REST_API {
 	 */
 	public static function init(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'no_cache_headers' ), 10, 4 );
+	}
+
+	/**
+	 * Prevent any visati/v1 response from being cached by browsers, proxies, or
+	 * the host's edge/CDN — several routes return per-application data (status,
+	 * admin notes) or short-lived presigned R2 download URLs. WordPress core
+	 * sends no Cache-Control header of its own for REST responses, and
+	 * Hostinger's edge (hcdn) was observed applying a blanket
+	 * `Cache-Control: public, max-age=604800` to any response that doesn't set
+	 * one explicitly — this overrides that at the origin so it can't happen.
+	 *
+	 * @param bool             $served  Whether the request was already served.
+	 * @param WP_HTTP_Response $result  Response object.
+	 * @param WP_REST_Request  $request Request object.
+	 * @param WP_REST_Server   $server  Server instance.
+	 * @return bool Unchanged $served.
+	 */
+	public static function no_cache_headers( $served, $result, $request, $server ) {
+		if ( 0 === strpos( $request->get_route(), '/' . self::NAMESPACE . '/' ) ) {
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+			header( 'Pragma: no-cache' );
+		}
+		return $served;
 	}
 
 	/**

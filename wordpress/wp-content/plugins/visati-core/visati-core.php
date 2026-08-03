@@ -3,7 +3,7 @@
  * Plugin Name:       Visati Core
  * Plugin URI:        https://visati.ae
  * Description:        Core engine for the Visati WordPress build — CPTs (visa types, FAQ, testimonials, jobs, discounts), custom tables (applications, status history, documents, payments, inquiries), REST API, Stripe payments, Cloudflare R2 document storage, email notifications, admin dashboard, and Elementor widgets/shortcodes.
- * Version:           0.3.24
+ * Version:           0.3.32
  * Requires at least: 6.9
  * Requires PHP:      8.2
  * Author:            Visati
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_CORE_VERSION', '0.3.24' );
+define( 'VISATI_CORE_VERSION', '0.3.32' );
 define( 'VISATI_CORE_FILE', __FILE__ );
 define( 'VISATI_CORE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VISATI_CORE_URL', plugin_dir_url( __FILE__ ) );
