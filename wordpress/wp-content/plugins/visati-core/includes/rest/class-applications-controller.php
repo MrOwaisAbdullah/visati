@@ -56,7 +56,7 @@ final class Visati_Core_Applications_Controller {
 			$d = $req->get_body_params();
 		}
 
-		$required = array( 'nationality', 'given_name', 'surname', 'passport_number', 'date_of_birth', 'passport_expiry', 'travel_date', 'visa_type_slug' );
+		$required = array( 'nationality', 'given_name', 'surname', 'passport_number', 'date_of_birth', 'place_of_birth', 'profession', 'address', 'passport_expiry', 'travel_date', 'visa_type_slug' );
 		foreach ( $required as $field ) {
 			if ( empty( $d[ $field ] ) ) {
 				/* translators: %s: field name */
@@ -71,10 +71,14 @@ final class Visati_Core_Applications_Controller {
 			'surname'         => sanitize_text_field( wp_unslash( $d['surname'] ) ),
 			'passport_number' => sanitize_text_field( wp_unslash( $d['passport_number'] ) ),
 			'date_of_birth'   => sanitize_text_field( wp_unslash( $d['date_of_birth'] ) ),
+			'place_of_birth'  => sanitize_text_field( wp_unslash( $d['place_of_birth'] ) ),
+			'profession'      => sanitize_text_field( wp_unslash( $d['profession'] ) ),
+			'address'         => sanitize_text_field( wp_unslash( $d['address'] ) ),
 			'passport_expiry' => sanitize_text_field( wp_unslash( $d['passport_expiry'] ) ),
 			'travel_date'     => sanitize_text_field( wp_unslash( $d['travel_date'] ) ),
 			'visa_type_slug'  => sanitize_text_field( wp_unslash( $d['visa_type_slug'] ) ),
 			'applicant_email' => sanitize_email( wp_unslash( $d['applicant_email'] ?? '' ) ),
+			'applicant_phone' => sanitize_text_field( wp_unslash( $d['applicant_phone'] ?? '' ) ),
 			'processing_tier' => ( 'express' === ( $d['processing_tier'] ?? '' ) ) ? 'express' : 'standard',
 		);
 

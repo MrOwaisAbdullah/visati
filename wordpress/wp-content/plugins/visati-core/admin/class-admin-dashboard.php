@@ -209,9 +209,14 @@ class Visati_Core_Admin_Dashboard {
 		$total_inquiries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$inq_table}" );
 		$new_inquiries   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$inq_table} WHERE status = %s", 'new' ) );
 
-		// Revenue (successful payments only).
-		$total_revenue    = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s", 'succeeded' ) );
-		$revenue_30d      = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)", 'succeeded' ) );
+		// Revenue (successful payments only). Checkout switched from AED to USD —
+		// summed separately per currency so historical AED payments are never
+		// silently added into the same total as USD ones (they're not the same
+		// unit). `amount_aed` keeps its historical column name for both rows,
+		// see class-database.php.
+		$total_revenue    = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s AND currency = 'usd'", 'succeeded' ) );
+		$revenue_30d      = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s AND currency = 'usd' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)", 'succeeded' ) );
+		$total_revenue_aed_legacy = (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount_aed),0) FROM {$pay_table} WHERE status = %s AND ( currency = 'aed' OR currency IS NULL )", 'succeeded' ) );
 		$paid_count       = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$pay_table} WHERE status = %s", 'succeeded' ) );
 
 		// Recent applications — Express jumps to the top since it needs faster turnaround.

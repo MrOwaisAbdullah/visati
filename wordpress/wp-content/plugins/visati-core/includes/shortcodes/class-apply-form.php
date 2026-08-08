@@ -55,7 +55,7 @@ final class Visati_Core_Apply_Form_Shortcode {
 				'post_status'    => 'publish',
 			)
 		);
-		$surcharge = Visati_Core_Settings::express_surcharge_aed();
+		$surcharge = Visati_Core_Settings::express_surcharge_usd();
 
 		if ( ! wp_script_is( 'visati-apply-form', 'enqueued' ) ) {
 			wp_enqueue_script( 'visati-apply-form' );
@@ -73,6 +73,8 @@ final class Visati_Core_Apply_Form_Shortcode {
 							'entry_type'  => get_post_meta( $v->ID, '_visati_entry_type', true ) ?: 'single',
 							'price_aed'   => (float) get_post_meta( $v->ID, '_visati_price_aed', true ),
 							'price_usd'   => (float) get_post_meta( $v->ID, '_visati_price_usd', true ),
+							'extra_traveler_price_usd' => (float) get_post_meta( $v->ID, '_visati_extra_traveler_price_usd', true ),
+							'extra_traveler_pricing_mode' => get_post_meta( $v->ID, '_visati_extra_traveler_pricing_mode', true ) ?: 'per_traveler',
 							'duration'    => get_post_meta( $v->ID, '_visati_duration_days', true ),
 							'has_express' => metadata_exists( 'post', $v->ID, '_visati_has_express' )
 								? (bool) get_post_meta( $v->ID, '_visati_has_express', true )
@@ -80,8 +82,7 @@ final class Visati_Core_Apply_Form_Shortcode {
 						);
 						return $carry;
 					}, array() ),
-					'surcharge_aed' => (float) $surcharge,
-					'surcharge_usd' => (float) Visati_Core_Settings::express_surcharge_usd(),
+					'surcharge_usd' => (float) $surcharge,
 					'whatsapp_number' => sanitize_text_field( Visati_Core_Settings::get( 'whatsapp_number', '' ) ),
 					'flagsUrl'        => esc_url( VISATI_CORE_URL . 'assets/images/flags/' ),
 				)
@@ -131,8 +132,21 @@ final class Visati_Core_Apply_Form_Shortcode {
 				</label>
 				<fieldset class="visati-tier">
 					<legend>Processing</legend>
-					<label><input type="radio" name="processing_tier" value="standard" checked> Standard</label>
-					<label data-express-option><input type="radio" name="processing_tier" value="express"> Express (+AED <?php echo esc_html( $surcharge ); ?>)</label>
+					<label class="visati-tier-card">
+						<input type="radio" name="processing_tier" value="standard">
+						<span class="visati-tier-card__body">
+							<strong class="visati-tier-card__title">Standard</strong>
+							<span class="visati-tier-card__desc">Approval in 24–72 hours</span>
+						</span>
+					</label>
+					<label class="visati-tier-card" data-express-option>
+						<input type="radio" name="processing_tier" value="express" checked>
+						<span class="visati-tier-card__badge">Express Service</span>
+						<span class="visati-tier-card__body">
+							<strong class="visati-tier-card__title">Express <span class="visati-tier-card__price">USD <?php echo esc_html( $surcharge ); ?></span></strong>
+							<span class="visati-tier-card__desc">Approval in 12–24 hours</span>
+						</span>
+					</label>
 				</fieldset>
 			</section>
 
@@ -151,14 +165,18 @@ final class Visati_Core_Apply_Form_Shortcode {
 
 					<label class="visati-field">Passport number<input name="passport_number" required placeholder="e.g. A1234567" class="visati-mono"></label>
 					<label class="visati-field">Date of birth<input type="date" name="date_of_birth" required></label>
+					<label class="visati-field">Place of birth<input name="place_of_birth" required placeholder="City, Country"></label>
+					<label class="visati-field">Profession<input name="profession" required placeholder="e.g. Engineer"></label>
+					<label class="visati-field">Address<input name="address" required placeholder="Current residential address"></label>
 					<label class="visati-field">Passport expiry<input type="date" name="passport_expiry" required></label>
 					<label class="visati-field">Travel date<input type="date" name="travel_date" required></label>
 					<label class="visati-field">Email<input type="email" name="applicant_email" required placeholder="confirmation@example.com"></label>
+					<label class="visati-field">Phone number<input type="tel" name="applicant_phone" required placeholder="+971 5X XXX XXXX" autocomplete="tel"></label>
 				</div>
 
 				<div class="visati-travelers" data-travelers hidden>
 					<h3 class="visati-travelers__title">Additional Travelers</h3>
-					<p class="visati-travelers__desc">Add family members or companions included in this multi-entry visa.</p>
+					<p class="visati-travelers__desc">Add family members or companions applying together with you.</p>
 					<div class="visati-travelers__list" data-travelers-list></div>
 					<button type="button" class="visati-btn visati-btn--outline visati-travelers__add" data-travelers-add>
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -173,6 +191,7 @@ final class Visati_Core_Apply_Form_Shortcode {
 					<small>Step 3 of 4</small>
 					<h2>Upload documents</h2>
 					<p>PDF, JPG, or PNG. Max 5 MB each.</p>
+					<p class="visati-doc-multi-note" data-doc-multi-note hidden>You've added additional travelers — select every person's file together in each box below (e.g. select all passport copies at once).</p>
 				</header>
 			<div class="visati-doc-upload">
 				<div class="visati-field visati-doc-upload__field">
@@ -185,12 +204,30 @@ final class Visati_Core_Apply_Form_Shortcode {
 					</div>
 				</div>
 				<div class="visati-field visati-doc-upload__field">
-					<label class="visati-field__label" for="doc-photo">Photo <span class="visati-field__required">*</span></label>
-					<div class="visati-doc-upload__box" data-doc-box="photo" tabindex="0" role="button" aria-label="Upload photo">
+					<label class="visati-field__label" for="doc-photo">Passport-size photo <span class="visati-field__required">*</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="photo" tabindex="0" role="button" aria-label="Upload passport-size photo">
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 						<span class="visati-doc-upload__text">Choose file or drag here</span>
 						<span class="visati-doc-upload__name" data-doc-name></span>
 						<input type="file" id="doc-photo" name="doc_photo" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="photo" hidden>
+					</div>
+				</div>
+				<div class="visati-field visati-doc-upload__field">
+					<label class="visati-field__label" for="doc-passport-cover">Passport cover photo <span class="visati-field__required">*</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="passport_cover" tabindex="0" role="button" aria-label="Upload passport cover photo">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+						<span class="visati-doc-upload__text">Choose file or drag here</span>
+						<span class="visati-doc-upload__name" data-doc-name></span>
+						<input type="file" id="doc-passport-cover" name="doc_passport_cover" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="passport_cover" hidden>
+					</div>
+				</div>
+				<div class="visati-field visati-doc-upload__field">
+					<label class="visati-field__label" for="doc-national-id">National ID photo <span class="visati-field__required">*</span></label>
+					<div class="visati-doc-upload__box" data-doc-box="national_id" tabindex="0" role="button" aria-label="Upload national ID photo">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+						<span class="visati-doc-upload__text">Choose file or drag here</span>
+						<span class="visati-doc-upload__name" data-doc-name></span>
+						<input type="file" id="doc-national-id" name="doc_national_id" accept=".pdf,.jpg,.jpeg,.png" data-doc-type="national_id" hidden>
 					</div>
 				</div>
 				<div class="visati-field visati-doc-upload__field">
@@ -247,6 +284,10 @@ final class Visati_Core_Apply_Form_Shortcode {
 							<div class="visati-order-summary__row">
 								<span><?php esc_html_e( 'Visa Fee', 'visati-core' ); ?></span>
 								<span data-summary-fee></span>
+							</div>
+							<div class="visati-order-summary__row" data-summary-travelers-row hidden>
+								<span><?php esc_html_e( 'Additional Travelers', 'visati-core' ); ?></span>
+								<span data-summary-travelers></span>
 							</div>
 							<div class="visati-order-summary__row" data-summary-express-row hidden>
 								<span><?php esc_html_e( 'Express Surcharge', 'visati-core' ); ?></span>

@@ -57,34 +57,61 @@ class Visati_Core_Webhooks_Controller {
 			return new WP_Error( 'app_not_found', 'Application not found.', array( 'status' => 404 ) );
 		}
 
-		// Get visa type price.
+		// Get visa type price — checkout charges in USD (see migration-log.md,
+		// "Switch actual Stripe checkout currency AED→USD"). _visati_price_aed is
+		// reference-only display now, never used to compute what's charged.
 		$visa_type = get_page_by_path( $app->visa_type_slug, OBJECT, 'visati_visa_type' );
-		$price_aed = $visa_type ? (int) get_post_meta( $visa_type->ID, '_visati_price_aed', true ) : 500;
+		$price_usd = $visa_type ? (float) get_post_meta( $visa_type->ID, '_visati_price_usd', true ) : 137;
 		$visa_name = $visa_type ? $visa_type->post_title : ucfirst( $app->visa_type_slug );
 
-		// Add express surcharge.
+		// Each additional traveler is a separate visa application — never trust
+		// the client's computed total, re-derive the traveler count from the
+		// application's own stored travelers_data (server-authoritative). The
+		// per-traveler price is set per visa type (0 bundles extras for free,
+		// an explicit admin choice) — see _visati_extra_traveler_price_usd.
+		$extra_travelers = array();
+		if ( ! empty( $app->travelers_data ) ) {
+			$decoded = json_decode( $app->travelers_data, true );
+			if ( is_array( $decoded ) ) {
+				$extra_travelers = $decoded;
+			}
+		}
+		$extra_traveler_count = count( $extra_travelers );
+		$total_travelers      = 1 + $extra_traveler_count;
+
+		if ( $extra_traveler_count > 0 && $visa_type ) {
+			$extra_traveler_price = (float) get_post_meta( $visa_type->ID, '_visati_extra_traveler_price_usd', true );
+			$pricing_mode         = get_post_meta( $visa_type->ID, '_visati_extra_traveler_pricing_mode', true ) ?: 'per_traveler';
+			$price_usd           += ( 'flat' === $pricing_mode ) ? $extra_traveler_price : ( $extra_traveler_count * $extra_traveler_price );
+		}
+
+		// Add express surcharge — a per-person service, so it scales with the
+		// total number of travelers on the application, not charged once.
 		$express = ( 'express' === $app->processing_tier );
 		if ( $express ) {
-			$surcharge = (int) Visati_Core_Settings::get( 'express_surcharge_aed', 99 );
-			$price_aed += $surcharge;
+			$surcharge = (float) Visati_Core_Settings::get( 'express_surcharge_usd', 27 );
+			$price_usd += $surcharge * $total_travelers;
 		}
 
 		// Optional discount code — re-validated server-side, never trust a client-computed amount.
 		$discount_code   = sanitize_text_field( (string) $request->get_param( 'discount_code' ) );
 		$discount_amount = 0.0;
 		if ( '' !== $discount_code ) {
-			$discount = Visati_Core_Discount::validate( $discount_code, $price_aed );
+			$discount = Visati_Core_Discount::validate( $discount_code, $price_usd );
 			if ( is_wp_error( $discount ) ) {
 				return $discount;
 			}
-			$discount_amount = (float) $discount['discount_amount_aed'];
-			$price_aed       = (float) $discount['final_price_aed'];
+			$discount_amount = (float) $discount['discount_amount'];
+			$price_usd       = (float) $discount['final_price'];
 			$discount_code   = $discount['code'];
 
+			// discount_amount_aed keeps its historical column name (see
+			// class-database.php) but now holds a USD value for rows where
+			// `currency` = 'usd'.
 			$wpdb->update( $table,
-				array( 'discount_code' => $discount_code, 'discount_amount_aed' => $discount_amount ),
+				array( 'discount_code' => $discount_code, 'discount_amount_aed' => $discount_amount, 'currency' => 'usd' ),
 				array( 'id' => $app_id ),
-				array( '%s', '%f' ),
+				array( '%s', '%f', '%s' ),
 				array( '%s' )
 			);
 		}
@@ -93,11 +120,12 @@ class Visati_Core_Webhooks_Controller {
 		$cancel_url  = add_query_arg( 'cancelled', '1', home_url( '/apply/' ) );
 
 		$result = Visati_Core_Stripe_Payments::create_checkout_session(
-			(int) round( $price_aed ),
+			(int) round( $price_usd ),
 			$app_id,
 			$visa_name,
 			$success_url,
-			$cancel_url
+			$cancel_url,
+			'usd'
 		);
 
 		if ( is_wp_error( $result ) ) {
@@ -166,10 +194,13 @@ class Visati_Core_Webhooks_Controller {
 		$now = current_time( 'mysql' );
 
 		// Update status → submitted.
+		// currency='usd' here (not just in the discount branch of create_checkout())
+		// so every successful checkout is correctly marked, even when no discount
+		// code was used.
 		$wpdb->update( $app_table,
-			array( 'status' => 'submitted', 'updated_at' => $now ),
+			array( 'status' => 'submitted', 'updated_at' => $now, 'currency' => 'usd' ),
 			array( 'id' => $app->id ),
-			array( '%s', '%s' ),
+			array( '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -180,14 +211,17 @@ class Visati_Core_Webhooks_Controller {
 			'note'           => 'Payment received via Stripe.',
 		), array( '%s', '%s', '%s' ) );
 
-		// Record payment.
-		$amount_aed = ( (int) ( $session['amount_total'] ?? 0 ) ) / 100; // Stripe sends cents.
+		// Record payment. Column is still named amount_aed for historical reasons
+		// (see class-database.php) but holds the real charged amount — USD here,
+		// paired with the currency column below.
+		$amount_usd = ( (int) ( $session['amount_total'] ?? 0 ) ) / 100; // Stripe sends cents.
 		$wpdb->insert( $wpdb->prefix . 'visati_payments', array(
 			'application_id'          => $app_id,
 			'stripe_payment_intent_id' => $session['payment_intent'] ?? '',
-			'amount_aed'              => $amount_aed,
+			'amount_aed'              => $amount_usd,
+			'currency'                => 'usd',
 			'status'                  => 'succeeded',
-		), array( '%s', '%s', '%f', '%s' ) );
+		), array( '%s', '%s', '%f', '%s', '%s' ) );
 
 		// Record discount code usage, if one was applied at checkout.
 		if ( ! empty( $app->discount_code ) && class_exists( 'Visati_Core_Discount' ) ) {

@@ -66,7 +66,10 @@ final class Visati_Core_Documents_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function upload( WP_REST_Request $req ) {
-		if ( ! visati_rate_limit( 'documents', 20, 600 ) ) {
+		// 60/10min — raised from 20 now that a multi-traveler application uploads
+		// one file per person per document type (5 doc types × several travelers
+		// can legitimately exceed 20 uploads in one sitting).
+		if ( ! visati_rate_limit( 'documents', 60, 600 ) ) {
 			return Visati_Core_REST_API::error( 'rate_limited', __( 'Too many uploads. Please slow down.', 'visati-core' ), 429 );
 		}
 

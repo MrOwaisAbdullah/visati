@@ -11,6 +11,7 @@
  * @var int    $new_inquiries
  * @var float  $total_revenue
  * @var float  $revenue_30d
+ * @var float  $total_revenue_aed_legacy
  * @var int    $paid_count
  * @var array  $recent_apps
  * @var array  $recent_inquiries
@@ -58,11 +59,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="visati-stat-card__label">New Inquiries</div>
 		</div>
 		<div class="visati-stat-card visati-stat-card--revenue">
-			<div class="visati-stat-card__number">AED <?php echo esc_html( number_format( $total_revenue, 0 ) ); ?></div>
-			<div class="visati-stat-card__label">Total Revenue</div>
+			<div class="visati-stat-card__number">USD <?php echo esc_html( number_format( $total_revenue, 0 ) ); ?></div>
+			<div class="visati-stat-card__label">Total Revenue<?php echo $total_revenue_aed_legacy > 0 ? ' <span title="Historical payments taken before checkout switched to USD">(+ AED ' . esc_html( number_format( $total_revenue_aed_legacy, 0 ) ) . ' legacy)</span>' : ''; ?></div>
 		</div>
 		<div class="visati-stat-card visati-stat-card--revenue">
-			<div class="visati-stat-card__number">AED <?php echo esc_html( number_format( $revenue_30d, 0 ) ); ?></div>
+			<div class="visati-stat-card__number">USD <?php echo esc_html( number_format( $revenue_30d, 0 ) ); ?></div>
 			<div class="visati-stat-card__label">Revenue (30d)</div>
 		</div>
 		<div class="visati-stat-card visati-stat-card--approved">

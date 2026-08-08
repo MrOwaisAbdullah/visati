@@ -20,9 +20,10 @@ final class Visati_Core_Visa_Cards_Shortcode {
 	public static function render( $atts ): string {
 		$atts = shortcode_atts(
 			array(
-				'count'    => 12,
-				'featured' => '',
-				'columns'  => 3,
+				'count'      => 12,
+				'featured'   => '',
+				'columns'    => 3,
+				'show_more'  => 'no',
 			),
 			$atts,
 			'visati_visa_cards'
@@ -99,11 +100,11 @@ final class Visati_Core_Visa_Cards_Shortcode {
 						<div class="visati-visa-card__price-block">
 							<span class="visati-visa-card__price-label">Starting at</span>
 							<div class="visati-visa-card__price">
-								<?php if ( $price_aed ) : ?>
-									<span class="visati-visa-card__price-aed">AED <?php echo esc_html( $price_aed ); ?></span>
-								<?php endif; ?>
 								<?php if ( $price_usd ) : ?>
-									<span class="visati-visa-card__price-usd">~$<?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+									<span class="visati-visa-card__price-primary">USD <?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+								<?php endif; ?>
+								<?php if ( $price_aed ) : ?>
+									<span class="visati-visa-card__price-secondary">~AED <?php echo esc_html( $price_aed ); ?></span>
 								<?php endif; ?>
 							</div>
 						</div>
@@ -115,7 +116,16 @@ final class Visati_Core_Visa_Cards_Shortcode {
 				</div>
 			<?php endforeach; ?>
 		</div>
+		<?php if ( 'yes' === $atts['show_more'] ) :
+			$archive_url = get_post_type_archive_link( 'visati_visa_type' );
+			if ( $archive_url ) :
+		?>
+			<div class="visati-visa-grid__more">
+				<a href="<?php echo esc_url( $archive_url ); ?>" class="visati-btn visati-btn--outline">Explore All Visas</a>
+			</div>
 		<?php
+			endif;
+		endif;
 		return (string) ob_get_clean();
 	}
 }

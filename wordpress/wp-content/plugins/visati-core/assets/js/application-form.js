@@ -74,10 +74,12 @@
 
 		/* Step 3: check uploaded docs */
 		if ( n === 3 ) {
-			var hasPassport = docs.some( function ( d ) { return d.doc_type === 'passport_copy'; } );
-			var hasPhoto    = docs.some( function ( d ) { return d.doc_type === 'photo'; } );
-			if ( ! hasPassport || ! hasPhoto ) {
-				showError( 'Please upload passport copy and photo.' );
+			var hasPassport       = docs.some( function ( d ) { return d.doc_type === 'passport_copy'; } );
+			var hasPhoto          = docs.some( function ( d ) { return d.doc_type === 'photo'; } );
+			var hasPassportCover  = docs.some( function ( d ) { return d.doc_type === 'passport_cover'; } );
+			var hasNationalId     = docs.some( function ( d ) { return d.doc_type === 'national_id'; } );
+			if ( ! hasPassport || ! hasPhoto || ! hasPassportCover || ! hasNationalId ) {
+				showError( 'Please upload your passport copy, passport-size photo, passport cover photo, and national ID photo.' );
 				return false;
 			}
 			return true;
@@ -240,8 +242,21 @@
 	var summaryEl = document.querySelector( '[data-order-summary]' );
 	var appliedDiscount = null; /* { code, amount, key } once validated; cleared if visa/tier changes */
 
-	function formatAed( amount ) {
-		return 'AED ' + Math.round( amount ).toLocaleString( 'en-US' );
+	/* Checkout charges in USD — see migration-log.md, "Switch actual Stripe
+	   checkout currency AED→USD". */
+	function formatUsd( amount ) {
+		return 'USD ' + Math.round( amount ).toLocaleString( 'en-US' );
+	}
+
+	/* Extra-traveler cost, matching the server-authoritative formula in
+	   class-webhooks-controller.php::create_checkout() — 'flat' charges the
+	   configured price once if any travelers were added, 'per_traveler'
+	   multiplies it by how many were added. Either mode is free at price 0. */
+	function calcTravelersFee( visa, extraTravelerCount ) {
+		var price = parseFloat( visa.extra_traveler_price_usd ) || 0;
+		var mode  = visa.extra_traveler_pricing_mode || 'per_traveler';
+		if ( extraTravelerCount < 1 ) { return 0; }
+		return 'flat' === mode ? price : ( extraTravelerCount * price );
 	}
 
 	/* ── Show/hide Express option based on the selected visa's has_express flag ── */
@@ -286,16 +301,25 @@
 		var isExpress   = tierInput && tierInput.value === 'express';
 		/* wp_localize_script() casts all top-level scalars to strings, so this
 		   must be parsed as a number — otherwise fee + extra string-concatenates. */
-		var surchargeAed = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_aed ) || 0 ) || 0;
-		var fee   = parseFloat( visa.price_aed ) || 0;
-		var extra = isExpress ? surchargeAed : 0;
-		var subtotal = fee + extra;
+		var surchargeUsd = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_usd ) || 0 ) || 0;
+		var fee   = parseFloat( visa.price_usd ) || 0;
 
-		/* A discount was validated against a specific fee+tier combo — if the
-		   visa or processing tier changed since, the amount no longer applies
+		/* Each additional traveler is a separate visa application, not a free
+		   add-on — priced per visa type via extra_traveler_price_usd (0 bundles
+		   them at no extra charge, an admin choice per visa type), and Express
+		   is a per-person service so its surcharge scales with total travelers
+		   (primary + extras), not charged once for the whole submission. */
+		var extraTravelerCount = travelersList ? travelersList.querySelectorAll( '.visati-traveler-card' ).length : 0;
+		var totalTravelers     = 1 + extraTravelerCount;
+		var travelersFee       = calcTravelersFee( visa, extraTravelerCount );
+		var extra = isExpress ? ( surchargeUsd * totalTravelers ) : 0;
+		var subtotal = fee + travelersFee + extra;
+
+		/* A discount was validated against a specific fee+tier+traveler-count
+		   combo — if any of those changed since, the amount no longer applies
 		   (it may exceed the new price, or the code may have different rules
 		   the server would re-check anyway) so drop it and ask to re-apply. */
-		var priceKey = slug + '|' + ( isExpress ? 'express' : 'standard' );
+		var priceKey = slug + '|' + ( isExpress ? 'express' : 'standard' ) + '|' + extraTravelerCount;
 		if ( appliedDiscount && appliedDiscount.key !== priceKey ) {
 			appliedDiscount = null;
 			var msgElReset = summaryEl.querySelector( '[data-discount-msg]' );
@@ -313,7 +337,7 @@
 		var discountAmount = appliedDiscount ? appliedDiscount.amount : 0;
 		if ( discountRow ) { discountRow.hidden = ! appliedDiscount; }
 		if ( appliedDiscount && discountCodeEl ) { discountCodeEl.textContent = appliedDiscount.code; }
-		if ( appliedDiscount && discountAmtEl ) { discountAmtEl.textContent = '-' + formatAed( discountAmount ); }
+		if ( appliedDiscount && discountAmtEl ) { discountAmtEl.textContent = '-' + formatUsd( discountAmount ); }
 
 		var total = Math.max( 0, subtotal - discountAmount );
 
@@ -328,15 +352,25 @@
 		}
 
 		var feeEl = summaryEl.querySelector( '[data-summary-fee]' );
-		if ( feeEl ) { feeEl.textContent = formatAed( fee ); }
+		if ( feeEl ) { feeEl.textContent = formatUsd( fee ); }
+
+		var travelersRow = summaryEl.querySelector( '[data-summary-travelers-row]' );
+		var travelersEl  = summaryEl.querySelector( '[data-summary-travelers]' );
+		if ( travelersRow ) { travelersRow.hidden = extraTravelerCount < 1; }
+		if ( travelersEl && extraTravelerCount >= 1 ) {
+			var isFlat = 'flat' === ( visa.extra_traveler_pricing_mode || 'per_traveler' );
+			travelersEl.textContent = isFlat
+				? ( extraTravelerCount + ' traveler(s), one-time: ' + formatUsd( travelersFee ) )
+				: ( extraTravelerCount + ' × ' + formatUsd( parseFloat( visa.extra_traveler_price_usd ) || 0 ) + ' = ' + formatUsd( travelersFee ) );
+		}
 
 		var expressRow = summaryEl.querySelector( '[data-summary-express-row]' );
 		var expressEl  = summaryEl.querySelector( '[data-summary-express]' );
 		if ( expressRow ) { expressRow.hidden = ! isExpress; }
-		if ( expressEl && isExpress ) { expressEl.textContent = formatAed( surchargeAed ); }
+		if ( expressEl && isExpress ) { expressEl.textContent = formatUsd( extra ); }
 
 		var totalEl = summaryEl.querySelector( '[data-summary-total]' );
-		if ( totalEl ) { totalEl.textContent = formatAed( total ); }
+		if ( totalEl ) { totalEl.textContent = formatUsd( total ); }
 	}
 
 	/* ── Discount code ─────────────────────────────────── */
@@ -369,8 +403,12 @@
 				return;
 			}
 			var isExpress = tierInput && tierInput.value === 'express';
-			var surchargeAed = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_aed ) || 0 ) || 0;
-			var subtotal = ( parseFloat( visa.price_aed ) || 0 ) + ( isExpress ? surchargeAed : 0 );
+			var surchargeUsd = parseFloat( ( window.visatiApply && window.visatiApply.surcharge_usd ) || 0 ) || 0;
+			var extraTravelerCount = travelersList ? travelersList.querySelectorAll( '.visati-traveler-card' ).length : 0;
+			var totalTravelers     = 1 + extraTravelerCount;
+			var subtotal = ( parseFloat( visa.price_usd ) || 0 )
+				+ calcTravelersFee( visa, extraTravelerCount )
+				+ ( isExpress ? ( surchargeUsd * totalTravelers ) : 0 );
 
 			discountApplyBtn.disabled = true;
 			discountApplyBtn.textContent = 'Checking…';
@@ -379,7 +417,7 @@
 				var resp = await fetch( restUrl + '/discount/validate', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-					body: JSON.stringify( { code: code, price_aed: subtotal } ),
+					body: JSON.stringify( { code: code, price_usd: subtotal } ),
 				} );
 				var data = await resp.json();
 
@@ -389,8 +427,8 @@
 				} else {
 					appliedDiscount = {
 						code: data.code,
-						amount: parseFloat( data.discount_amount_aed ) || 0,
-						key: slug + '|' + ( isExpress ? 'express' : 'standard' ),
+						amount: parseFloat( data.discount_amount ) || 0,
+						key: slug + '|' + ( isExpress ? 'express' : 'standard' ) + '|' + extraTravelerCount,
 					};
 					showDiscountMsg( 'Code "' + data.code + '" applied.', 'ok' );
 				}
@@ -418,15 +456,18 @@
 	}
 
 	function updateTravelersVisibility() {
+		/* Additional travelers are allowed on single-entry visas too, not just
+		   multi-entry — only gate on whether a visa type has been picked at all. */
 		var visaSelect = form.querySelector( 'select[name="visa_type_slug"]' );
 		if ( ! visaSelect || ! travelersSection ) { return; }
-		if ( isMultiEntry( visaSelect.value ) ) {
+		if ( visaSelect.value ) {
 			travelersSection.hidden = false;
 		} else {
 			travelersSection.hidden = true;
 			travelersList.innerHTML = '';
 			travelerCount = 0;
 		}
+		updateDocUploadMultiple();
 	}
 
 	function addTravelerCard() {
@@ -462,7 +503,30 @@
 
 		card.querySelector( '[data-remove-traveler]' ).addEventListener( 'click', function () {
 			card.remove();
+			updateDocUploadMultiple();
+			updateOrderSummary();
 		} );
+		updateDocUploadMultiple();
+		updateOrderSummary();
+	}
+
+	/* Multi-file uploads are only meaningful once there's more than one person on
+	   the application — toggle the `multiple` attribute on the doc upload inputs
+	   based on the *current* number of traveler cards (not travelerCount, which
+	   only ever increases — it's a naming counter, not a live count, since Remove
+	   doesn't decrement it). */
+	function updateDocUploadMultiple() {
+		var currentTravelerCards = travelersList ? travelersList.querySelectorAll( '.visati-traveler-card' ).length : 0;
+		var isMulti = currentTravelerCards > 0;
+		Array.prototype.forEach.call( form.querySelectorAll( '.visati-doc-upload__box input[type=file]' ), function ( input ) {
+			if ( isMulti ) {
+				input.setAttribute( 'multiple', 'multiple' );
+			} else {
+				input.removeAttribute( 'multiple' );
+			}
+		} );
+		var note = form.querySelector( '[data-doc-multi-note]' );
+		if ( note ) { note.hidden = ! isMulti; }
 	}
 
 	if ( travelersAdd ) {
@@ -545,39 +609,25 @@
 		}
 	}
 
-	async function uploadFile( input ) {
-		var file = input.files[ 0 ];
-		if ( ! file ) {
-			return;
+	/* Multiple travelers → one file per person is expected in each box, so file
+	   inputs accept multiple selections; a single applicant still just picks one. */
+	var docFileNames = {}; /* docType -> array of uploaded filenames, for the box label */
+
+	function updateDocBoxLabel( docType, box ) {
+		if ( ! box ) { return; }
+		var nameEl = box.querySelector( '[data-doc-name]' );
+		if ( ! nameEl ) { return; }
+		var names = docFileNames[ docType ] || [];
+		if ( names.length === 0 ) {
+			nameEl.textContent = '';
+		} else if ( names.length === 1 ) {
+			nameEl.textContent = names[ 0 ];
+		} else {
+			nameEl.textContent = names.length + ' files selected';
 		}
-		var docType = input.dataset.docType || 'document';
-		var box = form.querySelector( '[data-doc-box="' + docType + '"]' );
-		if ( box ) {
-			var nameEl = box.querySelector( '[data-doc-name]' );
-			if ( nameEl ) { nameEl.textContent = file.name; }
-			box.classList.add( 'is-filled' );
-			var icon = box.querySelector( 'svg' );
-			if ( file.type && file.type.match( /^image\// ) ) {
-				var reader = new FileReader();
-				reader.onload = function ( ev ) {
-					var preview = box.querySelector( '.visati-doc-upload__preview' );
-					if ( ! preview ) {
-						preview = document.createElement( 'img' );
-						preview.className = 'visati-doc-upload__preview';
-						box.insertBefore( preview, box.firstChild );
-					}
-					preview.src = ev.target.result;
-					if ( icon ) { icon.style.display = 'none'; }
-				};
-				reader.readAsDataURL( file );
-			} else {
-				if ( icon ) { icon.style.display = ''; }
-			}
-		}
-		if ( ! ( await ensureDraft() ) ) {
-			if ( box ) { box.classList.remove( 'is-filled' ); }
-			return;
-		}
+	}
+
+	async function uploadOneFile( file, docType, box ) {
 		activeUploads++;
 		setLoading( nextBtn, true, 'Uploading…' );
 		var fd = new FormData();
@@ -594,20 +644,68 @@
 			if ( ! r.ok ) {
 				console.error( 'Visati document upload failed:', j );
 				showError( j.message || 'Upload failed.' );
-				if ( box ) { box.classList.remove( 'is-filled' ); }
 			} else {
 				docs.push( { filename: j.filename, doc_type: docType } );
+				docFileNames[ docType ] = docFileNames[ docType ] || [];
+				docFileNames[ docType ].push( j.filename );
+				updateDocBoxLabel( docType, box );
 				console.log( 'Visati doc uploaded:', docType, j.filename, '— docs array now has', docs.length, 'items' );
 			}
 		} catch ( e ) {
 			console.error( 'Visati document upload network error:', e );
 			showError( 'Network error during upload.' );
-			if ( box ) { box.classList.remove( 'is-filled' ); }
 		}
 		activeUploads--;
 		if ( activeUploads <= 0 ) {
 			activeUploads = 0;
 			setLoading( nextBtn, false );
+		}
+	}
+
+	async function uploadFile( input ) {
+		var files = Array.prototype.slice.call( input.files || [] );
+		if ( ! files.length ) {
+			return;
+		}
+		var docType = input.dataset.docType || 'document';
+		var box = form.querySelector( '[data-doc-box="' + docType + '"]' );
+
+		if ( box ) {
+			box.classList.add( 'is-filled' );
+			var icon = box.querySelector( 'svg' );
+			var imageFiles = files.filter( function ( f ) { return f.type && f.type.match( /^image\// ); } );
+			if ( imageFiles.length > 0 ) {
+				var previews = box.querySelector( '.visati-doc-upload__previews' );
+				if ( ! previews ) {
+					previews = document.createElement( 'div' );
+					previews.className = 'visati-doc-upload__previews';
+					box.insertBefore( previews, box.firstChild );
+				}
+				imageFiles.forEach( function ( imgFile ) {
+					var reader = new FileReader();
+					reader.onload = function ( ev ) {
+						var preview = document.createElement( 'img' );
+						preview.className = 'visati-doc-upload__preview';
+						preview.src = ev.target.result;
+						previews.appendChild( preview );
+					};
+					reader.readAsDataURL( imgFile );
+				} );
+				if ( icon ) { icon.style.display = 'none'; }
+			} else if ( icon ) {
+				icon.style.display = '';
+			}
+		}
+
+		if ( ! ( await ensureDraft() ) ) {
+			if ( box && ! ( docFileNames[ docType ] && docFileNames[ docType ].length ) ) {
+				box.classList.remove( 'is-filled' );
+			}
+			return;
+		}
+
+		for ( var i = 0; i < files.length; i++ ) {
+			await uploadOneFile( files[ i ], docType, box );
 		}
 	}
 
@@ -626,8 +724,12 @@
 			[ 'Name', d.given_name + ' ' + d.surname ],
 			[ 'Nationality', d.nationality ],
 			[ 'Passport', d.passport_number ],
+			[ 'Place of birth', d.place_of_birth || '—' ],
+			[ 'Profession', d.profession || '—' ],
+			[ 'Address', d.address || '—' ],
 			[ 'Travel date', d.travel_date ],
 			[ 'Email', d.applicant_email || '—' ],
+			[ 'Phone', d.applicant_phone || '—' ],
 			[ 'Documents', docs.map( function ( x ) { return x.filename; } ).join( ', ' ) || 'none' ]
 		];
 		rows.forEach( function ( pair ) {
@@ -679,9 +781,13 @@
 			'*Nationality:* ' + d.nationality,
 			'*Passport:* ' + d.passport_number,
 			'*Date of Birth:* ' + d.date_of_birth,
+			'*Place of Birth:* ' + ( d.place_of_birth || '—' ),
+			'*Profession:* ' + ( d.profession || '—' ),
+			'*Address:* ' + ( d.address || '—' ),
 			'*Passport Expiry:* ' + d.passport_expiry,
 			'*Travel Date:* ' + d.travel_date,
 			'*Email:* ' + ( d.applicant_email || '—' ),
+			'*Phone:* ' + ( d.applicant_phone || '—' ),
 		];
 		if ( travelersList ) {
 			var cards = travelersList.querySelectorAll( '.visati-traveler-card' );
@@ -780,10 +886,18 @@
 		visaSelect.addEventListener( 'change', updateOrderSummary );
 	}
 
-	/* ── Processing tier change → update order summary ─── */
+	/* ── Processing tier change → update order summary + card highlight ── */
+	function updateTierCardHighlight() {
+		Array.prototype.forEach.call( form.querySelectorAll( '.visati-tier-card' ), function ( card ) {
+			var input = card.querySelector( 'input[name="processing_tier"]' );
+			card.classList.toggle( 'is-selected', !! ( input && input.checked ) );
+		} );
+	}
 	Array.prototype.forEach.call( form.querySelectorAll( 'input[name="processing_tier"]' ), function ( radio ) {
 		radio.addEventListener( 'change', updateOrderSummary );
+		radio.addEventListener( 'change', updateTierCardHighlight );
 	} );
+	updateTierCardHighlight();
 
 	/* ── Pre-select from URL params (?visa=&nationality=) ── */
 	(function () {

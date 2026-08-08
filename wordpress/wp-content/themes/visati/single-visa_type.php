@@ -57,11 +57,11 @@ $apply_url  = home_url( '/apply?visa=' . rawurlencode( $slug ) );
 					<div class="visati-visa-single__price-card">
 						<span class="visati-visa-single__price-label">Starting at</span>
 						<div class="visati-visa-single__price">
-							<?php if ( $price_aed ) : ?>
-								<span class="visati-visa-single__price-aed">AED <?php echo esc_html( $price_aed ); ?></span>
-							<?php endif; ?>
 							<?php if ( $price_usd ) : ?>
-								<span class="visati-visa-single__price-usd">~$<?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+								<span class="visati-visa-single__price-primary">USD <?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+							<?php endif; ?>
+							<?php if ( $price_aed ) : ?>
+								<span class="visati-visa-single__price-secondary">~AED <?php echo esc_html( $price_aed ); ?></span>
 							<?php endif; ?>
 						</div>
 						<a href="<?php echo esc_url( $apply_url ); ?>" class="visati-btn" style="width:100%;justify-content:center;">

@@ -174,6 +174,27 @@ Without SSH/WP-CLI, a raw SQL find-and-replace is **not** safe here — URLs are
 - [ ] Load homepage, About, Services, Careers, Blog, Apply, Contact, FAQ, Visa Types on the new domain and compare against local
 - [ ] Only after section 4's full smoke test passes live: archive (don't delete) the `.sql` export and zips somewhere safe, and keep treating the local Local-by-Flywheel site as the ongoing dev/staging environment — not something to tear down
 
+### 3.10 — Ongoing code-only redeploys (after the initial migration above)
+
+Once the site is live, most future changes are theme/plugin code only (no DB/content changes) — a much lighter operation than section 3's full migration. This is what actually gets used session to session; full details + lessons learned live in `migration-log.md`'s "Quick reference: code-only redeploy in 3 commands" entry (2026-08-08). `wordpress/deploy-local.ps1` automates this (`-ThemeOnly`/`-PluginOnly` flags); run these 3 by hand when only running from WSL (no SSH key-based auth to this host from there):
+
+1. **Build the zip** (PowerShell) — swap `plugin`/`visati-core` for `theme`/`visati` to deploy the theme instead:
+   ```powershell
+   Compress-Archive -Path "C:\Users\K TECH\Local Sites\visati\app\public\wp-content\plugins\visati-core\*" -DestinationPath "D:\GIAIC\Visati\wordpress\docs\deploy-plugin.zip" -Force
+   ```
+   Re-verify the zip's contents (entry count, version string, a symbol unique to the change) right before uploading — a zip can silently go stale between build and upload.
+
+2. **Upload**:
+   ```powershell
+   scp -P 65002 "D:\GIAIC\Visati\wordpress\docs\deploy-plugin.zip" u438130270@72.62.214.133:~/domains/visati.visati.ae/public_html/
+   ```
+
+3. **Extract + permissions + cleanup + cache flush, chained in one SSH call**:
+   ```powershell
+   ssh -p 65002 u438130270@72.62.214.133 "cd ~/domains/visati.visati.ae/public_html && unzip -o deploy-plugin.zip -d wp-content/plugins/visati-core/ && find wp-content/plugins/visati-core -type d -exec chmod 755 {} \; && find wp-content/plugins/visati-core -type f -exec chmod 644 {} \; && rm -f deploy-plugin.zip && /usr/local/bin/wp cache flush && echo DONE"
+   ```
+   Confirm the trailing `echo DONE` appears in the output — its absence means the chain stopped partway (has happened: a zip left behind on the server because output was truncated before `rm` ran). Always finish with a live `curl` check against `/wp-json/visati/v1/status` (version bump) plus a content marker specific to the change — "no error shown" alone isn't confirmation.
+
 ## 4. Smoke test (T071)
 
 - [ ] Full apply flow end-to-end on the live subdomain: form → R2 document upload → Stripe Checkout (live or test mode first) → webhook → status flips to `submitted` → confirmation email sent → `VIS-YYYY-XXXXXX` ID generated

@@ -637,6 +637,11 @@ body > main > :last-child {
 @media ( min-width: 1024px ) {
 	.visati-visa-grid { grid-template-columns: repeat(3, 1fr); }
 }
+.visati-visa-grid__more {
+	display: flex;
+	justify-content: center;
+	margin-top: 2rem;
+}
 .visati-visa-card {
 	background: var( --visati-white );
 	border: 1px solid rgba(10, 22, 40, 0.08);
@@ -725,13 +730,13 @@ body > main > :last-child {
 	align-items: baseline;
 	gap: 0.5rem;
 }
-.visati-visa-card__price-aed {
+.visati-visa-card__price-primary {
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-size: 1.35rem;
 	font-weight: 800;
 	color: var( --visati-navy );
 }
-.visati-visa-card__price-usd {
+.visati-visa-card__price-secondary {
 	font-size: 0.8rem;
 	font-weight: 500;
 	color: rgba(26,26,46,0.45);
@@ -740,14 +745,14 @@ body > main > :last-child {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
-	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%);
+	background: linear-gradient(135deg, #C9A84C 0%, #F0C864 50%, #C9A84C 100%) !important;
 	background-size: 200% 200%;
-	color: var( --visati-navy );
+	color: var( --visati-navy ) !important;
 	font-family: "Plus Jakarta Sans", sans-serif;
 	font-size: 0.8rem;
 	font-weight: 700;
-	padding: 0.55rem 1.1rem;
-	border-radius: 10px;
+	padding: 0.55rem 1.1rem !important;
+	border-radius: 10px !important;
 	text-decoration: none;
 	transition: background-position 0.3s, box-shadow 0.3s, transform 0.2s;
 	flex-shrink: 0;
@@ -757,6 +762,8 @@ body > main > :last-child {
 	background-position: 100% 100%;
 	box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);
 	transform: translateY(-1px);
+	color: var( --visati-navy ) !important;
+	background-color: transparent !important;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1403,7 +1410,7 @@ body > main > :last-child {
 /* Golden gradient button reset — overrides hello-elementor #c36 pink
    Only target bare elements without any visati-btn class.
    Exclude policy page content links. */
-body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta)),
+body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta):not(.visati-visa-card__apply)),
 body .visati-page button:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):not(.visati-order-summary__discount-btn):not(.visati-testimonials-arrow)),
 body .visati-page [type="button"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):not(.visati-order-summary__discount-btn)),
 body .visati-page [type="submit"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])),
@@ -1420,7 +1427,7 @@ body .visati-page [type="reset"]:where(:not([class*="visati-btn"]):not([class*="
 	box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
 	transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease !important;
 }
-body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta)):hover,
+body .visati-page:not(.visati-page--policy) a:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-header__brand):not(.visati-footer__social-link):not(.visati-footer__link):not(.visati-footer__legal a):not(.visati-contact-page__detail-value):not(.visati-order-summary__whatsapp):not(.visati-blog-card__stretched-link):not(.visati-blog-sidebar__link):not(.visati-global-reach__cta):not(.visati-visa-card__apply)):hover,
 body .visati-page button:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-faq-item__q):not(.visati-faq-cat-btn):not(.visati-header__toggle):not(.visati-drawer__close):not(.visati-announcement-close):not(.visati-combobox__button):not(.visati-order-summary__discount-btn):not(.visati-testimonials-arrow)):hover,
 body .visati-page [type="button"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"]):not(.visati-combobox__button):not(.visati-order-summary__discount-btn)):hover,
 body .visati-page [type="submit"]:where(:not([class*="visati-btn"]):not([class*="elementor-button"])):hover,
@@ -2422,13 +2429,13 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 .visati-visa-single__price {
 	margin: 0.5rem 0 1.25rem;
 }
-.visati-visa-single__price-aed {
+.visati-visa-single__price-primary {
 	font-size: 1.75rem;
 	font-weight: 700;
 	color: var( --visati-navy );
 	display: block;
 }
-.visati-visa-single__price-usd {
+.visati-visa-single__price-secondary {
 	font-size: 0.85rem;
 	color: rgba(26,26,46,0.5);
 }

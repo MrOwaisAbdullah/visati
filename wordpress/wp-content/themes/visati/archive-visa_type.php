@@ -67,11 +67,11 @@ get_header();
 								<div class="visati-visa-card__price-block">
 									<span class="visati-visa-card__price-label">Starting at</span>
 									<div class="visati-visa-card__price">
-										<?php if ( $price_aed ) : ?>
-											<span class="visati-visa-card__price-aed">AED <?php echo esc_html( $price_aed ); ?></span>
-										<?php endif; ?>
 										<?php if ( $price_usd ) : ?>
-											<span class="visati-visa-card__price-usd">~$<?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+											<span class="visati-visa-card__price-primary">USD <?php echo esc_html( number_format( (float) $price_usd, 0 ) ); ?></span>
+										<?php endif; ?>
+										<?php if ( $price_aed ) : ?>
+											<span class="visati-visa-card__price-secondary">~AED <?php echo esc_html( $price_aed ); ?></span>
 										<?php endif; ?>
 									</div>
 								</div>

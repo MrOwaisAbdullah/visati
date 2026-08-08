@@ -29,7 +29,12 @@ class Visati_Core_Database {
 
 		$tables = array();
 
-		// Applications (id = VIS-YYYY-XXXXXX).
+		// Applications (id = VIS-YYYY-XXXXXX). Note: `amount_paid_aed`/
+		// `discount_amount_aed` keep their historical column names even after the
+		// checkout currency switched to USD — renaming a column on a live table
+		// with real financial history is riskier than pairing the existing numeric
+		// columns with the new `currency` column, which says which unit the value
+		// in those columns is actually denominated in for that row.
 		$tables[] = "CREATE TABLE {$prefix}visati_applications (
 			id VARCHAR(20) NOT NULL,
 			post_id BIGINT UNSIGNED DEFAULT NULL,
@@ -39,8 +44,12 @@ class Visati_Core_Database {
 			given_name VARCHAR(100) NOT NULL,
 			surname VARCHAR(100) NOT NULL,
 			applicant_email VARCHAR(255) NOT NULL,
+			applicant_phone VARCHAR(50) DEFAULT NULL,
 			passport_number VARCHAR(50) NOT NULL,
 			date_of_birth DATE NOT NULL,
+			place_of_birth VARCHAR(150) DEFAULT NULL,
+			profession VARCHAR(150) DEFAULT NULL,
+			address VARCHAR(255) DEFAULT NULL,
 			passport_expiry DATE NOT NULL,
 			travel_date DATE NOT NULL,
 			travelers_data LONGTEXT DEFAULT NULL,
@@ -50,6 +59,7 @@ class Visati_Core_Database {
 			amount_paid_aed DECIMAL(10,2) DEFAULT 0,
 			discount_code VARCHAR(50) DEFAULT NULL,
 			discount_amount_aed DECIMAL(10,2) DEFAULT 0,
+			currency VARCHAR(3) DEFAULT 'aed',
 			sample_id VARCHAR(50) DEFAULT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -91,6 +101,7 @@ class Visati_Core_Database {
 			application_id VARCHAR(20) NOT NULL,
 			stripe_payment_intent_id VARCHAR(255) NOT NULL,
 			amount_aed DECIMAL(10,2) NOT NULL,
+			currency VARCHAR(3) DEFAULT 'aed',
 			status ENUM('pending','succeeded','failed') DEFAULT 'pending',
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
@@ -137,8 +148,11 @@ class Visati_Core_Database {
 		}
 		$done = true;
 
-		// Only run in admin or during REST API requests (schema changes need write context).
-		if ( ! is_admin() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+		// Only run in admin, during REST API requests, or under WP-CLI (schema
+		// changes need a real write context — but WP-CLI is a legitimate one too,
+		// not just wp-admin/REST; missing this meant `wp` commands could never
+		// trigger a pending migration, only an actual wp-admin page load could).
+		if ( ! is_admin() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 
@@ -153,6 +167,33 @@ class Visati_Core_Database {
 
 		if ( ! in_array( 'travelers_data', $columns, true ) ) {
 			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN travelers_data LONGTEXT DEFAULT NULL AFTER travel_date" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		if ( ! in_array( 'applicant_phone', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN applicant_phone VARCHAR(50) DEFAULT NULL AFTER applicant_email" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		if ( ! in_array( 'place_of_birth', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN place_of_birth VARCHAR(150) DEFAULT NULL AFTER date_of_birth" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		if ( ! in_array( 'profession', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN profession VARCHAR(150) DEFAULT NULL AFTER place_of_birth" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		if ( ! in_array( 'address', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN address VARCHAR(255) DEFAULT NULL AFTER profession" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		// Checkout currency switched from AED to USD — existing rows predate this
+		// column and were genuinely charged in AED, so the column default ('aed')
+		// is correct for them; new rows explicitly set 'usd' at insert time.
+		if ( ! in_array( 'currency', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN currency VARCHAR(3) DEFAULT 'aed' AFTER discount_amount_aed" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		$pay_table   = $prefix . 'visati_payments';
+		$pay_columns = $wpdb->get_col( "SHOW COLUMNS FROM {$pay_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( is_array( $pay_columns ) && ! in_array( 'currency', $pay_columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$pay_table} ADD COLUMN currency VARCHAR(3) DEFAULT 'aed' AFTER amount_aed" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 
 		// Inquiries: the admin UI (list/detail/filters) has always assumed a 3-state

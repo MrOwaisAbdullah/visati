@@ -30,7 +30,7 @@ final class Visati_Core_Discount_Controller {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'price_aed' => array(
+					'price_usd' => array(
 						'required'          => true,
 						'type'              => 'number',
 						// Not bare 'floatval' — WP core calls sanitize_callback with 3 args
@@ -51,9 +51,9 @@ final class Visati_Core_Discount_Controller {
 		}
 
 		$code      = (string) $request->get_param( 'code' );
-		$price_aed = (float) $request->get_param( 'price_aed' );
+		$price_usd = (float) $request->get_param( 'price_usd' );
 
-		$result = Visati_Core_Discount::validate( $code, $price_aed );
+		$result = Visati_Core_Discount::validate( $code, $price_usd );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}

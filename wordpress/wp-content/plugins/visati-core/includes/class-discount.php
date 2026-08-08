@@ -17,18 +17,20 @@ final class Visati_Core_Discount {
 
 	/**
 	 * Validate a discount code against a given price and compute the discount.
+	 * Currency-agnostic — the caller decides what unit $price is in (checkout is
+	 * charged in USD; this class just does the math).
 	 *
-	 * @param string $code      Code as typed by the customer.
-	 * @param float  $price_aed Price before discount, in AED.
+	 * @param string $code  Code as typed by the customer.
+	 * @param float  $price Price before discount.
 	 * @return array|WP_Error {
-	 *     @type string $code                 Normalized code (uppercased).
-	 *     @type string $discount_type        'percentage'|'fixed'.
-	 *     @type int    $discount_value       Raw configured value.
-	 *     @type float  $discount_amount_aed  Amount actually deducted (capped at price).
-	 *     @type float  $final_price_aed      Price after discount.
+	 *     @type string $code             Normalized code (uppercased).
+	 *     @type string $discount_type    'percentage'|'fixed'.
+	 *     @type int    $discount_value   Raw configured value.
+	 *     @type float  $discount_amount  Amount actually deducted (capped at price).
+	 *     @type float  $final_price      Price after discount.
 	 * }
 	 */
-	public static function validate( string $code, float $price_aed ) {
+	public static function validate( string $code, float $price ) {
 		$code = trim( $code );
 		if ( '' === $code ) {
 			return new WP_Error( 'discount_missing_code', __( 'Enter a discount code.', 'visati-core' ), array( 'status' => 400 ) );
@@ -63,18 +65,18 @@ final class Visati_Core_Discount {
 		$value = (int) get_post_meta( $post->ID, '_visati_discount_value', true );
 
 		$amount = 'percentage' === $type
-			? round( $price_aed * ( $value / 100 ), 2 )
+			? round( $price * ( $value / 100 ), 2 )
 			: (float) $value;
 
 		// Never discount below zero.
-		$amount = min( $amount, $price_aed );
+		$amount = min( $amount, $price );
 
 		return array(
-			'code'                => strtoupper( $post->post_title ),
-			'discount_type'       => $type,
-			'discount_value'      => $value,
-			'discount_amount_aed' => $amount,
-			'final_price_aed'     => round( $price_aed - $amount, 2 ),
+			'code'             => strtoupper( $post->post_title ),
+			'discount_type'    => $type,
+			'discount_value'   => $value,
+			'discount_amount'  => $amount,
+			'final_price'      => round( $price - $amount, 2 ),
 		);
 	}
 

@@ -1,0 +1,25 @@
+VISATI — EXTERNAL SERVICES
+(Note: R2 and Resend are both signed in using the same Gmail account.)
+
+1. CLOUDFLARE R2 — Document Storage
+   Stores: passport/photo uploads from applicants, and visa files uploaded by admin.
+   Why not WordPress's normal file storage (wp-content/uploads): passport/visa
+   documents are sensitive — R2 keeps them off the main web server, not directly
+   reachable by a URL guess, only accessible via a temporary signed link (expires
+   in 15-30 minutes). It also has no download/bandwidth fees, unlike most storage.
+   Free tier: 10 GB storage/month. Beyond that: ~$0.015 per GB/month.
+
+2. RESEND — Transactional Email
+   Sends: application confirmation emails, status update emails, admin alerts.
+   Why not WordPress's default mail: shared hosting's built-in mail sending has
+   poor deliverability and is frequently marked as spam. Resend properly
+   authenticates the domain so these emails reliably reach the inbox.
+   Free tier: 3,000 emails/month, 100/day, 1 verified domain.
+   Connected to WordPress through the "WP Mail SMTP" plugin.
+
+3. STRIPE — Payments
+   Handles visa application payments.
+
+Note: Everything else (applications, documents list, payments records,
+inquiries) is stored in the normal WordPress database on Hostinger — no
+external database is used.

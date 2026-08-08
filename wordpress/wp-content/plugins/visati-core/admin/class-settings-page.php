@@ -327,17 +327,17 @@ final class Visati_Core_Admin_Settings {
 				<h2><?php esc_html_e( 'Express Processing Fee', 'visati-core' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr><th><label for="express_surcharge_aed"><?php esc_html_e( 'Express surcharge (AED)', 'visati-core' ); ?></label></th>
-						<td><input name="express_surcharge_aed" id="express_surcharge_aed" type="number" min="0" class="small-text" value="<?php echo esc_attr( $s( 'express_surcharge_aed' ) ); ?>" placeholder="99">
+						<td><input name="express_surcharge_aed" id="express_surcharge_aed" type="number" min="0" class="regular-text" value="<?php echo esc_attr( $s( 'express_surcharge_aed' ) ); ?>" placeholder="99">
 							<p class="description"><?php esc_html_e( 'Added to the visa fee when applicant chooses Express processing.', 'visati-core' ); ?></p></td></tr>
 					<tr><th><label for="express_surcharge_usd"><?php esc_html_e( 'Express surcharge (USD)', 'visati-core' ); ?></label></th>
-						<td><input name="express_surcharge_usd" id="express_surcharge_usd" type="number" min="0" class="small-text" value="<?php echo esc_attr( $s( 'express_surcharge_usd' ) ); ?>" placeholder="27">
+						<td><input name="express_surcharge_usd" id="express_surcharge_usd" type="number" min="0" class="regular-text" value="<?php echo esc_attr( $s( 'express_surcharge_usd' ) ); ?>" placeholder="27">
 							<p class="description"><?php esc_html_e( 'USD equivalent — used in the Stripe checkout amount.', 'visati-core' ); ?></p></td></tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Storage', 'visati-core' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr><th><label for="r2_storage_quota_gb"><?php esc_html_e( 'Cloudflare R2 quota (GB)', 'visati-core' ); ?></label></th>
-						<td><input name="r2_storage_quota_gb" id="r2_storage_quota_gb" type="number" min="1" class="small-text" value="<?php echo esc_attr( $s( 'r2_storage_quota_gb' ) ); ?>" placeholder="10">
+						<td><input name="r2_storage_quota_gb" id="r2_storage_quota_gb" type="number" min="1" class="regular-text" value="<?php echo esc_attr( $s( 'r2_storage_quota_gb' ) ); ?>" placeholder="10">
 							<p class="description"><?php esc_html_e( 'Used only to calculate the storage percentage shown on the Dashboard — does not enforce a real limit.', 'visati-core' ); ?></p>
 							<p class="description"><strong><?php esc_html_e( 'Do not raise this above 10 unless you are willing to pay for it.', 'visati-core' ); ?></strong> <?php esc_html_e( 'Cloudflare R2\'s free tier covers 10 GB/month of storage; every GB beyond that is billed at roughly $0.015/GB-month. Raising this number does not itself create real capacity — Cloudflare will simply start charging once actual usage crosses 10 GB, whatever this field says.', 'visati-core' ); ?></p>
 							<p class="description"><?php esc_html_e( 'Instead of raising the quota, you can delete old applications from', 'visati-core' ); ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=visati-applications' ) ); ?>"><?php esc_html_e( 'Applications', 'visati-core' ); ?></a> <?php esc_html_e( '— this removes their uploaded documents from R2 too, actually freeing space (payment records are kept).', 'visati-core' ); ?></p></td></tr>

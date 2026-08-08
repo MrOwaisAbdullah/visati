@@ -94,14 +94,28 @@ final class Visati_Core_Meta_Boxes {
 				'desc'  => __( 'Short description shown on the visa card (e.g. "Perfect for short trips").', 'visati-core' ),
 				'type'  => 'text',
 			),
-			'_visati_price_aed'     => array(
-				'label' => __( 'Price (AED)', 'visati-core' ),
-				'desc'  => __( 'Display price in UAE Dirhams.', 'visati-core' ),
-				'type'  => 'number',
-			),
 			'_visati_price_usd'     => array(
 				'label' => __( 'Price (USD)', 'visati-core' ),
-				'desc'  => __( 'Approximate USD equivalent.', 'visati-core' ),
+				'desc'  => __( 'This is the amount actually charged at checkout.', 'visati-core' ),
+				'type'  => 'number',
+			),
+			'_visati_price_aed'     => array(
+				'label' => __( 'Price (AED)', 'visati-core' ),
+				'desc'  => __( 'Reference only, shown alongside the USD price — not charged.', 'visati-core' ),
+				'type'  => 'number',
+			),
+			'_visati_extra_traveler_pricing_mode' => array(
+				'label'   => __( 'Extra Traveler Pricing', 'visati-core' ),
+				'desc'    => __( 'How additional travelers (beyond the primary applicant) are charged. Set the price to 0 in either mode for no charge.', 'visati-core' ),
+				'type'    => 'select',
+				'options' => array(
+					'per_traveler' => __( 'Per traveler — price × number of extra travelers', 'visati-core' ),
+					'flat'         => __( 'One-time flat fee — charged once if any travelers are added, regardless of count', 'visati-core' ),
+				),
+			),
+			'_visati_extra_traveler_price_usd' => array(
+				'label' => __( 'Extra Traveler Price (USD)', 'visati-core' ),
+				'desc'  => __( 'Amount used by the pricing mode above. 0 bundles additional travelers at no extra charge.', 'visati-core' ),
 				'type'  => 'number',
 			),
 			'_visati_duration_days' => array(
@@ -175,7 +189,15 @@ final class Visati_Core_Meta_Boxes {
 			}
 		}
 
-		$number_fields = array( '_visati_price_aed', '_visati_price_usd', '_visati_duration_days' );
+		// Whitelisted (not just sanitized) since this mode value drives what a
+		// customer is actually charged — an unexpected value must never silently
+		// fall through into the pricing calculation.
+		if ( isset( $_POST['_visati_extra_traveler_pricing_mode'] ) ) {
+			$mode = sanitize_text_field( wp_unslash( $_POST['_visati_extra_traveler_pricing_mode'] ) );
+			update_post_meta( $post_id, '_visati_extra_traveler_pricing_mode', in_array( $mode, array( 'per_traveler', 'flat' ), true ) ? $mode : 'per_traveler' );
+		}
+
+		$number_fields = array( '_visati_price_aed', '_visati_price_usd', '_visati_extra_traveler_price_usd', '_visati_duration_days' );
 		foreach ( $number_fields as $key ) {
 			if ( isset( $_POST[ $key ] ) ) {
 				update_post_meta( $post_id, $key, absint( $_POST[ $key ] ) );
@@ -334,16 +356,16 @@ final class Visati_Core_Meta_Boxes {
 		$fields = array(
 			'_visati_discount_type'     => array(
 				'label'   => __( 'Discount Type', 'visati-core' ),
-				'desc'    => __( 'Percentage off, or a fixed AED amount off.', 'visati-core' ),
+				'desc'    => __( 'Percentage off, or a fixed USD amount off.', 'visati-core' ),
 				'type'    => 'select',
 				'options' => array(
 					'percentage' => __( 'Percentage (%)', 'visati-core' ),
-					'fixed'      => __( 'Fixed amount (AED)', 'visati-core' ),
+					'fixed'      => __( 'Fixed amount (USD)', 'visati-core' ),
 				),
 			),
 			'_visati_discount_value'    => array(
 				'label' => __( 'Discount Value', 'visati-core' ),
-				'desc'  => __( 'e.g. 20 for 20% off, or 100 for AED 100 off.', 'visati-core' ),
+				'desc'  => __( 'e.g. 20 for 20% off, or 15 for USD 15 off (checkout is charged in USD).', 'visati-core' ),
 				'type'  => 'number',
 			),
 			'_visati_discount_max_uses' => array(
@@ -550,7 +572,7 @@ final class Visati_Core_Meta_Boxes {
 
 				case 'number':
 					printf(
-						'<input id="%s" name="%s" type="number" min="0" class="small-text" value="%s">',
+						'<input id="%s" name="%s" type="number" min="0" class="regular-text" value="%s">',
 						esc_attr( $key ),
 						esc_attr( $key ),
 						esc_attr( $value )

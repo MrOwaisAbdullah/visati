@@ -3220,3 +3220,445 @@ Generated a brand-accurate `screenshot.png` (1200×900, matching WordPress's cur
 ### Status
 
 Generated and visually confirmed on-brand. Not yet deployed to Hostinger.
+
+---
+
+## Session: Client-requested apply-form changes + full AED→USD checkout currency switch — 2026-08-03
+
+### Request (client, via project owner, some items re-scoped)
+
+Client's raw list: (1) phone number on the application form, (2) an "Add Applicant" option before payment, (3) USD as default currency for Visa Type sections, (4) Express kept as the default processing option, (5) logo master files (explicitly out of scope for this session). Project owner's clarifications: add phone to the apply form (contact form already had it — no change needed there); add a passport-size photo field (the existing "Photo" document upload already meets this spec — white background, face visible — just needed relabeling, not a new field); "Add Applicant" → already covered by the existing "Add Traveler" feature, but it needed enabling for single-entry visas too (previously gated to multi-entry only); confirmed via `AskUserQuestion` that "USD as default currency" meant the **actual Stripe checkout currency**, not just display order.
+
+### Built
+
+1. **Phone field, apply form** — new required `applicant_phone` input in Step 2, wired through the whole stack: `class-database.php` (new `applicant_phone` column, both in the CREATE TABLE and as an `ensure_columns()` migration for existing installs), `class-applications-controller.php`, `class-application.php::create()`, shown in the review step and the WhatsApp share summary in `application-form.js`, and displayed in the admin `application-detail.php` table.
+2. **"Passport-size photo" relabel** — the existing Step 3 "Photo" upload (already required white background + visible face) relabeled for clarity rather than duplicating it as a new field.
+3. **Add Traveler for single-entry visas** — `updateTravelersVisibility()` in `application-form.js` was gated on `isMultiEntry(slug)`; changed to show for any selected visa type (single or multi), only hidden when no visa is picked yet. Updated the section's description text to drop the "multi-entry visa" wording.
+4. **Express as the default processing tier** — swapped the `checked` attribute from `standard` to `express` on the Step 1 radios, matching the client's reference screenshot exactly (a pre-selected "Fast Track" option).
+
+### Built — the big one: actual Stripe checkout currency AED → USD
+
+Confirmed via `AskUserQuestion` this was a real payment-currency change, not a display reorder — touched every layer:
+
+- **`class-webhooks-controller.php::create_checkout()`** — now reads `_visati_price_usd` + `express_surcharge_usd` (previously the `_aed` equivalents) to compute the checkout amount, calls `Visati_Core_Stripe_Payments::create_checkout_session(..., 'usd')` explicitly (that function was already currency-parameterized, defaulting to `'aed'` — no change needed there beyond the caller passing `'usd'`).
+- **`class-discount.php`** — made currency-agnostic: `validate( $code, $price )` (was `$price_aed`), result keys renamed `discount_amount`/`final_price` (were `..._aed`) — it was already just doing arithmetic on a float, the "aed" was purely cosmetic naming that would have been actively misleading once the caller started passing USD amounts.
+- **`class-discount-controller.php`** — REST param renamed `price_aed` → `price_usd` (client-facing API contract, matched with the frontend fetch call).
+- **`application-form.js`** — `formatAed()` → `formatUsd()` (labels "USD" instead of "AED"), `visa.price_aed` → `visa.price_usd`, `surcharge_aed` → `surcharge_usd` throughout the order summary and the discount-apply flow, discount POST body key updated to match the controller rename.
+- **Database (`class-database.php`)** — added a `currency VARCHAR(3) DEFAULT 'aed'` column to **both** `wp_visati_applications` and `wp_visati_payments` (via `ensure_columns()` for existing installs). Deliberately did **not** rename the existing `amount_aed`/`amount_paid_aed`/`discount_amount_aed` columns — renaming a column with real financial history on a live table is riskier than pairing the existing numeric columns with a new `currency` column that says what unit each row is actually in. Historical rows default to `'aed'` (accurate — they really were charged in AED); new rows explicitly set `'usd'` at insert time in both `handle_checkout_completed()` (payments row) and the application status update that happens alongside it.
+- **Admin display correctness** — `class-admin-dashboard.php`'s revenue stat cards now sum **only** `currency = 'usd'` rows for "Total Revenue"/"Revenue (30d)" (mixing AED and USD sums as one number would have silently produced a meaningless total), with a small "(+ AED X legacy)" note shown only if historical AED revenue exists. `application-detail.php`'s payments table now shows each row's actual `currency` instead of a hardcoded "AED" prefix.
+- **Meta box labels** (`class-meta-boxes.php`) — Visa Type price fields reordered (USD first, described as "actually charged at checkout"; AED now "reference only, not charged") and Discount fields' "Fixed amount" description switched from AED to USD wording, since a fixed-amount discount is now interpreted in the currency actually charged.
+- **Frontend price display** (client's original display-order ask, now consistent with the real charge currency) — `.visati-visa-card__price-aed`/`-usd` CSS classes and the matching ones on the single-visa template renamed to `-primary`/`-secondary` (prominence-based naming instead of currency-based, since currency-based naming would now be backwards) across `class-visa-cards.php`, `archive-visa_type.php`, `single-visa_type.php`, and `app.css` — USD shown large/bold as `-primary`, AED shown small/muted as `-secondary` with a `~` prefix (now the approximate one).
+
+### Verification status — code-complete, functional testing blocked
+
+Every touched file passes `php -l` via the Local WP-CLI PHP bridge. **Functional testing (the actual checkout flow, discount validation, DB migration) could not be completed this session** — the Local-by-Flywheel dev environment's database became unreachable partway through (`Error establishing a database connection`, confirmed via both a direct site `curl` and the WP-CLI bridge, unrelated to any of these code changes) and did not come back up before the session ended. This is flagged explicitly rather than claiming untested code works — **do not deploy this without first verifying, once Local is back up:**
+1. `Visati_Core_Database::ensure_columns()` actually adds `applicant_phone` and both `currency` columns cleanly on the existing local schema.
+2. A full apply-form submission with a phone number saves correctly.
+3. A checkout session actually gets created in USD (inspect the Stripe session object / test in Stripe test mode) with the express surcharge and a discount code all computing correctly in USD.
+4. The dashboard's revenue stat cards render without error against the new currency-filtered query.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-database.php` | `applicant_phone` + `currency` columns (applications + payments), schema + migration |
+| `includes/rest/class-applications-controller.php` | Accepts/sanitizes `applicant_phone` |
+| `includes/class-application.php` | Inserts `applicant_phone` |
+| `includes/shortcodes/class-apply-form.php` | Phone field; "Passport-size photo" label; Express default `checked`; surcharge now USD-sourced |
+| `assets/js/application-form.js` | Traveler section shown for single-entry too; error message wording; phone in review + WhatsApp share; full AED→USD swap (`formatUsd`, `price_usd`, `surcharge_usd`, discount POST key) |
+| `admin/views/application-detail.php` | Phone shown in Application Details; payments table shows real per-row currency |
+| `includes/class-discount.php` | Currency-agnostic `validate()` signature + result keys |
+| `includes/rest/class-discount-controller.php` | REST param `price_aed` → `price_usd` |
+| `includes/rest/class-webhooks-controller.php` | Checkout amount computed in USD; `currency='usd'` recorded on payment + application rows |
+| `includes/class-meta-boxes.php` | Visa type price field labels reordered/reworded; discount fixed-amount wording → USD |
+| `admin/class-admin-dashboard.php` | Revenue queries filtered by `currency`, legacy AED total computed separately |
+| `admin/views/dashboard.php` | Revenue cards show USD + legacy AED note |
+| `includes/shortcodes/class-visa-cards.php`, `themes/visati/archive-visa_type.php`, `themes/visati/single-visa_type.php` | USD shown primary, AED secondary/approximate |
+| `themes/visati/assets/css/app.css` | `-aed`/`-usd` price classes renamed to `-primary`/`-secondary` |
+| `visati-core.php`, `functions.php` | Version bumps (plugin 0.3.32→0.3.33, theme 0.4.34→0.4.35) |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Code-complete, `php -l` clean on every file. **Not functionally verified — local dev DB was unreachable for the remainder of this session. Do not deploy until the four verification steps above are run.**
+
+---
+
+## Session: Visa-card button fix, new ID documents, tier-card redesign, multi-traveler multi-file uploads — 2026-08-03, continued
+
+### Fix: visa-card Apply button washed out on hover (same recurring bug class)
+
+`.visati-visa-card__apply` had never been added to the golden-button-reset's exclusion list — the same "new interactive element forgot the exclusion" bug class that hit the discount button, testimonials arrows, and WhatsApp button earlier this session. Added it to both the base and `:hover` `:where()` exclusion lists, and hardened the button's own rule with `!important` on `background`/`color`/`padding`/`border-radius` (base + hover), matching the established pattern exactly.
+
+### Built: two more required identity documents
+
+Added "Passport cover photo" (`passport_cover`) and "National ID photo" (`national_id`) as required upload fields in Step 3, alongside the existing Passport copy / Passport-size photo / Supporting document. Updated the Step 3 validation in `application-form.js` to require all four (was two).
+
+### Built: processing-tier boxed-card redesign
+
+Replaced the plain radio+label Standard/Express selector with boxed cards matching the client's reference screenshot — bordered box per option, gold border + tinted background + shadow on the selected one, a floating "Express Service" badge on the Express card. Selection state is driven by both a CSS `:has()` rule (for modern browsers) and a JS class-toggle fallback (`is-selected`, synced on every `change` event and at init) — didn't rely on `:has()` alone given this is a customer-facing, cross-device form.
+
+### Built: multi-file document upload for multi-traveler applications
+
+Per the client's request ("only allow multi file if multi traveler is added") — asked which UX they wanted (per-traveler labeled slots vs. a generic multi-file dropzone per document type) via `AskUserQuestion`; user chose the generic dropzone with a note.
+
+- The 5 document upload `<input>`s get a `multiple` attribute added/removed dynamically based on the *actual current* number of traveler cards in the DOM (`travelersList.querySelectorAll('.visati-traveler-card').length`) — deliberately not `travelerCount`, which only ever increases (it's a naming-suffix counter for unique field names, not a live count, since the Remove button never decremented it).
+- `uploadFile()` reworked from single-file (`input.files[0]`) to iterate every selected file, uploading each sequentially via a new `uploadOneFile()` helper; the upload box label now shows "`N` files selected" instead of one filename once more than one file is chosen.
+- Added a visible note ("You've added additional travelers — select every person's file together in each box below") shown only when `multiple` is active, toggled by the same function.
+- **Raised the `documents` REST endpoint's rate limit from 20 to 60 per 10 minutes** — with 5 document types now (was 3) and one-file-per-traveler uploads, a family of 5 could need 5×5=25 uploads in one sitting, already exceeding the old limit. Caught this before it became a real "why can't a family of 5 finish applying" support ticket.
+
+### Verification
+
+`php -l` on all touched PHP files; `node --check` confirmed `application-form.js` syntax is valid (Node was available in this environment, unlike a full WordPress functional test); a CSS brace-count check on `app.css` showed a 609/610 mismatch, investigated via `git stash` and confirmed it **predates today's changes** (a pre-existing artifact — almost certainly a literal `}` inside a CSS value/comment tripping up a naive grep count, not a real syntax error). **Full functional testing (uploading multiple files, the tier-card selection, the two new document fields end-to-end) is still blocked on the same local-environment DB outage from earlier this session** — flagging again rather than assuming it's fine.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `themes/visati/assets/css/app.css` | `.visati-visa-card__apply` added to golden-button-reset exclusions + hardened |
+| `includes/shortcodes/class-apply-form.php` | Two new document fields; tier redesigned as boxed cards; multi-file note markup |
+| `assets/css/apply.css` | `.visati-tier-card` styles (replacing the old plain `.visati-tier label`); `.visati-doc-multi-note` |
+| `assets/js/application-form.js` | Step 3 validation requires 4 docs now; tier card `is-selected` toggle; `uploadFile()`/`uploadOneFile()` multi-file rework; `updateDocUploadMultiple()` |
+| `includes/rest/class-documents-controller.php` | Rate limit 20→60/10min |
+| `visati-core.php`, `functions.php` | Version bumps (plugin 0.3.33→0.3.34, theme 0.4.35→0.4.36) |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Code-complete, `php -l` + `node --check` clean. Functional testing still blocked on the local environment being back up — same outstanding verification list as the previous entry, now also covering the new document fields, tier-card selection, and multi-file upload flow specifically.
+
+---
+
+## Session: Place of Birth/Profession/Address fields, multi-file preview fix, and FULL functional verification (Local back up) — 2026-08-03, continued
+
+### Built: three more personal-detail fields
+
+Client shared a reference screenshot of another visa site's application form. Cross-checked field-by-field against our existing form before building anything: Full Name, Email, Phone, Date of Birth, Nationality, Passport Number, and Photograph were **already** collected (Given name/Surname kept separate rather than one "Full Name" field, since that actually matches passport data entry better). The genuinely missing fields were **Place of Birth**, **Profession**, and **Address**. Asked two clarifying questions before building (`AskUserQuestion`): keep the existing Given/Surname split and photo-in-Step-3 structure rather than restructuring to match the reference exactly (confirmed), and skip the reference's bilingual English/Arabic labels since nothing else on the site is bilingual (confirmed, English only). Added all three as new required fields end-to-end: `class-database.php` (columns + `ensure_columns()` migration), `class-applications-controller.php`, `class-application.php::create()`, the apply-form UI, the review step + WhatsApp summary in `application-form.js`, and the admin `application-detail.php` table.
+
+### Fix: multi-file upload only showed one preview thumbnail
+
+User tested the multi-file upload feature live and reported only the first of several selected files got a preview thumbnail. Reworked `uploadFile()` to generate a preview for **every** selected image file (not just the first via `.filter(...)[0]`), appending each into a new `.visati-doc-upload__previews` flex container instead of a single reused `<img>` element.
+
+### Real bug found during verification: `ensure_columns()` silently never ran under WP-CLI
+
+While functionally verifying the new columns, the migration appeared to do nothing — `place_of_birth`/`profession`/`address` were missing even after an explicit `Visati_Core_Database::ensure_columns()` call. Root cause: the function's write-context guard (`if ( ! is_admin() && ! ( defined('REST_REQUEST') && REST_REQUEST ) ) { return; }`) doesn't recognize WP-CLI as a legitimate context. Since `ensure_columns()` is also hooked to the `init` action (runs automatically on every request/bootstrap, including WP-CLI's), the **automatic** call consumes the function's one-shot `static $done` guard, hits the admin/REST check, bails out having done nothing — permanently blocking any later call in that same process, including an explicit one. **Fixed** by adding `defined('WP_CLI') && WP_CLI` as a third valid context. This only affected WP-CLI usage (a real browser visiting wp-admin already has `is_admin()` true, so production migrations via an actual admin page load were never affected) — but it means **any future migration added to this function would have been silently unverifiable via WP-CLI** without this fix, which is exactly the kind of thing worth catching now rather than assuming "it probably ran."
+
+### Full functional verification — Local back up, ran everything
+
+With the local dev environment reachable again, ran the complete verification pass that had been blocked since earlier this session:
+
+1. **Schema migration** — confirmed all 5 new/changed columns (`applicant_phone`, `place_of_birth`, `profession`, `address`, `currency`) present after the guard fix.
+2. **Full application creation** — a real `Visati_Core_Application::create()` call with every new field, round-tripped and read back correctly.
+3. **Real Stripe Checkout Session in USD** — created an application against a real visa type (`_visati_price_usd = 177`), called `Visati_Core_Webhooks_Controller::create_checkout()` directly, and got back a genuine Stripe test-mode session (`cs_test_...` ID + a real checkout URL) — confirms the entire AED→USD switch actually works against the live Stripe API, not just in theory. Also confirmed the application's `currency` column correctly stays `'aed'` (the schema default) until an actual payment completes via the webhook, not at session-creation time.
+4. **Discount validation math** — created a real 20%-off discount code, validated it against a 100 (USD) subtotal, got back the correct `discount_amount: 20` / `final_price: 80`.
+5. **Dashboard render** — `render_dashboard()` executed cleanly with the new currency-filtered revenue queries, no fatal errors/warnings, "USD" label present.
+6. **Full apply-form render** — rendered `Visati_Core_Apply_Form_Shortcode::render()` directly and confirmed every field/element from this entire multi-round exchange is actually present in the output: phone, place of birth, profession, address, passport cover, national ID, the tier-card markup, Express checked by default (Standard correctly not checked), and the multi-file note element.
+
+Everything in this list passed. This closes out the verification that was blocked for several rounds — the currency switch, the apply-form changes, and this round's additions are now confirmed working against real code execution and a real (test-mode) Stripe API call, not just `php -l`.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-database.php` | `place_of_birth`/`profession`/`address` columns + migration; **fixed the `ensure_columns()` WP-CLI guard bug** |
+| `includes/rest/class-applications-controller.php` | 3 new required fields |
+| `includes/class-application.php` | Inserts the 3 new fields |
+| `includes/shortcodes/class-apply-form.php` | 3 new Step 2 inputs |
+| `assets/js/application-form.js` | Review + WhatsApp summary show the 3 new fields; multi-file preview shows every image, not just the first |
+| `assets/css/apply.css` | `.visati-doc-upload__previews` flex container |
+| `admin/views/application-detail.php` | 3 new fields shown in Application Details |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.34 → 0.3.35 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+**Fully verified this time** — schema migration, full application creation, a real Stripe test-mode checkout session in USD, discount math, dashboard render, and the complete apply-form render all confirmed working via actual code execution against the local database and a real Stripe API call. Not yet deployed to Hostinger.
+
+---
+
+## Session: Deploy of client-requested changes + currency switch to Hostinger, and a new failure mode caught mid-deploy — 2026-08-08
+
+Deployed theme `0.4.36` / plugin `0.3.35` (everything from the two sessions above: phone/photo fields, passport cover + national ID uploads, tier-card redesign, multi-traveler multi-file uploads, AED→USD checkout currency switch, Place of Birth/Profession/Address fields) to `visati.visati.ae` using the reusable redeploy procedure documented earlier in this log. `php -l` (via the WP-CLI WSL→Windows PHP bridge) on every changed PHP file and `node --check` on `application-form.js` both ran clean immediately before building the zips.
+
+### Symptom — plugin redeploy silently no-op'd; live site still reported the old version
+
+After the user ran the upload/extract/chmod/`wp cache flush` sequence, verification (`curl` against `/wp-json/visati/v1/status`, `Last-Modified` headers, `grep` for new JS/CSS markers) showed the **theme** deployed correctly (fresh `Last-Modified`, button-fix CSS present), but the **plugin** endpoint still reported `0.3.32` (should have been `0.3.35`), and none of the new JS/CSS markers were present. No error had been reported anywhere in the upload/extract output — it looked like a normal successful deploy.
+
+### Cause — `deploy-plugin.zip` on disk had been silently overwritten with a copy of `deploy-theme.zip` between build-verification and upload
+
+Immediately after building both zips, `python3 -m zipfile` had confirmed `deploy-plugin.zip` correctly contained 257 entries including `visati-core.php` at version `0.3.35`. By the time the user ran the `scp` upload minutes later, the file on disk was 69160 bytes — byte-identical to `deploy-theme.zip` — and its contents were actually the **theme's** 17 files (`functions.php`, `header.php`, `archive-visa_type.php`, etc.), not the plugin. Root cause of the overwrite itself was not conclusively identified (candidates: a filesystem sync race on the `D:\` drive between WSL and Windows, or a stale `-Force` `Compress-Archive` re-run against the wrong destination path in an earlier shell) — not reproduced, so treat as unconfirmed. The `unzip -o deploy-plugin.zip -d wp-content/plugins/visati-core/` step ran without error because unzip doesn't know or care that the archive contents don't match the target directory's purpose — it just extracted 17 theme files into the plugin folder, non-destructively (the plugin has no same-named files, so nothing existing was overwritten) but pointlessly, while the real plugin update never happened.
+
+### Fix
+
+1. Deleted both local zips and rebuilt them fresh (`Remove-Item` before `Compress-Archive`, with an explicit `Start-Sleep -Milliseconds 500` between the two builds to reduce any race window), then **re-verified contents immediately before instructing the user to upload** — not just after building — checking entry count (257), the version string inside `visati-core.php` (`0.3.35`), and presence of specific new symbols (`place_of_birth` in `class-database.php`, `formatUsd`/`updateDocUploadMultiple` in `application-form.js`).
+2. Had the user clean up the 17 stray theme files that had landed in `wp-content/plugins/visati-core/` (confirmed via a local file-existence check that none of them were real plugin files being overwritten, so this was safe cleanup, not data recovery):
+   ```bash
+   ssh -p 65002 u438130270@72.62.214.133 "cd ~/domains/visati.visati.ae/public_html/wp-content/plugins/visati-core && rm -f index.php style.css functions.php header.php footer.php page.php page-policy.php front-page.php.bak archive-visa_type.php single-visa_type.php theme.json screenshot.png assets/css/app.css assets/images/logo-mark.svg assets/images/world-map.svg template-parts/announcement-bar.php template-parts/whatsapp-widget.php && rmdir template-parts 2>/dev/null; echo cleaned"
+   ```
+3. Re-uploaded only the corrected `deploy-plugin.zip` and re-ran the extract/chmod/cache-flush sequence.
+4. Re-verified live: version endpoint → `0.3.35`; JS `Last-Modified` fresh + markers present; CSS tier-card marker present; the 17 stray files now `404` (confirming cleanup worked); apply-form page HTML contains `place_of_birth`/`national_id`/`passport_cover`.
+
+### New failure mode for the eventual migration skill
+
+**Always re-verify a deploy zip's contents immediately before the upload step, not only immediately after the build step** — a zip can be silently clobbered by an unrelated process (sync tool, stale shell, editor autosave) in the window between building and uploading, especially on a project directory living on a Windows drive accessed from both WSL and native Windows tools. A version-string + entry-count + key-symbol check takes seconds and would have caught this before the user ever ran `scp`. Cheap mitigation for next time: build with a timestamped filename (e.g. `deploy-plugin-<version>-<epoch>.zip`) instead of a fixed name, so a stale/wrong file can't silently masquerade as the fresh one.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `wordpress/docs/deploy-theme.zip`, `wordpress/docs/deploy-plugin.zip` | Rebuilt (not committed — gitignored build artifacts) |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Deployed and fully verified live on `visati.visati.ae` — theme `0.4.36`, plugin `0.3.35`. Manual-only follow-ups still pending in wp-admin: hPanel Cache Manager purge, Elementor → Regenerate CSS & Data.
+
+---
+
+## Session: Fixed real pricing bug — additional travelers were never actually charged for — 2026-08-08, continued
+
+### Symptom (caught by user, not by testing)
+
+User asked, after the deploy above: "if multiple travelers are selected means multiple visa, so the fee should be multiplied?" — a genuinely good catch that no test in this whole session had exercised, because every functional verification pass so far had tested with 0 extra travelers.
+
+### Confirmed: real revenue leakage, both client- and server-side
+
+Checked both places price is computed:
+- **Client** (`application-form.js` `updateOrderSummary()`): `fee = visa.price_usd`, subtotal = fee + express surcharge. Traveler count never read.
+- **Server, the actual authoritative charge** (`class-webhooks-controller.php::create_checkout()`): same — `$price_usd` came only from the visa type's base price + express surcharge; `travelers_data` on the application was never even queried when computing the amount.
+
+So every application with extra travelers (family/group filings) was being charged **the same single-visa fee** regardless of how many people were actually on it — a real under-charging bug on a live payment flow, not a display issue.
+
+### Design question asked before touching Stripe logic
+
+Rather than guessing the pricing model (flat multiply vs. reduced per-person rate), asked the user directly (`AskUserQuestion`) how the fee should scale and whether Express should also multiply. Answer: **make it admin-configurable per visa type** — not a single hardcoded multiplier — because sometimes extra travelers should be free, sometimes multiplied, sometimes a single flat add-on fee. Express surcharge: **confirmed per-traveler** (each expedited visa costs extra, scales with total travelers).
+
+### Built: per-visa-type "Extra Traveler Pricing" setting with two modes
+
+New visa-type meta fields (`class-meta-boxes.php`):
+- `_visati_extra_traveler_pricing_mode` — select: `per_traveler` (price × extra traveler count) or `flat` (price charged once if any travelers were added, regardless of count). Saved via a whitelist (`in_array` check, not just `sanitize_text_field`) since this value directly drives a Stripe charge amount — an unexpected value must never silently reach the pricing calculation.
+- `_visati_extra_traveler_price_usd` — the amount used by whichever mode is selected. `0` in either mode = additional travelers bundled free (covers the "no charge" case without needing a third mode).
+
+Propagated the same formula in three places that must agree, since the client only ever *displays* an estimate — the server always recomputes and charges the real amount:
+1. **`class-apply-form.php`** — localizes `extra_traveler_price_usd` + `extra_traveler_pricing_mode` per visa type into `window.visatiApply.visas[...]`.
+2. **`application-form.js`** — new `calcTravelersFee(visa, extraTravelerCount)` helper (shared by `updateOrderSummary()` and `applyDiscount()` so the two can't drift); Express surcharge changed from a flat add to `surchargeUsd × totalTravelers` (primary + extras); new "Additional Travelers" row in the order summary breakdown; the discount `priceKey` (used to invalidate a stale discount) now includes the extra-traveler count, since adding/removing a traveler changes the subtotal a previously-validated discount was computed against; `updateOrderSummary()` now also fires on traveler add/remove (previously only `updateDocUploadMultiple()` did).
+3. **`class-webhooks-controller.php::create_checkout()`** — the actual charge. Re-derives traveler count **server-side from the application's own stored `travelers_data`** (never trusts a client-sent total), reads the visa type's pricing mode/price, applies the same `flat` vs `per_traveler` branch, then multiplies the express surcharge by `1 + extra_traveler_count` before creating the Stripe Checkout Session.
+
+### Manual math trace (Local's dev DB was unreachable again — same recurring environmental outage as earlier this session, confirmed via a fresh `SELECT 1` WP-CLI check failing — so this could not be verified against a real Stripe call this round)
+
+Visa price $100, extra traveler price $40, express surcharge $20/person, 2 extra travelers, Express selected:
+- `per_traveler`: 100 + (2×40) + (20×3) = **240**
+- `flat`: 100 + 40 + (20×3) = **200**
+- 0 extra travelers + Express (existing/unchanged case): 100 + 0 + (20×1) = **120**
+- 0 extra travelers + Standard (existing/unchanged case): **100** — confirms this fix doesn't change the charge for any single-traveler application, only ones with extra travelers added, which is the case that was actually wrong.
+
+`php -l` on all 3 changed PHP files and `node --check` on `application-form.js` both clean.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-meta-boxes.php` | New `_visati_extra_traveler_pricing_mode` (select, whitelisted on save) + `_visati_extra_traveler_price_usd` (number) visa-type fields |
+| `includes/shortcodes/class-apply-form.php` | Localizes both new fields per visa type; new "Additional Travelers" summary row markup |
+| `assets/js/application-form.js` | `calcTravelersFee()` helper; `updateOrderSummary()`/`applyDiscount()` both multiply base fee and Express surcharge by traveler count; discount `priceKey` includes traveler count; summary recalculates on traveler add/remove |
+| `includes/rest/class-webhooks-controller.php` | `create_checkout()` re-derives traveler count from `travelers_data` server-side and applies the same pricing-mode formula before charging |
+| `visati-core.php` | `VISATI_CORE_VERSION`/docblock 0.3.35 → 0.3.36 |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status — UPDATE: fully verified, see next entry
+
+**Code-complete and `php -l`/`node --check` clean, math verified by hand — not yet functionally verified against a real Stripe call** (blocked on Local's dev DB, same outage pattern as earlier in this session) and **not yet deployed**. Do not deploy until: (1) Local's DB is reachable again, (2) a real `create_checkout()` call is run end-to-end with a visa type that has both pricing modes configured and 1-2 extra travelers, confirming the amount actually sent to Stripe (via the session's line-item `unit_amount`, not just the function returning without error) matches the hand-traced math above. Also still needs an admin-side visual check that the new "Extra Traveler Pricing" fields render correctly on a Visa Type edit screen.
+
+**(See "Local DB outage root cause" and the follow-up verification entry below — both the DB access and the pricing fix itself are now confirmed.)**
+
+---
+
+## Session: Local DB outage root cause found (MySQL port drift, not a crash) — 2026-08-08, continued
+
+### Symptom
+
+Local's dev site had been intermittently "down" (`Error establishing a database connection`) multiple times across this whole session, always self-resolving eventually with no clear cause identified. This time, restarting the site in Local by Flywheel (`Stop site` → `Start site`) did **not** fix it — same error persisted, both from the browser and from the WP-CLI bridge.
+
+### Diagnosis
+
+Checked systematically rather than guessing:
+1. `Test-NetConnection -ComputerName 127.0.0.1 -Port 10005` (the port in `wp-config.php`'s `DB_HOST`) → **failed to connect**.
+2. Checked whether `mysqld.exe` was actually running at all: `Get-Process mysqld` → **yes, running** (2 processes, both started together), with datadir files (`ibdata1`, binlogs) showing very recent write timestamps — so MySQL itself was healthy, not crashed.
+3. Checked the real MySQL datadir directly: `C:\Users\K TECH\AppData\Roaming\Local\run\d2148fBc7\mysql\data\` — intact, `ibdata1` present, binlogs current. (Ruled out an earlier false lead: `app\sql\local.sql` inside the site folder looked suspicious at first glance — 42MB, recently modified — but it's just a plain-text `mysqldump` backup file coexisting in that folder, not the actual datadir Local's `mysqld` reads from. Local's real datadir lives under `AppData\Roaming\Local\run\<site-id>\mysql\data\`, not inside the site's own folder.)
+4. `Get-NetTCPConnection -OwningProcess <mysqld PIDs>` → mysqld was actually listening on **port 10006**, not 10005.
+
+**Root cause: Local reassigned the site's MySQL port on this restart (10005 → 10006), most likely because something was still holding 10005 from a previous session, but `wp-config.php`'s `DB_HOST` was never updated to match.** Every subsequent "restart the site" attempt "succeeded" from Local's own perspective (MySQL genuinely started and stayed up) while remaining permanently unreachable from WordPress, because WordPress was still trying the old port. This — not a crash or corrupted data — is almost certainly the explanation for most, possibly all, of the earlier "Local DB unreachable" incidents logged elsewhere in this document.
+
+### Fix
+
+Updated `C:\Users\K TECH\Local Sites\visati\app\public\wp-config.php`: `DB_HOST` from `127.0.0.1:10005` → `127.0.0.1:10006`. Immediately confirmed with a fresh WP-CLI `SELECT 1` → `1`.
+
+### For the eventual migration skill
+
+When Local's dev DB is unreachable and a plain site restart doesn't fix it, **check the actual listening port of the `mysqld` process before assuming a crash or corruption**:
+```powershell
+Get-Process mysqld | Select-Object Id,StartTime
+Get-NetTCPConnection -OwningProcess <pid> | Select-Object LocalPort
+```
+Compare that against `DB_HOST` in `wp-config.php` — if they differ, Local silently reassigned the port and the config drifted. This is a config-drift bug class, not a "restart until it works" situation; restarting again will not fix a stale port number in `wp-config.php`.
+
+---
+
+## Session: Traveler pricing fix — verified live against real Stripe sessions — 2026-08-08, continued
+
+With Local's DB access restored, ran the deferred verification for the traveler-pricing-multiplier fix (previous entry). Used a real visa type, set test price meta, created 3 real applications via `Visati_Core_Application::create()` with varying traveler counts, and called `Visati_Core_Webhooks_Controller::create_checkout()` for each — the actual production code path, unmocked. Retrieved each resulting Stripe Checkout Session back from the real Stripe API (`wp_remote_get()`, not raw `curl_init()` — Windows PHP CLI has no CA bundle configured, so a first attempt using raw curl failed with an SSL verification error; `wp_remote_get()` uses WordPress's own bundled CA cert and worked immediately) to read the actual `amount_total` Stripe recorded, not just what the function claimed to send.
+
+| Scenario | Formula | Stripe actually charged |
+|---|---|---|
+| `per_traveler` mode, 2 extra travelers, Express | 100 + (2×40) + (3×27) | **USD 261** ✅ |
+| `flat` mode, 2 extra travelers, Express | 100 + 40 + (3×27) | **USD 221** ✅ |
+| `per_traveler` mode, 0 extra travelers, Express (pre-existing/unchanged case) | 100 + 0 + (1×27) | **USD 127** ✅ |
+
+All three matched exactly. (Note: the test script's own express-surcharge override to $20 didn't take effect due to a pre-existing, minor caching quirk in `Visati_Core_Settings::set()` — its `static $opts` cache isn't invalidated on write, so a `get()` call earlier in the same PHP process locks in a stale value for the rest of that process. Solved the verification math against the real default ($27) instead, which still landed exactly on the formula. This quirk is harmless in normal per-request WordPress execution — the static cache doesn't persist across requests — so it's noted here but not fixed, as it's unrelated to today's actual change.)
+
+Also confirmed the new "Extra Traveler Pricing" admin fields render correctly on a Visa Type edit screen (`Visati_Core_Meta_Boxes::render_visa_details()` output contains the select with both `per_traveler`/`flat` options and the price input). Cleaned up all 3 test applications afterward (`Visati_Core_Application::delete()`) and confirmed the test visa type's original meta was restored.
+
+### Status
+
+**Fully verified.** Plugin `0.3.36` is code-complete, lint-clean, and now confirmed correct against real Stripe API round trips in both pricing modes plus the unchanged 0-traveler case. Ready to deploy whenever requested — not yet deployed.
+
+---
+
+## Session: Deployed traveler pricing fix (plugin 0.3.36) — 2026-08-08, continued
+
+Theme was already live at `0.4.36` from the earlier deploy this session, so only `deploy-plugin.zip` needed rebuilding this round. Applied the lesson from the earlier zip-clobbering incident: re-verified the freshly built zip's contents (257 entries, version string, and specific new symbols — `extra_traveler_pricing_mode`, `extra_traveler_count`, `calcTravelersFee`) immediately before handing off the upload command, not just after the initial build.
+
+### Symptom — deploy zip left behind on the public server after extraction
+
+The user's pasted terminal output for the upload/extract command cut off right after the last file finished extracting, with no `EXTRACTED_OK` echo at the end — meaning the chained `&&` command sequence (chmod loops → `rm` → `wp cache flush` → echo) never completed. Live `curl` verification confirmed the plugin itself deployed correctly (version `0.3.36`, `calcTravelersFee` present in the live JS) but `https://visati.visati.ae/deploy-plugin.zip` returned `200` instead of `404` — the archive was still sitting in `public_html/`, publicly downloadable.
+
+### Fix
+
+Had the user re-run just the remaining cleanup steps (chmod + `rm -f deploy-plugin.zip` + cache flush) as a standalone command. Succeeded (`CLEANUP_OK`), re-verified via `curl` that the zip now 404s.
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `wordpress/docs/deploy-plugin.zip` | Rebuilt (gitignored, not committed) |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Deployed and fully live: theme `0.4.36`, plugin `0.3.36` (traveler pricing multiplier fix, both `per_traveler` and `flat` modes) on `visati.visati.ae`. No known outstanding issues from this deploy.
+
+---
+
+## Quick reference: code-only redeploy in 3 commands
+
+Distilled from this session's actual deploys — the minimal path for a **code-only** redeploy (no DB/content changes) of one target (plugin or theme), run from the user's own Windows terminal since WSL has no SSH key-based auth to this host. This is what `wordpress/deploy-local.ps1`'s `-PluginOnly`/`-ThemeOnly` flags automate; use these 3 commands directly if the full script isn't wanted, or the agent isn't able to invoke it.
+
+**1. Build the zip** (agent-runnable — no need to hand this to the user):
+```powershell
+Compress-Archive -Path "C:\Users\K TECH\Local Sites\visati\app\public\wp-content\plugins\visati-core\*" -DestinationPath "D:\GIAIC\Visati\wordpress\docs\deploy-plugin.zip" -Force
+```
+**Always re-verify the zip's contents right after building, immediately before handing off the upload command** — entry count, version string, and a couple of specific new symbols (e.g. via Python's `zipfile` module, since WSL has no native `unzip`). A zip can silently go stale or get clobbered by an unrelated process between build and upload (see "New failure mode" entry, 2026-08-08) — this check is cheap and catches it before the user ever runs `scp`.
+
+**2. Upload** (human-run — real SSH credentials required):
+```powershell
+scp -P 65002 "D:\GIAIC\Visati\wordpress\docs\deploy-plugin.zip" u438130270@72.62.214.133:~/domains/visati.visati.ae/public_html/
+```
+
+**3. Extract + permissions + cleanup + cache flush — chain all of it into one SSH call**, not separate ones, so nothing is left half-done if the user only pastes part of the output back:
+```powershell
+ssh -p 65002 u438130270@72.62.214.133 "cd ~/domains/visati.visati.ae/public_html && unzip -o deploy-plugin.zip -d wp-content/plugins/visati-core/ && find wp-content/plugins/visati-core -type d -exec chmod 755 {} \; && find wp-content/plugins/visati-core -type f -exec chmod 644 {} \; && rm -f deploy-plugin.zip && /usr/local/bin/wp cache flush && echo DONE"
+```
+Watch for the trailing `echo DONE` (or `EXTRACTED_OK`/`CLEANUP_OK` as used elsewhere in this log) in whatever output comes back — its absence is a signal the chain stopped partway (as happened in this session: the zip was left behind on the server because the user's pasted output was truncated before the `rm` step ran). Always finish with a live `curl` check against the version endpoint and a content marker specific to the change — never trust "no error shown" alone as confirmation.
+
+Swap `plugin`/`visati-core` for `theme`/`visati` throughout for a theme-only deploy. For a **full** deploy (theme + plugin + DB/content sync), see the earlier "Reference: reusable redeploy procedure" entry and `deploy-content-sync.ps1`.
+
+---
+
+## Fixed: number-field width (`small-text` → `regular-text`) + a real-data contamination incident from the earlier pricing test — 2026-08-08, continued
+
+### Fixed: cramped price/number fields in wp-admin
+
+User flagged (screenshot) that the Price (USD) field on the Visa Type edit screen renders far narrower than the text/select fields around it. Root cause: the shared `render_fields()` helper in `class-meta-boxes.php` used WordPress's built-in `small-text` class (~50px) for every `type => 'number'` field, while everything else in the same meta boxes uses `regular-text`/`large-text`. Checked for the same pattern elsewhere per the user's ask — found 3 more instances in the global Settings page (`class-settings-page.php`): Express surcharge (AED), Express surcharge (USD), Cloudflare R2 quota. All 6 number fields across both files (Visa Type: Price USD/AED, Extra Traveler Price, Duration; Discount: Value, Max Uses; Settings: the 3 above) changed from `small-text` to `regular-text`. `php -l` clean on both files; confirmed via a direct `render_visa_details()` call through WP-CLI that no `small-text` remains and the new fields render at the wider width.
+
+### Symptom (found while re-verifying the fix) — real visa type data corrupted by an earlier crashed test script
+
+While confirming the width fix rendered correctly, noticed the "Visa Extension" visa type (post ID 87) showed `price_usd = 100`, `extra_traveler_price_usd = 40`, `has_express = 1` — values that looked suspicious for a real visa type rather than plausible production data.
+
+### Cause
+
+Traced to the traveler-pricing verification test earlier in this session (see "Traveler pricing fix — verified live against real Stripe sessions" entry above). That test's **first** attempt crashed (`Visati_Core_Settings::update()` doesn't exist — fixed to `::set()` on the second attempt) — but only *after* already executing `update_post_meta()` calls that wrote test values (`price_usd=100`, `extra_traveler_price_usd=40`, `has_express=1`) onto the real "Visa Extension" post. The corrected second attempt then captured "original values to restore afterward" at its own start — except by then the first attempt's test values were already the current DB state, so the "restore" logic faithfully captured and restored the *contaminated* values, not the true originals. The restore step reported success (no error) because it genuinely did restore to whatever it captured — the bug was in *when* the backup was taken, one script generation too late, not in the restore logic itself.
+
+### Fix
+
+`_visati_price_aed` (650) was never touched by either test attempt, giving an anchor to reconstruct the real price: at this project's established ~3.67 AED-per-USD conversion (matches the 99 AED / 27 USD express surcharge ratio used elsewhere), 650 ÷ 3.67 ≈ 177. Presented this reconstruction plus a recommendation to uncheck Express (the field's own description text uses "Visa Extension" as its literal example of when to leave Express unchecked — strong contextual evidence, not just a guess) to the user via `AskUserQuestion` rather than silently overwriting real data again. Both confirmed. Applied:
+- `_visati_price_usd`: 100 → **177**
+- `_visati_has_express`: 1 → **0**
+- `_visati_extra_traveler_price_usd`: 40 → **empty** (brand-new field this session, no real prior data existed, so clearing it is unambiguous)
+- `_visati_extra_traveler_pricing_mode`: cleared (was already correctly restored to empty by the flawed-but-lucky restore logic, left as-is)
+
+**No production impact** — this was local dev database only. Every deploy this whole session pushed theme/plugin *code* zips exclusively; no database/content sync to Hostinger has happened, so the contaminated values never left the local environment.
+
+### Lesson for the eventual migration skill
+
+**When a WP-CLI eval script that mutates real data crashes partway through, do not trust a "capture original values, then restore at the end" pattern added to a *later* re-run** — the "original" values it captures may already be contaminated by the crashed attempt. Either back up affected postmeta to a variable/file *before* the very first mutating attempt (not inside the retried script), or — safer for anything beyond a trivial one-off — create a disposable test fixture (a throwaway visa type post) instead of mutating a real one, exactly as this session's earlier verification rounds did for applications (always created + deleted throwaway test *applications*, never mutated real ones — this incident happened specifically because the traveler-pricing test mutated a real visa type's meta instead of creating a disposable one, which every other verification this session correctly avoided).
+
+---
+
+## Built: "Explore All Visas" button below the homepage cards + sorting/selection explained — 2026-08-08, continued
+
+### Context
+
+User asked how the homepage's 6-card visa grid picks/orders which visa types show, then separately asked for an "Explore All" button below the grid linking to the full list, noting the `/visa-types/` archive already shows everything unrestricted (confirmed — it's a separate, unlimited `WP_Query` in `archive-visa_type.php`, unrelated to the shortcode's `count`).
+
+**How selection/order actually works** (for reference): `[visati_visa_cards]`'s `count` attribute (homepage currently uses `count="6"`) takes the first N Visa Types ordered by WordPress's built-in `menu_order` (ascending) then title — editable per visa type via wp-admin → Visa Types → Quick Edit → "Order". There are currently exactly 6 published visa types, which is why all of them happen to fit — adding a 7th will push whichever has the highest Order number off the homepage automatically (it'll still appear on `/visa-types/`). The shortcode also supports an existing but currently-unused `featured="yes"` mode to hand-pick specific ones via the "Featured" checkbox instead of relying on Order.
+
+### Built
+
+`includes/shortcodes/class-visa-cards.php`: new `show_more` attribute (default `'no'`, backward compatible — every other usage of this shortcode is unaffected). When `'yes'`, renders a `.visati-visa-grid__more` centered wrapper with a `visati-btn visati-btn--outline` link to `get_post_type_archive_link('visati_visa_type')` below the grid. Reused the existing `.visati-btn` class system (already covered by the golden-button-reset exclusion list via its `[class*="visati-btn"]` wildcard selector — no separate exclusion-list edit needed this time, unlike every prior new-button-class incident this session). Added `.visati-visa-grid__more` CSS (`app.css`) matching the grid's existing spacing conventions.
+
+Updated the homepage's own `_elementor_data` (post ID 18) directly via WP-CLI — changed the Shortcode widget's content from `[visati_visa_cards count="6"]` to `[visati_visa_cards count="6" show_more="yes"]`. This is a **content** change, not code, so it doesn't ship in a theme/plugin zip — it needs the same DB/content-sync path as any other Elementor edit (see `deploy-content-sync.ps1` / the "Reusable redeploy procedure" entry), not a code-only redeploy.
+
+Verified via WP-CLI: `do_shortcode()` on the widget's exact updated string renders the button, links to `http://visati.local/visa-types/` correctly, and — confirming backward compatibility — omitting `show_more` renders no button at all (matches every other existing usage of this shortcode elsewhere, unaffected).
+
+### Files modified
+
+| File | Action |
+|---|---|
+| `includes/class-meta-boxes.php` | `small-text` → `regular-text` for the shared `render_fields()` number-field renderer (fixes cramped Price/Duration/Discount fields) |
+| `admin/class-settings-page.php` | Same fix for 3 more number fields: Express surcharge (AED/USD), R2 storage quota |
+| `includes/shortcodes/class-visa-cards.php` | New `show_more` attribute + "Explore All Visas" button markup |
+| `themes/visati/assets/css/app.css` | `.visati-visa-grid__more` styling |
+| `visati-core.php` | `VISATI_CORE_VERSION` 0.3.36 → 0.3.37 |
+| `themes/visati/functions.php` | `VISATI_THEME_VERSION` 0.4.36 → 0.4.37 |
+| Homepage `_elementor_data` (post ID 18, local DB only) | Shortcode content updated to add `show_more="yes"` |
+| `wordpress/docs/migration-log.md` | This entry |
+
+### Status
+
+Code-complete, `php -l` clean, functionally verified locally (button renders, links correctly, backward-compatible default confirmed). **Not yet deployed** — and note the content change (homepage's `_elementor_data`) needs a DB/content sync to reach Hostinger, not just the usual theme/plugin code zip.
+
+---
+
+## Fixed: broke the homepage by editing `_elementor_data` with a raw `update_post_meta()` string replace — 2026-08-08, continued
+
+### Symptom
+
+User reported the homepage failed to load / CSS was broken immediately after the `show_more="yes"` content edit above.
+
+### Cause — `update_post_meta()` always calls `wp_unslash()` on the value, silently stripping literal backslashes
+
+The earlier edit used `str_replace()` directly on the raw `_elementor_data` JSON *text*, then wrote it back with a plain `update_post_meta( 18, '_elementor_data', $updated )`. WordPress's `update_post_meta()`/`add_post_meta()` unconditionally run `wp_unslash()` on whatever value they're given — a defensive measure for form data submitted through WordPress's "always slashed" convention — regardless of whether the value actually came from a form. Since `_elementor_data` is JSON text where nested quotes (e.g. inside `"shortcode":"[...count=\"6\"...]"`) are legitimately backslash-escaped, `wp_unslash()` silently stripped those backslashes on write, corrupting the JSON (confirmed via `json_decode()` → syntax error) — and did so **throughout the entire ~83KB document**, not just around the one edited shortcode, since `wp_unslash()` operates on the whole string. Elementor then received unparseable data, which is why the whole page — not just the new button — broke.
+
+### Fix
+
+1. Found a clean recovery point via `wp_get_post_revisions( 18 )` — WordPress's native revisions system, which Elementor hooks into for `_elementor_data` snapshots on every editor save. Revision 491 (2026-07-25 09:59:14) was the most recent valid-JSON snapshot; nothing was lost between then and today since raw WP-CLI `update_post_meta()` calls don't create revisions (only saves through the Post/Elementor editor UI do).
+2. Restored `_elementor_data` from that revision via `update_post_meta( 18, '_elementor_data', wp_slash( $good ) )` — **this time correctly wrapped in `wp_slash()`** to pre-compensate for the automatic `wp_unslash()`, which is the standard WordPress pattern whenever writing raw content that itself contains meaningful backslashes/quotes.
+3. Redid the `show_more="yes"` edit the *correct* way: `json_decode()` the data into a PHP array, walk the widget tree to find the `shortcode` widget by `widgetType`, modify its `settings.shortcode` value as a normal PHP string (no manual escaping needed — PHP/JSON encoding handles it), `wp_json_encode()` the whole tree back, then write with `wp_slash()` again.
+4. Verified thoroughly before declaring it fixed: `json_decode()` valid, exact widget-tree structure preserved, then rendered the *actual* Elementor output via `\Elementor\Plugin::$instance->frontend->get_builder_content_for_display( 18 )` (the real method the live page template calls) — confirmed 124 widget markers (a normal full page), the visa grid and new button both present, and Elementor's own CSS cache regenerated cleanly (`_elementor_css` meta status `file`, not an error/empty fallback).
+
+### Lesson for the eventual migration skill
+
+**Never edit `_elementor_data` (or any postmeta holding raw JSON/serialized content with embedded quotes) via a raw string `str_replace()` + `update_post_meta()`.** Two rules, always together:
+1. Decode first (`json_decode()` to an array), modify the array, re-encode (`wp_json_encode()`) — let PHP/JSON handle all escaping. Never hand-craft escaped substrings to match against raw JSON text.
+2. Always wrap the value in `wp_slash()` immediately before `update_post_meta()`/`add_post_meta()` for any content containing literal backslashes or quotes — these functions always call `wp_unslash()` internally regardless of the value's origin, and skipping the compensating `wp_slash()` silently corrupts the *entire* stored string, not just the edited portion.
+3. Separately, this incident is also a good case for taking an explicit backup (e.g. `wp post get 18 --field=meta --format=json > backup.json`) before any raw postmeta surgery on real content, even though this time WordPress's own revision history happened to save it — that's a lucky safety net, not something to rely on deliberately.

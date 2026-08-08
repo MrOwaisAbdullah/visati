@@ -41,10 +41,14 @@ foreach ( $signed_docs as $visati_doc ) {
 				<tr><th>Status</th><td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $app->status ); ?>"><?php echo esc_html( ucfirst( str_replace( '_', ' ', $app->status ) ) ); ?></span></td></tr>
 				<tr><th>Full Name</th><td><?php echo esc_html( $app->given_name . ' ' . $app->surname ); ?></td></tr>
 				<tr><th>Email</th><td><?php echo esc_html( $app->applicant_email ); ?></td></tr>
+				<tr><th>Phone</th><td><?php echo esc_html( $app->applicant_phone ?: '—' ); ?></td></tr>
 				<tr><th>Nationality</th><td><?php echo esc_html( $app->nationality ); ?></td></tr>
 				<tr><th>Passport Number</th><td><?php echo esc_html( $app->passport_number ); ?></td></tr>
 				<tr><th>Passport Expiry</th><td><?php echo esc_html( $app->passport_expiry ); ?></td></tr>
 				<tr><th>Date of Birth</th><td><?php echo esc_html( $app->date_of_birth ); ?></td></tr>
+				<tr><th>Place of Birth</th><td><?php echo esc_html( $app->place_of_birth ?: '—' ); ?></td></tr>
+				<tr><th>Profession</th><td><?php echo esc_html( $app->profession ?: '—' ); ?></td></tr>
+				<tr><th>Address</th><td><?php echo esc_html( $app->address ?: '—' ); ?></td></tr>
 				<tr><th>Visa Type</th><td><?php echo esc_html( $visa_name ?: $app->visa_type_slug ); ?></td></tr>
 				<tr><th>Processing Tier</th><td><?php echo esc_html( ucfirst( $app->processing_tier ) ); ?></td></tr>
 				<tr><th>Travel Date</th><td><?php echo esc_html( $app->travel_date ); ?></td></tr>
@@ -112,7 +116,7 @@ foreach ( $signed_docs as $visati_doc ) {
 				<tbody>
 					<?php foreach ( $payments as $pay ) : ?>
 						<tr>
-							<td><strong>AED <?php echo esc_html( number_format( (float) $pay->amount_aed, 2 ) ); ?></strong></td>
+							<td><strong><?php echo esc_html( strtoupper( $pay->currency ?: 'aed' ) . ' ' . number_format( (float) $pay->amount_aed, 2 ) ); ?></strong></td>
 							<td><span class="visati-status-badge visati-status-badge--<?php echo esc_attr( $pay->status ); ?>"><?php echo esc_html( ucfirst( $pay->status ) ); ?></span></td>
 							<td><code><?php echo esc_html( $pay->stripe_payment_intent_id ); ?></code></td>
 							<td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $pay->created_at ) ) ); ?></td>
