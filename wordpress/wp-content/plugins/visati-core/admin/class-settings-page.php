@@ -27,6 +27,24 @@ final class Visati_Core_Admin_Settings {
 	public static function init(): void {
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_post_visati_send_test_email', array( __CLASS__, 'handle_test_email' ) );
+	}
+
+	/**
+	 * Send a test notification to the configured recipients, then redirect back with the result.
+	 *
+	 * @return void
+	 */
+	public static function handle_test_email(): void {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'visati-core' ) );
+		}
+		check_admin_referer( 'visati_send_test_email' );
+
+		$sent = Visati_Core_Email::send_test( Visati_Core_Settings::notification_emails() );
+
+		wp_safe_redirect( add_query_arg( 'test_email', $sent ? '1' : '0', admin_url( 'admin.php?page=' . self::SLUG ) ) );
+		exit;
 	}
 
 	/**
@@ -129,6 +147,7 @@ final class Visati_Core_Admin_Settings {
 		$emails     = preg_split( '/[\r\n,]+/', $emails_raw );
 		$emails     = array_values( array_unique( array_filter( array_map( 'sanitize_email', array_map( 'trim', $emails ) ), 'is_email' ) ) );
 		$opts['notification_emails'] = implode( "\n", $emails );
+		$opts['bot_document_access'] = isset( $_POST['bot_document_access'] ) ? 1 : 0;
 
 		// Tracking + social.
 		$opts['ga4_id']             = sanitize_text_field( wp_unslash( $_POST['ga4_id'] ?? '' ) );
@@ -205,9 +224,23 @@ final class Visati_Core_Admin_Settings {
 			<?php if ( isset( $_GET['updated'] ) ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'visati-core' ); ?></p></div>
 			<?php endif; ?>
-			<p class="description"><?php esc_html_e( 'Client-editable content. Secrets (Stripe, R2, SMTP) are configured in wp-config.php, not here.', 'visati-core' ); ?></p>
+							<?php if ( isset( $_GET['test_email'] ) ) : ?>
+					<?php if ( '1' === $_GET['test_email'] ) : ?>
+						<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Test notification handed to the mailer. Check the recipient inbox and spam folder, then Resend → Logs.', 'visati-core' ); ?></p></div>
+					<?php else : ?>
+						<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Test notification failed or no recipient is set. Check Notification recipients and debug.log.', 'visati-core' ); ?></p></div>
+					<?php endif; ?>
+				<?php endif; ?>
+				<p class="description"><?php esc_html_e( 'Client-editable content. Secrets (Stripe, R2, SMTP) are configured in wp-config.php, not here.', 'visati-core' ); ?></p>
 
-			<form method="post" action="">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;">
+					<input type="hidden" name="action" value="visati_send_test_email">
+					<?php wp_nonce_field( 'visati_send_test_email' ); ?>
+					<?php submit_button( __( 'Send test notification', 'visati-core' ), 'secondary', 'visati_send_test', false ); ?>
+					<span class="description"><?php esc_html_e( 'Sends a test to the Notification recipients below (saved values only).', 'visati-core' ); ?></span>
+				</form>
+
+				<form method="post" action="">
 				<?php wp_nonce_field( self::NONCE ); ?>
 
 				<h2><?php esc_html_e( 'WhatsApp & Contact', 'visati-core' ); ?></h2>
@@ -266,6 +299,8 @@ final class Visati_Core_Admin_Settings {
 						<td>
 							<textarea name="notification_emails" id="notification_emails" rows="3" class="large-text" placeholder="admin@visati.ae&#10;manager@visati.ae"><?php echo esc_textarea( $s( 'notification_emails' ) ); ?></textarea>
 							<p class="description"><?php esc_html_e( 'One email per line (or comma-separated). Every address here receives new application and new inquiry alerts. Leave empty to fall back to the wp-config.php ADMIN_NOTIFICATION_EMAIL / WordPress admin email.', 'visati-core' ); ?></p>
+						<p><label for="bot_document_access"><input type="checkbox" name="bot_document_access" id="bot_document_access" value="1" <?php checked( Visati_Core_Settings::bot_access_enabled() ); ?>> <?php esc_html_e( 'Enable bot document access and add the bot document index to admin alert emails', 'visati-core' ); ?></label></p>
+						<p class="description"><?php esc_html_e( 'Lets an authorised CMS or AI agent fetch applicant documents through the REST API, using a WordPress Application Password for a user with the Visati Bot role. Each download link is generated fresh and expires after 5 minutes. When off, every bot request is refused.', 'visati-core' ); ?></p>
 						</td>
 					</tr>
 				</table>

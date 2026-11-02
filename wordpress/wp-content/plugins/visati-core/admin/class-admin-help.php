@@ -165,6 +165,7 @@ final class Visati_Core_Admin_Help {
 			),
 			'Notifications'                => array(
 				array( 'field' => 'Notification recipients', 'desc' => 'One email per line — every address here gets new-application and new-inquiry alerts. Falls back to the WordPress admin email if left empty.' ),
+			array( 'field' => 'Enable bot document access', 'desc' => 'Turns on the bot REST endpoints (Application Password, Visati Bot role) and adds the bot document index to alert emails. Off = every bot request gets 403. See Document Downloads & Bot Access below.' ),
 			),
 			'Tracking & Social'           => array(
 				array( 'field' => 'GA4 ID / GTM ID / Facebook Pixel / TikTok Pixel', 'desc' => 'Analytics/ad tracking IDs, injected site-wide if set.' ),
@@ -213,6 +214,8 @@ final class Visati_Core_Admin_Help {
 			array( 'method' => 'GET', 'route' => '/wp-json/visati/v1/track', 'desc' => 'Look up an application by ID for the Track page.' ),
 			array( 'method' => 'POST', 'route' => '/wp-json/visati/v1/discount/validate', 'desc' => 'Preview a discount code\'s computed amount before checkout, without applying it.' ),
 			array( 'method' => 'POST', 'route' => '/wp-json/visati/v1/inquiries', 'desc' => 'Submit the Contact page inquiry form.' ),
+			array( 'method' => 'GET', 'route' => '/wp-json/visati/v1/applications/{id}/documents', 'desc' => 'Bot access: list an application\'s applicant documents, each with a download_url. Needs an Application Password (Visati Bot role) and the bot toggle on.' ),
+			array( 'method' => 'GET', 'route' => '/wp-json/visati/v1/documents/{id}/download', 'desc' => 'Bot access: returns a fresh 5-minute storage URL for one applicant document.' ),
 		);
 	}
 
@@ -325,7 +328,64 @@ final class Visati_Core_Admin_Help {
 				</table>
 			<?php endforeach; ?>
 
-			<h2 id="visati-help-api"><?php esc_html_e( 'REST API', 'visati-core' ); ?></h2>
+			<h2 id="visati-help-bot-access"><?php esc_html_e( 'Document Downloads & Bot Access', 'visati-core' ); ?></h2>
+			<?php $visati_api = rest_url( Visati_Core_REST_API::NAMESPACE ); ?>
+
+			<h3><?php esc_html_e( 'Admin download links (alert emails)', 'visati-core' ); ?></h3>
+			<p><?php esc_html_e( 'Each new application alert lists the applicant documents. Clicking a link opens wp-admin and downloads the file. You must be logged in as an administrator. Each click fetches a fresh 5-minute storage link, so the link in the email never expires. Storage links are never placed in email.', 'visati-core' ); ?></p>
+
+			<h3><?php esc_html_e( 'Setting up a bot, CMS or AI agent', 'visati-core' ); ?></h3>
+			<ol>
+				<li><?php esc_html_e( 'Settings → Notifications → tick "Enable bot document access", then Save.', 'visati-core' ); ?></li>
+				<li><?php esc_html_e( 'Users → Add New: create a user (for example visati-bot) and set the role to Visati Bot.', 'visati-core' ); ?></li>
+				<li><?php esc_html_e( 'Edit that user → Application Passwords → enter a name → Add New Application Password. Copy it now, because WordPress will not show it again.', 'visati-core' ); ?></li>
+				<li><?php esc_html_e( 'Store the password in the bot\'s secret store. Never paste it into chat, email or the Settings page.', 'visati-core' ); ?></li>
+			</ol>
+
+			<h3><?php esc_html_e( 'Endpoints', 'visati-core' ); ?></h3>
+			<table class="wp-list-table widefat fixed striped">
+				<thead><tr>
+					<th style="width:80px;"><?php esc_html_e( 'Method', 'visati-core' ); ?></th>
+					<th style="width:420px;"><?php esc_html_e( 'URL', 'visati-core' ); ?></th>
+					<th><?php esc_html_e( 'Returns', 'visati-core' ); ?></th>
+				</tr></thead>
+				<tbody>
+					<tr><td><code>GET</code></td><td><code><?php echo esc_html( $visati_api ); ?>/applications/{VIS-ID}/documents</code></td><td><?php esc_html_e( 'The applicant document list. Each entry has a download_url.', 'visati-core' ); ?></td></tr>
+					<tr><td><code>GET</code></td><td><code><?php echo esc_html( $visati_api ); ?>/documents/{id}/download</code></td><td><?php esc_html_e( 'JSON with a url valid for expires_in (300) seconds. Request the url within that window.', 'visati-core' ); ?></td></tr>
+				</tbody>
+			</table>
+
+			<h3><?php esc_html_e( 'Example', 'visati-core' ); ?></h3>
+			<pre><code>curl -u "visati-bot:APP_PASSWORD" "<?php echo esc_html( $visati_api ); ?>/applications/VIS-2026-XXXXXX/documents"
+curl -u "visati-bot:APP_PASSWORD" "<?php echo esc_html( $visati_api ); ?>/documents/12/download"
+curl -L -o passport.pdf "URL_FROM_THE_RESPONSE"</code></pre>
+
+			<h3><?php esc_html_e( 'Rules', 'visati-core' ); ?></h3>
+			<ul style="list-style:disc;padding-left:20px;">
+				<li><?php esc_html_e( 'Applicant documents only. Issued visa files are never returned to bots.', 'visati-core' ); ?></li>
+				<li><?php esc_html_e( 'Toggle off = every bot request gets 403, even with valid credentials.', 'visati-core' ); ?></li>
+				<li><?php esc_html_e( 'Requests are rate limited by the same helper as the public forms (120 per 10 minutes).', 'visati-core' ); ?></li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Errors', 'visati-core' ); ?></h3>
+			<table class="wp-list-table widefat fixed striped">
+				<thead><tr><th style="width:80px;"><?php esc_html_e( 'Code', 'visati-core' ); ?></th><th><?php esc_html_e( 'Meaning and fix', 'visati-core' ); ?></th></tr></thead>
+				<tbody>
+					<tr><td>401</td><td><?php esc_html_e( 'Not logged in. Check the username and Application Password (spaces are fine).', 'visati-core' ); ?></td></tr>
+					<tr><td>403</td><td><?php esc_html_e( 'Bot access is off, or the user does not have the Visati Bot role.', 'visati-core' ); ?></td></tr>
+					<tr><td>404</td><td><?php esc_html_e( 'Document ID not found, or it is an issued visa file (not available to bots).', 'visati-core' ); ?></td></tr>
+					<tr><td>429</td><td><?php esc_html_e( 'Rate limit reached. Wait 10 minutes.', 'visati-core' ); ?></td></tr>
+					<tr><td>500</td><td><?php esc_html_e( 'Document storage is not configured. Check the VISATI_R2_* constants in wp-config.php.', 'visati-core' ); ?></td></tr>
+				</tbody>
+			</table>
+
+			<h3><?php esc_html_e( 'Revoking access', 'visati-core' ); ?></h3>
+			<p><?php esc_html_e( 'Untick the toggle to block all bots at once. To revoke one bot, delete its Application Password on its user profile, or delete the user.', 'visati-core' ); ?></p>
+
+			<h3><?php esc_html_e( 'Privacy', 'visati-core' ); ?></h3>
+			<p><?php esc_html_e( 'Passports and photos are personal data. Before you connect a third-party CMS or AI service, confirm that your privacy notice and applicant consent cover that processing.', 'visati-core' ); ?></p>
+
+						<h2 id="visati-help-api"><?php esc_html_e( 'REST API', 'visati-core' ); ?></h2>
 			<p class="description"><?php esc_html_e( 'For developer reference — the apply form, tracking page, and Stripe webhook all talk to these.', 'visati-core' ); ?></p>
 			<table class="wp-list-table widefat fixed striped">
 				<thead><tr>

@@ -12,6 +12,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Visati_Core_Admin_Applications {
 
 	/**
+	 * admin-post handler: mint a fresh, short-lived R2 URL for one document and redirect to it.
+	 * Requires an admin login (manage_options). The R2 URL itself is never emailed.
+	 *
+	 * @return void
+	 */
+	public static function handle_document_download(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'visati-core' ), 403 );
+		}
+
+		global $wpdb;
+		$id  = absint( $_GET['id'] ?? 0 );
+		$key = $id ? $wpdb->get_var( $wpdb->prepare( "SELECT r2_key FROM {$wpdb->prefix}visati_documents WHERE id = %d", $id ) ) : null;
+		if ( ! $key ) {
+			wp_die( esc_html__( 'Document not found.', 'visati-core' ), 404 );
+		}
+
+		$url = Visati_Core_R2_Storage::presigned_url( $key, 300 );
+		if ( ! $url ) {
+			wp_die( esc_html__( 'Document storage is not configured.', 'visati-core' ), 500 );
+		}
+
+		nocache_headers();
+		// R2 is an external host, so wp_safe_redirect() would refuse it.
+		wp_redirect( $url, 302 ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+		exit;
+	}
+
+	/**
 	 * Issued-visa-document upload limit. Larger than the 5 MB applicant-upload
 	 * limit — a multi-page scanned visa, or a zip of several travelers'
 	 * documents, can reasonably run bigger than a single passport photo.

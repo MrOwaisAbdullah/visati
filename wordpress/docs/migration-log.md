@@ -3662,3 +3662,317 @@ The earlier edit used `str_replace()` directly on the raw `_elementor_data` JSON
 1. Decode first (`json_decode()` to an array), modify the array, re-encode (`wp_json_encode()`) — let PHP/JSON handle all escaping. Never hand-craft escaped substrings to match against raw JSON text.
 2. Always wrap the value in `wp_slash()` immediately before `update_post_meta()`/`add_post_meta()` for any content containing literal backslashes or quotes — these functions always call `wp_unslash()` internally regardless of the value's origin, and skipping the compensating `wp_slash()` silently corrupts the *entire* stored string, not just the edited portion.
 3. Separately, this incident is also a good case for taking an explicit backup (e.g. `wp post get 18 --field=meta --format=json > backup.json`) before any raw postmeta surgery on real content, even though this time WordPress's own revision history happened to save it — that's a lucky safety net, not something to rely on deliberately.
+
+---
+
+## 🎉 Milestone: migration skill created from this log — 2026-08-13
+
+The distillation promised throughout this log (and mandated by `CLAUDE.md` §6) is done. The
+running narrative in this file has been distilled into a reusable, production-grade Claude
+Code skill:
+
+**`.claude/skills/nextjs-to-wordpress-elementor-migration/`**
+
+Structure:
+- `SKILL.md` (204 lines) — procedural backbone: the architecture split, the 5-phase
+  procedure, and a **failure-mode catalogue** (Symptom → Cause → Fix tables) covering the
+  Local/WP-CLI traps (P1–P7), the Elementor JSON rules (E1/E1b/E2/E3, Kit-stale P-Kit), the
+  Hello Elementor `reset.css` pink-button war (S1), the deploy traps (D1–D5), and the
+  external-service security model (X1 R2 custom domain, X2 rate limiting).
+- `references/environment-setup.md` — Phase 0: the `wp-local.sh` wrapper, the no-ini / custom-
+  port / junction gotchas, EMCP-over-WP-CLI-stdio wiring.
+- `references/elementor-json.md` — Phase 2: `wp_slash()` on save, the no-string-replace rule,
+  `full_width` + column padding, dedicated shortcode widgets, FA5 naming, import-script pattern.
+- `references/plugin-architecture.md` — Phase 3: dependency-free R2/Stripe patterns, secrets
+  layer, custom-table migrations, REST rate limiting, pricing-that-must-agree, admin UI traps.
+- `references/external-services.md` — R2 presigned-URL security model, Stripe `price_data`,
+  email domain-derived from-address, rate limiting, storage quota observability.
+- `references/deploy-procedure.md` — Phase 5: 3-way division of labor (agent build/verify →
+  human push → agent verify), the zip-clobber trap, scoped DB deploy, domain switch, hardening.
+- `references/migration-decisions.md` — planning-phase concept mapping (Next.js/Sanity → WP)
+  + locked decisions + planning checklist.
+
+**Process going forward:** when a new Symptom→Cause→Fix is discovered during a migration,
+append it to this log **AND** add a row to the failure-mode catalogue in the skill's `SKILL.md`.
+The log remains the canonical append-only source; the skill is the distilled, structured form.
+
+---
+
+## 2026-11-03 — Email delivery fix, bot document access, help guide
+
+**Session scope:** why alert emails never arrived; live production mail setup; admin document download links; bot/CMS/AI document access; in-plugin help guide.
+
+### Blockers: Symptom → Cause → Fix → commands
+
+**B1 — Alert emails never arrived; Resend Logs empty for 30 days**
+- Symptom: no inquiry or application alert; Resend → Logs shows nothing for 30 days; WordPress admin email also silent.
+- Cause (verified): (a) WP Mail SMTP is not installed on production. The live REST namespaces list has no `wp-mail-smtp` entry, and the migration log says "Not yet installed". Without it `wp_mail()` falls back to PHP `mail()`, which Hostinger does not deliver reliably and which logs nothing. (b) The plugin sent from `noreply@visati.ae`, but the verified Resend domain is `send.visati.ae`. (c) `Visati_Core_Settings::from_email()` (RESEND_FROM_EMAIL) was never used by `Visati_Core_Email::from_email()`.
+- Fix (code, done locally): `from_email()` uses the configured sender and falls back to `noreply@<host>` only when none is set. A `wp_mail_failed` listener writes to the PHP error log. "Send test notification" button posts to `admin-post.php?action=visati_send_test_email`.
+- Fix (ops, not done on production):
+  ```
+  # On the server, from the WordPress root, after uploading the plugin zip:
+  wp plugin install wp-mail-smtp --activate
+  ```
+  Then in WP Mail SMTP → Settings: Mailer = Resend, paste a Resend API key with Full access, From Email = `noreply@send.visati.ae`, From Name = `Visati`, tick Force From Email and Force From Name. Add to production `wp-config.php`:
+  ```php
+  define( 'VISATI_RESEND_FROM_EMAIL', 'noreply@send.visati.ae' );
+  ```
+  Verify: Visati Settings → "Send test notification" → check Resend → Logs and the recipient inbox and spam folder.
+
+**B2 — SSH from Windows to Hostinger fails (not fixed)**
+- Symptom: Git Bash `ssh`: `Load key "/c/Users/K TECH/.ssh/id_rsa": error in libcrypto`, then `Permission denied (publickey,password)`. Windows OpenSSH: `Load key "C:\\Users\\K TECH/.ssh/id_rsa": invalid format`.
+- Cause (not yet verified): the key file is not in a format OpenSSH accepts (PuTTY `.ppk`, or a corrupt or passphrase-protected key). Both clients failed on the same file.
+- Fix to try (unverified):
+  ```
+  ssh-keygen -y -f "$HOME/.ssh/id_rsa"           # prints the public key if the private key loads
+  ssh-keygen -p -m PEM -f "$HOME/.ssh/id_rsa"    # convert to PEM if it prompts for a passphrase or the format is old
+  ssh -p 65002 u438130270@72.62.214.133 "ls ~/domains"
+  ```
+
+**B3 — `php: command not found`**
+- Cause: PHP is not on PATH. Local by Flywheel ships its own binary.
+- Fix (verified): lint with Local's PHP:
+  ```
+  "C:\Users\K TECH\AppData\Roaming\Local\lightning-services\php-8.2.29+0\bin\win32\php.exe" -l <file.php>
+  ```
+
+**B4 — Edit tool "String to replace not found" on some PHP files**
+- Cause: some files use CRLF line endings, so a multi-line `old_string` does not match.
+- Fix (verified): use a single-line anchor and `[System.IO.File]::ReadAllText` / `WriteAllText` in PowerShell, then lint. Check the result before moving on: a bad replacement can leave a stray `\t` or a duplicated variable.
+
+**B5 — Upload zip had backslash entry names (`visati-core\admin\...`)**
+- Cause: Windows PowerShell 5.1 `ZipFile.CreateFromDirectory` and `Compress-Archive` write `\` separators. WordPress will not read those paths correctly. The `Compress-Archive` command in `GO-LIVE-TODO.md` §3.10 has the same risk.
+- Fix (verified): build with `ZipArchive.CreateEntryFromFile`, using forward-slash names under a `visati-core/` root:
+  ```powershell
+  $src = 'D:\GIAIC\Visati\wordpress\wp-content\plugins\visati-core'
+  $out = 'D:\GIAIC\Visati\wordpress\docs\visati-core-upload.zip'
+  if (Test-Path $out) { Remove-Item $out -Force }
+  Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::Open($out, 'Create')
+  try { Get-ChildItem $src -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($src.Length).TrimStart('\','/') -replace '\\','/'
+    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, "visati-core/$rel", [System.IO.Compression.CompressionLevel]::Optimal) } } finally { $zip.Dispose() }
+  ```
+
+**B6 — New roles/caps missing after replacing plugin files**
+- Cause: replacing the plugin files via upload does not re-run the activation hook.
+- Fix (done): `Visati_Core_Roles::ensure_bot_role()` runs on `init`. It creates the `visati_bot` role if missing and grants `visati_download_documents` to administrators.
+
+**B7 — Admin alert emails had no document links**
+- Cause (by design): R2 is private. Presigned links last 15–30 minutes, so a link in email would expire, and anyone who reads the inbox would get passports.
+- Fix (done): admin alert lists each applicant document as a link to `admin-post.php?action=visati_download_document&id=N`. Each click requires an admin login and mints a fresh 5-minute R2 URL.
+
+### Environment facts
+- Live site: `https://visati.ae` (REST namespace `visati/v1` present).
+- Hostinger SSH: `u438130270@72.62.214.133`, port 65002. The docroot `~/domains/visati.visati.ae/public_html` comes from GO-LIVE-TODO §3.10 and has not been verified against the live site.
+- DNS (checked 2026-11-03): `visati.ae` MX = Hostinger (`mx1`, `mx2`); SPF `v=spf1 include:_spf.mail.hostinger.com ~all`; DMARC `p=none`. `send.visati.ae` (Resend): DKIM present; SPF `include:amazonses.com`; MX `feedback-smtp.eu-west-1.amazonses.com`.
+- Local plugin folder `C:\Users\K TECH\Local Sites\visati\app\public\wp-content\plugins\visati-core` is a junction to `D:\GIAIC\Visati\wordpress\wp-content\plugins\visati-core`.
+- Local PHP: `php-8.2.29+0` (path above).
+
+### Locked decisions
+- Documents are never sent in email. Admin links go through `admin-post.php` and require `manage_options`.
+- Bot access uses WordPress Application Passwords for a dedicated `visati_bot` user (role: read + `visati_download_documents`). Applicant documents only. Issued visa files are excluded.
+- Toggle `bot_document_access` (Settings → Notifications) controls the bot routes (403 when off) and adds the bot document index line to application alert emails.
+- Bot routes share the `visati_rate_limit` helper, bucket `bot_docs`, 120 requests per 600 seconds.
+
+### Code changed (working tree, branch 002-wp-migration, not committed)
+- `includes/class-email.php`: `from_email()`, `log_failure()`, `send_test()`, `document_links()`, document links and bot index line in `send_admin_alert()`.
+- `includes/class-settings.php`: `from_email()` also reads `VISATI_RESEND_FROM_EMAIL`; new `bot_access_enabled()`.
+- `admin/class-settings-page.php`: test-notification button and notice; `bot_document_access` checkbox and save.
+- `admin/class-admin-applications.php`: `handle_document_download()`.
+- `admin/class-admin-dashboard.php`: registers the `admin_post_visati_download_document` action.
+- `includes/class-roles.php`: `add_bot_role()`, `ensure_bot_role()`.
+- `includes/rest/class-documents-controller.php`: bot routes (`/applications/{id}/documents`, `/documents/{id}/download`), `bot_permission()`, handlers.
+- `admin/class-admin-help.php`: new "Document Downloads & Bot Access" section, REST table rows, Notifications row.
+- Deploy artifact: `wordpress/docs/visati-core-upload.zip` (257 files, `visati-core/` root, forward slashes).
+
+### Verification status
+- PHP syntax: all changed files pass `php -l` with Local's PHP 8.2.29.
+- Not run: WordPress runtime, end-to-end email, bot REST calls, production. Nothing has been deployed.
+
+### Open items
+1. Install and configure WP Mail SMTP on production (B1 ops steps). Add `VISATI_RESEND_FROM_EMAIL`.
+2. Upload `visati-core-upload.zip` in production wp-admin using Replace. Check the Settings page for the test button and the Notifications toggle.
+3. Fix the SSH key (B2) so deploys can be scripted.
+4. End-to-end test: paid test application → alert → admin document link downloads the file. Then a bot test: create the `visati-bot` user, generate an Application Password, run the curl commands from the help page.
+5. Confirm the privacy notice and applicant consent cover any third-party CMS or AI processing before connecting a bot.
+6. Earlier turns this session did not each get a PHR. See `history/prompts/002-wp-migration/`.
+
+### 2026-11-03 (follow-up) — DMARC warning on send.visati.ae
+
+- Symptom: Resend → Domains → send.visati.ae shows DKIM, SPF and MX as Success, and DMARC as "Action Recommended". The WP Mail SMTP Resend test screen says the test email "might have sent, but its deliverability should be improved".
+- Cause (verified by DNS, 2026-11-03): no DMARC record at `_dmarc.send.visati.ae` ("DNS name does not exist"). The parent `_dmarc.visati.ae` has `v=DMARC1; p=none`. Visati's zone nameservers are `ns1.dns-parking.com` / `ns2.dns-parking.com`.
+- Fix (user action; DNS not changed by the agent): add a TXT record at the host where the `visati.ae` zone is edited:
+  - Name: `_dmarc.send` (or `_dmarc.send.visati.ae`, depending on the DNS panel)
+  - Value: `v=DMARC1; p=none;`
+  - Verify: `Resolve-DnsName _dmarc.send.visati.ae -Type TXT`, then click Re-verify in Resend.
+- Policy note: `p=none` is monitor-only and does not reject or quarantine mail. Tighten to `p=quarantine` only after reports show DKIM/SPF aligned.
+- Status: open until the record is published and Resend shows DMARC green.
+
+### 2026-11-03 (follow-up 2) — Resend DNS records entered under the wrong name
+
+- Symptom: Hostinger DNS panel lists the Resend SPF TXT and MX records with Name `send.send`. Resend's DKIM record is correct (`resend._domainkey.send`).
+- Cause (verified via Google DNS 8.8.8.8, 2026-11-03):
+  - TXT `send.send.visati.ae` = `v=spf1 include:amazonses.com ~all` (exists, wrong name)
+  - MX `send.send.visati.ae` = `feedback-smtp.eu-west-1.amazonses.com` pref 10 (exists, wrong name)
+  - TXT and MX at `send.visati.ae` (the name Resend checks): none
+  - `_dmarc.send.visati.ae`: none
+  - The Hostinger panel appends `visati.ae` to the Name field, so `send.send` becomes `send.send.visati.ae`. The name must be `send`.
+  - Nameservers for `visati.ae`: `ns1.dns-parking.com`, `ns2.dns-parking.com`.
+- Fix (user action in the Hostinger DNS panel; the agent did not edit DNS):
+  1. Edit the TXT `send.send` → Name `send`, value `"v=spf1 include:amazonses.com ~all"`.
+  2. Edit the MX `send.send` → Name `send`, priority 10, value `feedback-smtp.eu-west-1.amazonses.com`.
+  3. Add TXT Name `_dmarc.send`, value `"v=DMARC1; p=none;"`.
+  4. Leave the DKIM record `resend._domainkey.send` unchanged.
+  5. Wait up to the record TTL (3600 s), then verify:
+     ```
+     Resolve-DnsName send.visati.ae -Type TXT -Server 8.8.8.8
+     Resolve-DnsName send.visati.ae -Type MX -Server 8.8.8.8
+     Resolve-DnsName _dmarc.send.visati.ae -Type TXT -Server 8.8.8.8
+     ```
+  6. Click Re-verify in Resend → Domains → send.visati.ae.
+- Note: the earlier Resend screen showed SPF and MX as Success. That result doesn't match the public DNS now, so re-verify before trusting it.
+- Impact until fixed: DKIM still passes, so delivery may work, but SPF will not align for `noreply@send.visati.ae`.
+- After the new records are verified, delete the old `send.send` TXT and MX.
+
+### 2026-11-03 (follow-up 3) — Plugin version bump 0.3.37 → 0.3.38
+
+- Test-notification button: present (Visati Settings → "Send test notification", `admin-post.php?action=visati_send_test_email`, nonce `visati_send_test_email`).
+- Version bumped in `visati-core.php` (header `Version:` and `VISATI_CORE_VERSION`). Both lines read 0.3.38.
+- Upload zip rebuilt with 0.3.38. Verify after upload: `curl -s https://visati.ae/wp-json/visati/v1/status` should report `0.3.38`.
+
+### 2026-11-03 (follow-up 4) — Test to visa@visati.ae stuck at "Sent" in Resend
+
+- Symptom: Resend → Sending shows "Visati test notification" to `visa@visati.ae` as **Sent** (not Delivered), 2 min after sending. Two WP Mail SMTP test emails to Gmail addresses show **Delivered**.
+- Interpretation: "Sent" means Resend's API accepted the message and is handing it to the recipient's mail server. The Gmail results show the send path works (Resend, DKIM, the From domain). The stall is on the receiving side for `visati.ae`.
+- Likely causes, to check in order (not yet verified):
+  1. Mailbox `visa@visati.ae` does not exist in hPanel → Emails. Hostinger MX (`mx1`/`mx2.hostinger.com`) will reject unknown recipients, and Resend will then show Bounced or Failed.
+  2. Mail still queued or greylisted by Hostinger. Wait 5–15 minutes and refresh Resend.
+  3. Message landed in the Junk folder. Check it.
+- Next step: confirm the mailbox exists. Then send another test and check the status in Resend. If it shows Bounced, read the reason in Resend's event details.
+- Address note: the recipient is `visa@visati.ae`, not `visa.visati.ae`.
+
+### 2026-11-03 (follow-up 5) — visa@visati.ae mailbox confirmed to exist
+
+- Hostinger Mail (signed in as visa@visati.ae, Starter Business Email) shows the mailbox exists. Cause 1 from follow-up 4 is ruled out.
+- Receiving MX for `visati.ae` is unchanged and resolves to `mx1`/`mx2.hostinger.com`. DNS edits from follow-up 2 only touched the `send` subdomain and did not affect inbound mail.
+- Next: search the mailbox for "Visati test notification" and check the Spam folder (11 items). If the message is absent and Resend still shows "Sent" after about 30 minutes, check the Resend event details for the SMTP response.
+
+### 2026-11-03 (follow-up 6) — Resend event stuck at "Sent" for visa@visati.ae
+
+- Resend email `01a19dc3-5944-7982-a051-8…` (Subject "Visati test notification", From `visati <noreply@send.visati.ae>`, To `visa@visati.ae`, POST /emails, 12:36 AM) shows one event: **Sent**. No Delivered, Bounced or Failed event.
+- Two WP Mail SMTP tests to Gmail addresses from the same From domain show **Delivered**.
+- Conclusion: the Resend → Hostinger handoff is not confirmed for `visati.ae`. This is not a DNS or mailbox-existence issue (see follow-up 5).
+- Next checks:
+  1. Open the email's **Insights** tab (1 warning) and record the warning text.
+  2. Send a plain email from a Gmail account to `visa@visati.ae`. If it arrives, inbound mail to Hostinger works, and the problem is specific to mail from `send.visati.ae`.
+  3. If still unresolved, ask Hostinger support why mail from `noreply@send.visati.ae` to `visa@visati.ae` is not confirmed, and quote the Resend email ID above.
+
+### 2026-11-03 (follow-up 7) — Resend Insights: "Don't use no-reply"
+
+- Insights warning on the stuck email: "Don't use 'no-reply'". The From `visati <noreply@send.visati.ae>` signals one-way mail and lowers inbox trust. This is a deliverability hint and does not explain the stuck "Sent" status (follow-up 6).
+- Fix: change the From address on the sending domain (`send.visati.ae`) to a monitored-looking address. Recommended: `hello@send.visati.ae`, or `notifications@send.visati.ae` if the team wants a role-specific address. Change it in both places:
+  1. WP Mail SMTP → Settings → From Email (with Force From Email on).
+  2. Production `wp-config.php`: `define( 'VISATI_RESEND_FROM_EMAIL', 'hello@send.visati.ae' );`
+- Code follow-up (not done): the fallback in `Visati_Core_Email::from_email()` is still `noreply@<host>`. Change the fallback to the same address if it should match.
+- Then send a new test and check Insights again.
+
+### 2026-11-03 (follow-up 8) — Second test: visa@visati.ae still "Sent", Gmail "Delivered"
+
+- Resend email `01a19dcd-a8a7-7c2e-a00f-b…` (12:47 AM), To `visa@visati.ae` (+1 recipient `mr.fantastic0567@gmail.com`). Gmail: **Delivered**. visa@visati.ae: **Sent**, no further events.
+- From is still `visati <noreply@send.visati.ae>`. Reply-To is `hello@send.visati.ae`. The From-address change from follow-up 7 has not been applied yet.
+- WP Mail SMTP → Connections: Resend is primary, status "Domain check warning". This is the DMARC warning, which is still open.
+- Conclusion: two sends to two different recipients show the same split (external Gmail delivered, Hostinger `visati.ae` mailbox never confirmed). The send path is fine. The block is on the Hostinger side for `visa@visati.ae`.
+- Next: (1) run the Gmail → visa@visati.ae test (follow-up 6, step 2) to see whether any external mail reaches that mailbox. (2) Open Hostinger support with the Resend IDs `01a19dc3-5944-7982-a051-8…` and `01a19dcd-a8a7-7c2e-a00f-b…`. (3) Re-verify DMARC in Resend once the `_dmarc.send` record is confirmed.
+
+### 2026-11-03 (correction to follow-up 2) — Resend return-path records must stay at `send.send`
+
+- Symptom: Hostinger returned `450 4.1.8 <…@send.send.visati.ae>: Sender address rejected: Domain not found` for the Resend test sends. Resend showed "Sent" with no bounce event.
+- Cause (verified via Google DNS 8.8.8.8): Resend's return-path (MAIL FROM) domain is `send.` + the sending domain, which is `send.send.visati.ae`. The records Resend requires (SPF TXT and MX) belong at the name `send.send` in the Hostinger panel (which appends `visati.ae`). Follow-up 2 said to rename them to `send`. That was wrong. The rename removed the MX at `send.send.visati.ae` (verified: MX now returns none there), so Hostinger can no longer resolve the envelope sender domain.
+- Live state (2026-11-03): `send.send.visati.ae` TXT SPF present, MX none. `send.visati.ae` TXT SPF present, MX present (amazonses). DKIM `resend._domainkey.send` present.
+- Fix (user action in the Hostinger DNS panel):
+  1. Add MX: Name `send.send`, Priority `10`, Value `feedback-smtp.eu-west-1.amazonses.com`.
+  2. Confirm TXT Name `send.send`, value `"v=spf1 include:amazonses.com ~all"` (already present).
+  3. Keep `_dmarc.send` (`"v=DMARC1; p=none;"`) and DKIM `resend._domainkey.send` unchanged.
+  4. Optional clean-up once Resend re-verifies: the MX and SPF at `send` (not `send.send`) are not needed by Resend's return-path check. Leave them unless Resend asks otherwise.
+  5. Verify: `Resolve-DnsName send.send.visati.ae -Type MX -Server 8.8.8.8` should return `feedback-smtp.eu-west-1.amazonses.com`.
+  6. In Resend → Domains → send.visati.ae, click Re-verify. Then send a new test to `visa@visati.ae`.
+- Open: the stuck emails from before this fix were rejected at SMTP time and will not be retried. Send new tests after the record is live.
+
+### 2026-11-03 (follow-up 9) — Inbound to visa@visati.ae confirmed working
+
+- Plain Gmail → `visa@visati.ae` arrived in the Hostinger mailbox. Inbound mail to `visati.ae` works.
+- Root cause for the stuck Resend sends is the return-path DNS (see the correction entry above): Hostinger returns `450 Sender address rejected: Domain not found` for `send.send.visati.ae` because it has no MX record.
+- Next: add MX `send.send` → `feedback-smtp.eu-west-1.amazonses.com` (priority 10), confirm with `Resolve-DnsName`, click Re-verify in Resend, then send a new test to `visa@visati.ae`.
+
+### 2026-11-03 (follow-up 10) — Resend dashboard now shows Forge CNAME records
+
+- Resend → Domains → send.visati.ae (DNS Records) now lists:
+  - DKIM: TXT `resend._domainkey.send`, Pending (value matches our record).
+  - SPF (Enable Sending): CNAME `rsend.send` → `rsend-apne1.forge.rmta.net` (Pending); CNAME `send.send` → `send.forge.rmta.net` (Not Started).
+- Live DNS (8.8.8.8, 2026-11-03): TXT SPF at `send.send.visati.ae` present. The MX at `send.send.visati.ae` was not returned on this check, though it was present in follow-up 9. CNAME records for `send.send` and `rsend.send` not found.
+- DNS rule: a name with a CNAME cannot also have TXT or MX records. The old TXT and MX at `send.send` must be removed before the CNAME is added.
+- Recommended (follow the Resend dashboard, which is the current source of truth, not the older MX/SPF guidance):
+  1. Hostinger panel: delete TXT `send.send` (SPF) and MX `send.send`, if present.
+  2. Add CNAME `send.send` → `send.forge.rmta.net`.
+  3. Add CNAME `rsend.send` → `rsend-apne1.forge.rmta.net`.
+  4. Keep DKIM TXT `resend._domainkey.send` and DMARC TXT `_dmarc.send`.
+  5. In Resend, click Verify on the DNS records section. Wait until SPF and DKIM show Verified.
+  6. Send a new test to `visa@visati.ae` and check the Resend event log.
+- Note: follow-up 9 (MX at send.send) is superseded by this if Forge is the active setup.
+
+### 2026-11-03 (follow-up 11) — Hostinger panel updated to Resend Forge records
+
+- Panel now has the Forge records: CNAME `send.send` → `send.forge.rmta.net`; CNAME `rsend.send` → `rsend-apne1.forge.rmta.net`; DKIM TXT `resend._domainkey.send` (new key); DMARC TXT `_dmarc.send` = `v=DMARC1; p=none;`.
+- Legacy records at name `send` (SPF TXT, MX → amazonses) remain in the panel. Forge does not use them, and they do not conflict with `send.send`. Leave them or delete them later.
+- Live DNS check (8.8.8.8): DKIM live value matches the panel; `rsend.send` CNAME live; `_dmarc.send` live. `send.send` CNAME not yet visible, and a cached MX at `send.send` is still returned (removed in the panel; TTL 3600 s). Propagation is in progress.
+- Next: wait about 1 hour, confirm `Resolve-DnsName send.send.visati.ae -Type CNAME -Server 8.8.8.8` returns `send.forge.rmta.net`, click Verify in Resend, then send a new test to `visa@visati.ae`.
+
+### 2026-11-03 (follow-up 12) — Resend DNS and domain verified; Forge enabled
+
+- Resend → Domains → send.visati.ae: DNS verified (12:56 AM), domain verified (1:02 AM).
+- Configuration: Resend Forge enabled (1:06 AM). Forge routes mail automatically once it is established as a good sender, so early sends may still use the standard route.
+- TLS: opportunistic (default). Click tracking not enabled.
+- Next: send a new test from Visati Settings to `visa@visati.ae`, then check the Resend event log for Delivered. Change the From address to `hello@send.visati.ae` (follow-up 7) before judging inbox placement.
+
+### 2026-11-03 (follow-up 13) — User reports the email issue is fixed
+
+- User reported "fixed" after the Resend DNS and domain verification (follow-up 12).
+- Still to confirm and record: the Resend event for the new test to `visa@visati.ae` shows Delivered, and the From address change to `hello@send.visati.ae` (follow-up 7) is applied in WP Mail SMTP and wp-config.
+
+## Session log — 2026-11-02 to 2026-11-03: production email, bot access, help guide
+
+Chronological record of every request in this session and what was done. Blockers are detailed in the entries above; this is the index.
+
+1. **Why alert emails never arrived** (Resend logs empty, no WordPress admin email either). Investigated the code path (`wp_mail()` → WP Mail SMTP → Resend), the settings, and the DNS. Found WP Mail SMTP missing on production, the From address off the verified domain, and `from_email()` ignoring RESEND_FROM_EMAIL. → follow-up notes in B1.
+2. **"Resend free tier or WP SMTP?"** Recommended WP Mail SMTP with the Resend mailer. No file changes.
+3. **"WP Mail SMTP + Resend: what to set up and do; install it on production."** Implemented plugin changes: configured sender, `wp_mail_failed` logging, test-notification button (`class-email.php`, `class-settings.php`, `class-settings-page.php`). Production install not done: SSH key failed (B2).
+4. **"Did I have to upload the zip in WP?"** Explained both paths (wp-admin upload vs extract over SSH) and the zip-root difference. Built `visati-core-upload.zip` with a `visati-core/` root after catching backslash entry names (B5).
+5. **"Did the notifications include the uploaded file URLs?"** No. Explained R2 privacy; offered three options.
+6. **Chose option 1** (admin-only download links). Added `handle_document_download()` (`class-admin-applications.php`), its action registration (`class-admin-dashboard.php`), and `document_links()` in the alert email (`class-email.php`).
+7. **Bot / CMS / AI agent access.** Asked three questions; user chose Application Password, applicant documents only, and a toggle that also adds bot links to alert emails. Built the `visati_bot` role (`class-roles.php`), the REST routes and handlers (`class-documents-controller.php`), the Notifications toggle (`class-settings-page.php`, `class-settings.php`), and the bot index line in alerts (`class-email.php`).
+8. **"Add this guide to the help page and log everything."** Added the "Document Downloads & Bot Access" section, REST table rows, and a Notifications row (`class-admin-help.php`). Logged the session (B1–B7, decisions, verification status) and wrote PHR 0069.
+9. **DMARC warning from Resend** on `send.visati.ae`. Checked DNS: no record at `_dmarc.send`. Advised adding `_dmarc.send` `v=DMARC1; p=none;`. Logged as follow-up 1.
+10. **Pasted Hostinger DNS panel.** Found Resend's SPF and MX entered as `send.send`, and advised renaming them to `send`. **That advice was wrong** (corrected in the correction entry above).
+11. **"Is the test email in the plugin? Did you bump the version?"** Test button confirmed. Version was 0.3.37; bumped to **0.3.38** in both places (`visati-core.php`). Zip rebuilt with 0.3.38.
+12. **"visa@visati.ae didn't receive the email."** Diagnosed: Resend "Sent" with no further events. Gmail deliveries to external addresses showed Delivered. Checked mailbox existence (exists), receiving MX (correct), SMTP reachability (open). Logged as follow-ups 4–8.
+13. **Insights: "Don't use no-reply".** Advised changing From to `hello@send.visati.ae`. Not applied in code; logged as follow-up 7.
+14. **SMTP error 450 "Domain not found" for `send.send.visati.ae`.** Root cause: the rename from step 10 removed the MX that the return-path needs. Advised restoring it. Logged as the correction entry.
+15. **"Gmail to visa@visati.ae arrived in the mailbox."** Inbound confirmed working. Logged as follow-up 9.
+16. **Resend Forge records shown on the dashboard.** Identified that the current setup uses CNAMEs (`send.send` → `send.forge.rmta.net`, `rsend.send` → `rsend-apne1.forge.rmta.net`) and that a name cannot hold a CNAME alongside TXT or MX. Gave the Hostinger panel steps. Logged as follow-up 10.
+17. **Pasted the updated Hostinger DNS.** Verified DKIM and DMARC are live and the `rsend.send` CNAME is live. Logged as follow-up 11.
+18. **Resend: DNS verified, domain verified, Forge enabled.** Logged as follow-up 12.
+19. **"Fixed."** Live DNS check: `send.send.visati.ae` CNAME → `send.forge.rmta.net`. A legacy MX at `send.send.visati.ae` (→ amazonses) still resolves. Logged as follow-up 13.
+20. **"Log everything."** This entry and PHR 0070 (backfill).
+
+### Open items (as of this entry)
+
+1. Confirm the new test to `visa@visati.ae` shows **Delivered** in Resend. Record the Resend event ID.
+2. Apply the From-address change to `hello@send.visati.ae` in WP Mail SMTP and in production `wp-config.php` (`VISATI_RESEND_FROM_EMAIL`). Fallback in `Visati_Core_Email::from_email()` still `noreply@`.
+3. Remove the legacy MX at `send.send` if it still resolves after the TTL. The panel no longer lists it, so the live answer is likely cache. Re-check with `Resolve-DnsName send.send.visati.ae -Type MX -Server 8.8.8.8`.
+4. Install WP Mail SMTP on production and configure Resend (B1 ops steps). The "fixed" status applies to the local setup and the Resend domain; the production plugin state is not confirmed.
+5. Upload `wordpress/docs/visati-core-upload.zip` (version 0.3.38, bot access, help guide) in production wp-admin using Replace. Verify `/wp-json/visati/v1/status` reports `0.3.38`.
+6. Fix the SSH key (B2) so deploys can be scripted.
+7. End-to-end: paid test application → alert → admin document link downloads the file. Then a bot curl test.
+8. Confirm the privacy notice and applicant consent cover any third-party CMS or AI processing before a bot is connected.
+9. Nothing committed. Code changes live in the working tree on branch `002-wp-migration`.

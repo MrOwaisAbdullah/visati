@@ -57,10 +57,11 @@ final class Visati_Core_Settings {
 	}
 
 	/**
-	 * Verified sender address (from RESEND_FROM_EMAIL), or '' to fall back to noreply@<host>.
+	 * Verified sender address (RESEND_FROM_EMAIL env, or VISATI_RESEND_FROM_EMAIL in wp-config),
+	 * or '' to fall back to noreply@<host>. Must be on the domain verified in Resend (send.visati.ae).
 	 */
 	public static function from_email(): string {
-		return self::env( array( 'RESEND_FROM_EMAIL' ), '' );
+		return self::env( array( 'RESEND_FROM_EMAIL' ), 'VISATI_RESEND_FROM_EMAIL' );
 	}
 
 	/**
@@ -127,6 +128,14 @@ final class Visati_Core_Settings {
 		return '' !== $val ? (int) $val : 27;
 	}
 
+	/**
+	 * Whether bot document access (REST + Application Password) is enabled. Settings → Notifications.
+	 *
+	 * @return bool
+	 */
+	public static function bot_access_enabled(): bool {
+		return (bool) self::get( 'bot_document_access', 0 );
+	}
 	/* ── Configuration status (booleans only — never values) ─────────── */
 
 	public static function stripe_is_configured(): bool {

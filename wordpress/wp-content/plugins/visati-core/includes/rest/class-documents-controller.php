@@ -32,6 +32,8 @@ final class Visati_Core_Documents_Controller {
 	 */
 	public static function init(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+			add_action( 'rest_api_init', array( __CLASS__, 'register_bot_routes' ) );
+			add_action( 'init', array( 'Visati_Core_Roles', 'ensure_bot_role' ) );
 	}
 
 	/**
@@ -130,5 +132,117 @@ final class Visati_Core_Documents_Controller {
 				'size_bytes'  => strlen( $data ),
 			)
 		);
+	}
+
+	/**
+	 * Register bot routes (Application Password auth). Every response mints a fresh, short-lived
+	 * R2 URL, so links never go stale. Only applicant documents are exposed; issued visa files are excluded.
+	 *
+	 * @return void
+	 */
+	public static function register_bot_routes(): void {
+		register_rest_route(
+			Visati_Core_REST_API::NAMESPACE,
+			'/applications/(?P<app_id>[A-Za-z0-9-]+)/documents',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'bot_list_documents' ),
+				'permission_callback' => array( __CLASS__, 'bot_permission' ),
+			)
+		);
+		register_rest_route(
+			Visati_Core_REST_API::NAMESPACE,
+			'/documents/(?P<id>\d+)/download',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'bot_download' ),
+				'permission_callback' => array( __CLASS__, 'bot_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Permission check for bot routes: feature toggle, login, capability, rate limit.
+	 *
+	 * @return true|WP_Error
+	 */
+	public static function bot_permission() {
+		if ( ! Visati_Core_Settings::bot_access_enabled() ) {
+			return new WP_Error( 'visati_bot_disabled', 'Bot document access is disabled.', array( 'status' => 403 ) );
+		}
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'visati_auth_required', 'Authentication required.', array( 'status' => 401 ) );
+		}
+		if ( ! current_user_can( 'visati_download_documents' ) ) {
+			return new WP_Error( 'visati_forbidden', 'Not allowed.', array( 'status' => 403 ) );
+		}
+		if ( ! visati_rate_limit( 'bot_docs', 120, 600 ) ) {
+			return new WP_Error( 'visati_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
+		}
+		return true;
+	}
+
+	/**
+	 * GET /applications/{app_id}/documents — applicant documents, each with a per-request download URL.
+	 *
+	 * @param WP_REST_Request $req Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function bot_list_documents( WP_REST_Request $req ) {
+		$app_id = visati_sanitize_application_id( (string) $req['app_id'] );
+		if ( '' === $app_id ) {
+			return new WP_Error( 'visati_bad_id', 'Invalid application ID.', array( 'status' => 400 ) );
+		}
+
+		global $wpdb;
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, document_type, filename, size_bytes, uploaded_at FROM {$wpdb->prefix}visati_documents WHERE application_id = %s AND document_type NOT LIKE %s ORDER BY uploaded_at ASC",
+				$app_id,
+				'issued\_visa\_%'
+			)
+		);
+
+		$docs = array();
+		foreach ( (array) $rows as $row ) {
+			$docs[] = array(
+				'id'            => (int) $row->id,
+				'document_type' => $row->document_type,
+				'filename'      => $row->filename,
+				'size_bytes'    => (int) $row->size_bytes,
+				'uploaded_at'   => $row->uploaded_at,
+				'download_url'  => rest_url( Visati_Core_REST_API::NAMESPACE . '/documents/' . (int) $row->id . '/download' ),
+			);
+		}
+
+		return rest_ensure_response( array( 'application_id' => $app_id, 'documents' => $docs ) );
+	}
+
+	/**
+	 * GET /documents/{id}/download — returns a fresh 5-minute R2 URL for one applicant document.
+	 *
+	 * @param WP_REST_Request $req Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function bot_download( WP_REST_Request $req ) {
+		global $wpdb;
+		$id  = absint( $req['id'] );
+		$doc = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT r2_key, filename FROM {$wpdb->prefix}visati_documents WHERE id = %d AND document_type NOT LIKE %s",
+				$id,
+				'issued\_visa\_%'
+			)
+		);
+		if ( ! $doc ) {
+			return new WP_Error( 'visati_not_found', 'Document not found.', array( 'status' => 404 ) );
+		}
+
+		$url = Visati_Core_R2_Storage::presigned_url( $doc->r2_key, 300 );
+		if ( ! $url ) {
+			return new WP_Error( 'visati_storage_unavailable', 'Document storage is not configured.', array( 'status' => 500 ) );
+		}
+
+		return rest_ensure_response( array( 'id' => $id, 'filename' => $doc->filename, 'url' => $url, 'expires_in' => 300 ) );
 	}
 }

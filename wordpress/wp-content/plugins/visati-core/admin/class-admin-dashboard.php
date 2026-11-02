@@ -16,6 +16,7 @@ class Visati_Core_Admin_Dashboard {
 		add_action( 'admin_menu', array( __CLASS__, 'move_dashboard_submenu_first' ), 999 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
 		add_action( 'wp_dashboard_setup', array( __CLASS__, 'register_dashboard_widget' ) );
+		add_action( 'admin_post_visati_download_document', array( 'Visati_Core_Admin_Applications', 'handle_document_download' ) );
 	}
 
 	/**

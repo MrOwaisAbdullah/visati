@@ -107,6 +107,19 @@ final class Visati_Core_Email {
 			$body .= '<p><strong>' . esc_html__( 'Visa type:', 'visati-core' ) . '</strong> ' . esc_html( $visa_name ) . '</p>';
 		}
 
+				if ( Visati_Core_Settings::bot_access_enabled() ) {
+			$body .= '<p><strong>' . esc_html__( 'Bot document index (requires an Application Password, role Visati Bot):', 'visati-core' ) . '</strong><br><code>' . esc_html( rest_url( Visati_Core_REST_API::NAMESPACE . '/applications/' . $app_id . '/documents' ) ) . '</code></p>';
+			}
+
+			$docs = self::document_links( $app_id );
+		if ( $docs ) {
+			$body .= '<p><strong>' . esc_html__( 'Documents (admin login required to open):', 'visati-core' ) . '</strong></p><ul style="padding-left:20px;margin:0 0 16px;">';
+			foreach ( $docs as $doc ) {
+				$body .= '<li><a href="' . esc_url( $doc['url'] ) . '">' . esc_html( $doc['label'] ) . '</a></li>';
+			}
+			$body .= '</ul>';
+		}
+
 		$body .= '<p><a href="' . $track_url . '" style="display:inline-block;padding:12px 24px;background:#C9A84C;color:#0A1628;border-radius:999px;font-weight:700;text-decoration:none;">'
 			. esc_html__( 'Review application', 'visati-core' ) . '</a></p>';
 
@@ -237,22 +250,61 @@ final class Visati_Core_Email {
 		add_filter( 'wp_mail_from', array( __CLASS__, 'from_email' ) );
 		add_filter( 'wp_mail_from_name', array( __CLASS__, 'from_name' ) );
 		add_filter( 'wp_mail_content_type', array( __CLASS__, 'content_type' ) );
+		add_action( 'wp_mail_failed', array( __CLASS__, 'log_failure' ) );
 
 		$sent = wp_mail( $to, $subject, $html );
 
 		remove_filter( 'wp_mail_from', array( __CLASS__, 'from_email' ) );
 		remove_filter( 'wp_mail_from_name', array( __CLASS__, 'from_name' ) );
 		remove_filter( 'wp_mail_content_type', array( __CLASS__, 'content_type' ) );
+		remove_action( 'wp_mail_failed', array( __CLASS__, 'log_failure' ) );
+
+		if ( ! $sent ) {
+			error_log( sprintf( '[visati-core] wp_mail returned false for subject "%s"', $subject ) );
+		}
 
 		return $sent;
 	}
 
 	/**
-	 * From email derived from the site domain (noreply@<host>).
+	 * Log wp_mail() failures (WP_Error from the mailer / SMTP plugin) to debug.log.
+	 *
+	 * @param WP_Error $error Error raised by wp_mail().
+	 * @return void
+	 */
+	public static function log_failure( $error ): void {
+		if ( is_wp_error( $error ) ) {
+			error_log( '[visati-core] wp_mail_failed: ' . $error->get_error_message() );
+		}
+	}
+
+	/**
+	 * Send a test notification to the configured recipients (Settings page button).
+	 *
+	 * @param array<int,string> $to Recipients.
+	 * @return bool True if wp_mail() accepted the message for delivery.
+	 */
+	public static function send_test( array $to ): bool {
+		if ( ! $to ) {
+			return false;
+		}
+		$body = '<p>' . esc_html__( 'This is a test notification from Visati. If you received it, admin alerts are reaching this inbox.', 'visati-core' ) . '</p>'
+			. '<p>' . esc_html__( 'Sent at:', 'visati-core' ) . ' ' . esc_html( current_time( 'mysql' ) ) . '</p>';
+
+		return self::mail( $to, __( 'Visati test notification', 'visati-core' ), self::wrap( $body ) );
+	}
+
+	/**
+	 * From email: the configured verified sender (Settings / VISATI_RESEND_FROM_EMAIL),
+	 * falling back to noreply@<host> only when none is set.
 	 *
 	 * @return string
 	 */
 	public static function from_email(): string {
+		$configured = Visati_Core_Settings::from_email();
+		if ( $configured && is_email( $configured ) ) {
+			return $configured;
+		}
 		$host = wp_parse_url( home_url(), PHP_URL_HOST );
 		return $host ? 'noreply@' . $host : 'noreply@visati.ae';
 	}
@@ -273,6 +325,33 @@ final class Visati_Core_Email {
 	 */
 	public static function content_type(): string {
 		return 'text/html; charset=UTF-8';
+	}
+
+	/**
+	 * Admin-only download links for an application's uploaded documents. Each link goes to
+	 * wp-admin (login + manage_options required) and mints a short-lived R2 URL on click,
+	 * so the storage URL itself is never placed in email.
+	 *
+	 * @param string $app_id Application ID.
+	 * @return array<int,array{url:string,label:string}>
+	 */
+	private static function document_links( string $app_id ): array {
+		global $wpdb;
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, document_type, filename FROM {$wpdb->prefix}visati_documents WHERE application_id = %s ORDER BY uploaded_at ASC",
+				$app_id
+			)
+		);
+
+		$links = array();
+		foreach ( (array) $rows as $row ) {
+			$links[] = array(
+				'url'   => admin_url( 'admin-post.php?action=visati_download_document&id=' . (int) $row->id ),
+				'label' => $row->document_type . ' — ' . $row->filename,
+			);
+		}
+		return $links;
 	}
 
 	/**
