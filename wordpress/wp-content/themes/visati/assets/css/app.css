@@ -226,7 +226,7 @@ a:hover { color: var( --visati-gold ); }
    HEADER
    ───────────────────────────────────────────────────────── */
 .visati-header {
-	position: sticky;
+	position: sticky !important;
 	top: 0;
 	z-index: 9999;
 	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -239,6 +239,13 @@ a:hover { color: var( --visati-gold ); }
 .visati-header__bar {
 	background: var( --visati-navy );
 	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Logged-in: keep the sticky header below the WordPress admin bar. */
+body.admin-bar .visati-header {
+	top: 32px;
+}
+body.admin-bar .visati-header.is-scrolled {
+	top: 44px;
 }
 /* Sticky: shrink to 85% width, centered, rounded + shadow */
 .visati-header.is-scrolled .visati-header__bar {
