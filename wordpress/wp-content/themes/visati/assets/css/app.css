@@ -3123,6 +3123,7 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	position: sticky;
 	top: 96px;
 	overflow: visible;
+	align-self: start;
 }
 .visati-blog-sidebar__scroll {
 	max-height: calc( 100vh - 420px );
