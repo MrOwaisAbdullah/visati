@@ -3126,13 +3126,8 @@ a.visati-contact-page__detail-value:hover { text-decoration: underline; }
 	align-self: start;
 }
 .visati-blog-sidebar__scroll {
-	max-height: calc( 100vh - 420px );
-	overflow-y: auto;
-	scrollbar-width: none;
-	-ms-overflow-style: none;
-}
-.visati-blog-sidebar__scroll::-webkit-scrollbar {
-	display: none;
+	max-height: none;
+	overflow: visible;
 }
 .visati-blog-sidebar__scroll > * + * {
 	margin-top: 1.5rem;

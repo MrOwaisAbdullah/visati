@@ -21,7 +21,7 @@ $visati_sidebar_cats    = get_categories( array( 'hide_empty' => true ) );
 $visati_sidebar_recent_args = array(
 	'post_type'           => 'post',
 	'post_status'         => 'publish',
-	'posts_per_page'      => 4,
+	'posts_per_page'      => 3,
 	'no_found_rows'       => true,
 	'ignore_sticky_posts' => true,
 );

@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VISATI_THEME_VERSION', '0.4.45' );
+define( 'VISATI_THEME_VERSION', '0.4.46' );
 
 /**
  * TEMPORARY diagnostic — checks what the real web-serving PHP process
