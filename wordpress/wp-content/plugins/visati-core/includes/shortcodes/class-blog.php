@@ -89,7 +89,6 @@ final class Visati_Core_Blog_Shortcode {
 									<p class="visati-blog-card__excerpt"><?php echo esc_html( $excerpt ); ?></p>
 									<div class="visati-blog-card__meta">
 										<span><?php echo esc_html( get_the_date( '', $post_item ) ); ?></span>
-										<span><?php echo esc_html( get_the_author_meta( 'display_name', $post_item->post_author ) ); ?></span>
 									</div>
 								</div>
 							</article>
