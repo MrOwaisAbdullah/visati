@@ -2,8 +2,8 @@
 /**
  * Single blog post template.
  *
- * Editorial layout: breadcrumbs, hero, featured image, prose column,
- * sidebar CTA, tags, share links, author box, related posts, and a final CTA.
+ * Editorial layout: breadcrumbs, centered hero, featured image, prose column,
+ * sidebar CTA, tags, share links, related posts, and a final CTA.
  *
  * @package Visati
  */
@@ -22,16 +22,6 @@ while ( have_posts() ) :
 	$visati_categories  = get_the_category();
 	$visati_primary_cat = ! empty( $visati_categories ) ? $visati_categories[0] : null;
 	$visati_tags        = get_the_tags();
-	$visati_author_id   = (int) get_the_author_meta( 'ID' );
-	$visati_author_name = get_the_author();
-	$visati_author_bio  = get_the_author_meta( 'description' );
-	$visati_author_url  = get_author_posts_url( $visati_author_id );
-
-	// The production blog is authored by a system SEO user; present it as the
-	// editorial team instead of exposing the username on the front end.
-	if ( 'visati-seo' === get_the_author_meta( 'user_login' ) ) {
-		$visati_author_name = __( 'Visati Editorial Team', 'visati' );
-	}
 
 	$visati_published_ts  = (int) get_the_time( 'U' );
 	$visati_modified_ts   = (int) get_the_modified_time( 'U' );
@@ -41,12 +31,6 @@ while ( have_posts() ) :
 	$visati_content      = get_the_content();
 	$visati_word_count   = str_word_count( wp_strip_all_tags( $visati_content ) );
 	$visati_reading_time = max( 1, (int) ceil( $visati_word_count / 200 ) );
-
-	$visati_excerpt = get_the_excerpt();
-	if ( ! $visati_excerpt ) {
-		$visati_excerpt = $visati_content;
-	}
-	$visati_excerpt = wp_trim_words( wp_strip_all_tags( $visati_excerpt ), 34 );
 
 	$visati_blog_url    = home_url( '/blog/' );
 	$visati_featured_id = get_post_thumbnail_id();
@@ -81,21 +65,7 @@ while ( have_posts() ) :
 
 				<h1 class="visati-post-hero__title"><?php the_title(); ?></h1>
 
-				<?php if ( $visati_excerpt ) : ?>
-					<p class="visati-post-hero__dek"><?php echo esc_html( $visati_excerpt ); ?></p>
-				<?php endif; ?>
-
 				<div class="visati-post-hero__meta">
-					<div class="visati-post-hero__author">
-						<?php echo get_avatar( $visati_author_id, 44, '', $visati_author_name, array( 'class' => 'visati-post-hero__avatar' ) ); ?>
-						<div class="visati-post-hero__author-info">
-							<span class="visati-post-hero__author-name"><?php echo esc_html( $visati_author_name ); ?></span>
-							<span class="visati-post-hero__author-role"><?php esc_html_e( 'Visa specialists', 'visati' ); ?></span>
-						</div>
-					</div>
-
-					<span class="visati-post-hero__meta-divider" aria-hidden="true"></span>
-
 					<span class="visati-post-hero__meta-item">
 						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 						<time datetime="<?php echo esc_attr( get_the_date( 'c' ) ); ?>"><?php echo esc_html( get_the_date() ); ?></time>
@@ -182,19 +152,6 @@ while ( have_posts() ) :
 						<button type="button" class="visati-post-share__btn" data-visati-copy="<?php echo esc_url( $visati_permalink ); ?>" aria-label="<?php esc_attr_e( 'Copy article link', 'visati' ); ?>">
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
 						</button>
-					</div>
-
-					<div class="visati-post-author">
-						<?php echo get_avatar( $visati_author_id, 64, '', $visati_author_name, array( 'class' => 'visati-post-author__avatar' ) ); ?>
-						<div class="visati-post-author__content">
-							<span class="visati-post-author__eyebrow"><?php esc_html_e( 'Written by', 'visati' ); ?></span>
-							<h2 class="visati-post-author__name">
-								<a href="<?php echo esc_url( $visati_author_url ); ?>"><?php echo esc_html( $visati_author_name ); ?></a>
-							</h2>
-							<p class="visati-post-author__bio">
-								<?php echo esc_html( $visati_author_bio ? $visati_author_bio : __( 'Visa insights from the Visati team.', 'visati' ) ); ?>
-							</p>
-						</div>
 					</div>
 				</article>
 

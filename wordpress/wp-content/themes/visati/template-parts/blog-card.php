@@ -48,7 +48,6 @@ $visati_card_permalink = get_permalink();
 
 		<div class="visati-blog-card__meta">
 			<span><?php echo esc_html( get_the_date() ); ?></span>
-			<span><?php echo esc_html( get_the_author() ); ?></span>
 		</div>
 	</div>
 </article>
